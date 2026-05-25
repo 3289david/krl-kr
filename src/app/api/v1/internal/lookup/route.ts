@@ -2,29 +2,29 @@
  * KRL.KR — Internal Edge-Worker Lookup API
  * GET /api/v1/internal/lookup?slug=<slug>
  *
- * Called by the Cloudflare Edge Worker (worker/index.ts) for every
- * potential short-link slug request. Returns either a redirect URL
- * or a directive to pass the request through to Next.js.
+ * 엣지 워커(worker/index.ts)가 호출하는 내부 전용 엔드포인트.
+ * 슬러그에 대한 리다이렉트 URL을 반환합니다.
+ * Analytics 기록은 /api/v1/internal/click 에서 처리합니다.
  *
- * Protected by the shared WORKER_SECRET header (X-Worker-Secret).
- * The edge worker records analytics data in query params so the VPS
- * can store them without an extra POST round-trip.
+ * 인증: X-Worker-Secret 헤더
  *
- * Response shapes:
- *   { redirect_url: string }            → worker should 302 to this URL
- *   { pass_through: true, reason: string } → worker should forward to origin
+ * 응답:
+ *   { redirect_url: string }              → 엣지에서 302 리다이렉트
+ *   { pass_through: true, reason: string } → Next.js 원본으로 패스스루
  */
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db/postgres";
-import { generateId, isExpired } from "@/lib/utils";
-import { md5 } from "@/lib/utils";
+import { isExpired } from "@/lib/utils";
 
 export const runtime = "nodejs";
 
-// ─── Auth ─────────────────────────────────────────────────────────────────────
 function authorize(request: NextRequest): boolean {
   const secret = request.headers.get("x-worker-secret");
   return !!secret && secret === process.env.WORKER_SECRET;
+}
+
+function passThrough(reason: string) {
+  return NextResponse.json({ pass_through: true, reason }, { status: 200 });
 }
 
 // ─── GET /api/v1/internal/lookup ─────────────────────────────────────────────
@@ -35,22 +35,9 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const slug = searchParams.get("slug");
-  if (!slug) {
-    return NextResponse.json(
-      { pass_through: true, reason: "no_slug" },
-      { status: 200 }
-    );
-  }
+  if (!slug) return passThrough("no_slug");
 
-  // ── Visitor context (forwarded from edge worker) ───────────────────────────
-  const ua = searchParams.get("ua") ?? "";
-  const ip = searchParams.get("ip") ?? "unknown";
-  const country = searchParams.get("country") ?? null;
-  const city = searchParams.get("city") ?? null;
-  const region = searchParams.get("region") ?? null;
-  const referer = searchParams.get("referer") ?? null;
-
-  // ── Look up the link ───────────────────────────────────────────────────────
+  // ── 링크 조회 ──────────────────────────────────────────────────────────────
   let link: {
     id: string;
     original_url: string;
@@ -58,8 +45,6 @@ export async function GET(request: NextRequest) {
     expires_at: number | null;
     max_clicks: number | null;
     click_count: number;
-    is_active: number;
-    is_dynamic: number;
     ios_url: string | null;
     android_url: string | null;
     geo_rules: string | null;
@@ -73,7 +58,7 @@ export async function GET(request: NextRequest) {
     link = await db
       .prepare(
         `SELECT id, original_url, password_hash, expires_at, max_clicks,
-                click_count, is_active, is_dynamic, ios_url, android_url,
+                click_count, ios_url, android_url,
                 geo_rules, device_rules, utm_source, utm_medium, utm_campaign
          FROM links WHERE slug = ? AND is_active = 1 LIMIT 1`
       )
@@ -81,88 +66,20 @@ export async function GET(request: NextRequest) {
       .first();
   } catch (err) {
     console.error("[internal/lookup] DB error:", err);
-    return NextResponse.json(
-      { pass_through: true, reason: "db_error" },
-      { status: 200 }
-    );
+    return passThrough("db_error");
   }
 
-  // Not found → let Next.js render its 404
-  if (!link) {
-    return NextResponse.json(
-      { pass_through: true, reason: "not_found" },
-      { status: 200 }
-    );
-  }
+  if (!link) return passThrough("not_found");
+  if (isExpired(link.expires_at)) return passThrough("expired");
+  if (link.max_clicks !== null && link.click_count >= link.max_clicks)
+    return passThrough("max_clicks");
+  if (link.password_hash) return passThrough("password_required");
 
-  // Expired → let Next.js render the expired page
-  if (isExpired(link.expires_at)) {
-    return NextResponse.json(
-      { pass_through: true, reason: "expired" },
-      { status: 200 }
-    );
-  }
-
-  // Max clicks reached → let Next.js render the limit page
-  if (link.max_clicks !== null && link.click_count >= link.max_clicks) {
-    return NextResponse.json(
-      { pass_through: true, reason: "max_clicks" },
-      { status: 200 }
-    );
-  }
-
-  // Password-protected → let Next.js render the password gate
-  if (link.password_hash) {
-    return NextResponse.json(
-      { pass_through: true, reason: "password_required" },
-      { status: 200 }
-    );
-  }
-
-  // ── Determine target URL ───────────────────────────────────────────────────
+  // ── 리다이렉트 URL 결정 ───────────────────────────────────────────────────
+  // (방문자 UA/IP는 /click 엔드포인트에서 처리하므로 여기서는 원본 URL만 반환)
   let targetUrl = link.original_url;
 
-  const device = getDevice(ua);
-  const os = getOS(ua);
-
-  // App links (iOS / Android deep links)
-  if (os === "iOS" && link.ios_url) {
-    targetUrl = link.ios_url;
-  } else if (os === "Android" && link.android_url) {
-    targetUrl = link.android_url;
-  } else {
-    // Geo-based redirect
-    if (link.geo_rules && country) {
-      try {
-        const rules = JSON.parse(link.geo_rules) as Array<{
-          country: string;
-          url: string;
-        }>;
-        const rule = rules.find(
-          (r) => r.country.toUpperCase() === country.toUpperCase()
-        );
-        if (rule?.url) targetUrl = rule.url;
-      } catch {
-        // Ignore invalid JSON
-      }
-    }
-
-    // Device-based redirect
-    if (link.device_rules) {
-      try {
-        const rules = JSON.parse(link.device_rules) as Array<{
-          device: string;
-          url: string;
-        }>;
-        const rule = rules.find((r) => r.device === device);
-        if (rule?.url) targetUrl = rule.url;
-      } catch {
-        // Ignore invalid JSON
-      }
-    }
-  }
-
-  // Append UTM params
+  // UTM 파라미터 추가
   if (link.utm_source || link.utm_medium || link.utm_campaign) {
     try {
       const parsed = new URL(targetUrl);
@@ -174,131 +91,9 @@ export async function GET(request: NextRequest) {
         parsed.searchParams.set("utm_campaign", link.utm_campaign);
       targetUrl = parsed.toString();
     } catch {
-      // Not a valid URL — use as-is
+      // URL 파싱 실패 시 원본 사용
     }
   }
-
-  // ── Record analytics (fire-and-forget) ───────────────────────────────────
-  recordClick({
-    linkId: link.id,
-    ip,
-    ua,
-    country,
-    city,
-    region,
-    referer,
-    device,
-    os,
-  }).catch(console.error);
 
   return NextResponse.json({ redirect_url: targetUrl }, { status: 200 });
-}
-
-// ─── Analytics ────────────────────────────────────────────────────────────────
-
-async function recordClick(opts: {
-  linkId: string;
-  ip: string;
-  ua: string;
-  country: string | null;
-  city: string | null;
-  region: string | null;
-  referer: string | null;
-  device: string;
-  os: string;
-}): Promise<void> {
-  const { linkId, ip, ua, country, city, region, referer, device, os } = opts;
-
-  try {
-    const ipHash = await md5(ip);
-    const browser = getBrowser(ua);
-    const refererDomain = referer ? extractDomain(referer) : null;
-    const now = Date.now();
-
-    // Deduplicate within 24 h from same IP
-    const existing = await db
-      .prepare(
-        "SELECT id FROM clicks WHERE link_id = ? AND ip_hash = ? AND clicked_at > ? LIMIT 1"
-      )
-      .bind(linkId, ipHash, now - 86_400_000)
-      .first();
-
-    const isUnique = !existing;
-    const clickId = generateId("clk");
-
-    await db
-      .prepare(
-        `INSERT INTO clicks (
-          id, link_id, clicked_at, country, city, region,
-          device_type, browser, os, referer, referer_domain, user_agent, ip_hash
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      )
-      .bind(
-        clickId,
-        linkId,
-        now,
-        country,
-        city,
-        region,
-        device,
-        browser,
-        os,
-        referer,
-        refererDomain,
-        ua.substring(0, 500),
-        ipHash
-      )
-      .run();
-
-    if (isUnique) {
-      await db
-        .prepare(
-          "UPDATE links SET click_count = click_count + 1, unique_count = unique_count + 1 WHERE id = ?"
-        )
-        .bind(linkId)
-        .run();
-    } else {
-      await db
-        .prepare("UPDATE links SET click_count = click_count + 1 WHERE id = ?")
-        .bind(linkId)
-        .run();
-    }
-  } catch (err) {
-    console.error("[internal/lookup] Analytics error:", err);
-    // Never throw — analytics must not break redirects
-  }
-}
-
-// ─── UA helpers ───────────────────────────────────────────────────────────────
-
-function getDevice(ua: string): string {
-  if (/bot|crawler|spider|curl|wget|python/i.test(ua)) return "bot";
-  if (/iPad|Android(?!.*Mobile)/i.test(ua)) return "tablet";
-  if (/Android|iPhone|iPod|Windows Phone|IEMobile/i.test(ua)) return "mobile";
-  return "desktop";
-}
-
-function getOS(ua: string): string {
-  if (/iPhone|iPad|iPod/i.test(ua)) return "iOS";
-  if (/Android/i.test(ua)) return "Android";
-  if (/Windows/i.test(ua)) return "Windows";
-  if (/Mac OS X/i.test(ua)) return "macOS";
-  if (/Linux/i.test(ua)) return "Linux";
-  return "Other";
-}
-
-function getBrowser(ua: string): string {
-  if (/Edg\//i.test(ua)) return "Edge";
-  if (/Chrome\//i.test(ua)) return "Chrome";
-  if (/Firefox\//i.test(ua)) return "Firefox";
-  if (/Safari\//i.test(ua)) return "Safari";
-  return "Other";
-}
-
-function extractDomain(url: string): string | null {
-  try {
-    return new URL(url).hostname.replace(/^www\./, "");
-  } catch {
-    return null;
-  }
 }

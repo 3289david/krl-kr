@@ -1,0 +1,25 @@
+# KRL.KR — Cache Management Worker
+#
+# URL: https://krl-kr-cache.rukkit.workers.dev
+#
+# VPS가 링크를 수정/삭제할 때 이 워커를 호출해 KV 캐시를 무효화합니다.
+# krl-kr-edge 워커와 동일한 KV 네임스페이스를 공유합니다.
+#
+# 배포:
+#   wrangler deploy --config wrangler.cache.toml
+#
+# 시크릿 설정 (한 번만):
+#   wrangler secret put WORKER_SECRET --config wrangler.cache.toml
+#
+# KV 네임스페이스:
+#   krl-kr-edge 워커와 동일한 id 사용 (wrangler kv namespace create URL_CACHE)
+
+name = "krl-kr-cache"
+main = "worker/cache-worker.ts"
+compatibility_date = "2024-11-01"
+workers_dev = true
+
+# krl-kr-edge 와 동일한 KV 네임스페이스 (캐시 공유)
+[[kv_namespaces]]
+binding = "URL_CACHE"
+id = "3c7365988cf848cb84d012c855145e80"

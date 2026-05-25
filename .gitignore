@@ -15,7 +15,7 @@ dist/
 .env.test.local
 .env.production.local
 
-# Wrangler
+# Wrangler runtime cache (local only)
 .wrangler/
 .dev.vars
 
@@ -34,9 +34,5 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Cloudflare
-.wrangler
-wrangler.toml
-wrangler.email.toml
 # Local file storage (uploads)
 uploads/

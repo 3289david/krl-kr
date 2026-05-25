@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDB } from "@/lib/env";
 import { generateId, generateSlug, isValidUrl, isValidSlug, normalizeUrl } from "@/lib/utils";
+import { warmCache } from "@/lib/cache";
 import { checkRateLimit } from "@/lib/auth";
 import { z } from "zod";
 
@@ -201,6 +202,11 @@ export async function POST(request: NextRequest) {
     }
 
     const shortUrl = `https://krl.kr/${slug}`;
+
+    // 엣지 캐시 워밍 — 첫 방문부터 KV 히트되도록 미리 등록 (비동기)
+    if (!passwordHash) {
+      warmCache(slug, originalUrl).catch(console.warn);
+    }
 
     return NextResponse.json(
       {

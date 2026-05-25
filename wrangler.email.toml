@@ -1,11 +1,22 @@
+# KRL.KR — Email Receive Worker
+#
+# URL: https://krl-kr-email.rukkit.workers.dev
+#      (이메일 수신 전용 — HTTP URL로는 직접 접근 안 함)
+#
+# 배포:
+#   wrangler deploy --config wrangler.email.toml
+#
+# 시크릿 설정 (한 번만):
+#   wrangler secret put WORKER_SECRET --config wrangler.email.toml
+#
+# Cloudflare 대시보드 설정:
+#   Email > Email Routing > Routing Rules
+#   Catch-all: *@mail.krl.kr → Worker (krl-kr-email)
+
 name = "krl-kr-email"
 main = "worker/email-worker.ts"
 compatibility_date = "2024-11-01"
+workers_dev = true
 
 [vars]
 APP_URL = "https://krl.kr"
-# WORKER_SECRET은 wrangler secret으로 관리합니다 (절대 여기에 넣지 마세요):
-#   wrangler secret put WORKER_SECRET --config wrangler.email.toml
-#
-# 로컬 개발: .dev.vars 파일 생성 (gitignore 됨)
-#   echo 'WORKER_SECRET=your-secret-here' > .dev.vars

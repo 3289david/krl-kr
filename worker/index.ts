@@ -1,36 +1,42 @@
 /**
- * KRL.KR — Cloudflare Edge Redirect Worker
+ * KRL.KR — Edge Redirect Worker
  *
- * Intercepts slug requests at the Cloudflare edge and resolves them
- * by calling the KRL.KR VPS API. This means redirects are served from
- * Cloudflare's global network without a round-trip to the VPS for the
- * client — only the worker→VPS lookup happens at the edge.
+ * URL: https://krl-kr-edge.rukkit.workers.dev
+ *      https://krl.kr/* (production route)
  *
- * Architecture:
- *   Browser → CF Edge Worker → (lookup) VPS API → redirect URL
- *                                                 ↳ Browser redirected
+ * 동작 순서:
+ *   1. Bypass 경로면 Next.js 원본 서버로 패스스루
+ *   2. KV 캐시 확인 → 히트: 즉시 리다이렉트 + 비동기 analytics 기록
+ *   3. KV 미스: VPS /api/v1/internal/lookup 호출
+ *      → 결과 KV에 캐시 (60초) + 리다이렉트 + 비동기 analytics 기록
+ *   4. pass_through / 오류: Next.js 원본으로 패스스루
  *
- * If the lookup fails or the link needs special handling (password,
- * expired, etc.), the request is passed through to the Next.js origin.
- *
- * Deploy:
- *   wrangler deploy                       (uses wrangler.toml)
- *
- * Secrets (set once, never commit):
- *   wrangler secret put APP_URL
- *   wrangler secret put WORKER_SECRET
+ * 배포: wrangler deploy
+ * 시크릿: wrangler secret put WORKER_SECRET
  */
 
-import type { ExecutionContext } from "@cloudflare/workers-types";
+import type { KVNamespace, ExecutionContext } from "@cloudflare/workers-types";
 
 export interface Env {
-  /** VPS origin — e.g. https://krl.kr */
+  /** VPS 원본 URL — https://krl.kr */
   APP_URL: string;
-  /** Shared secret authenticating worker→API calls */
+  /** VPS API와 공유하는 인증 시크릿 */
   WORKER_SECRET: string;
+  /** URL 리다이렉트 캐시 (krl-kr-cache 워커와 공유) */
+  URL_CACHE: KVNamespace;
 }
 
-// ─── Paths that should always pass through to Next.js ────────────────────────
+/** KV에 저장되는 캐시 데이터 */
+interface CacheEntry {
+  redirect_url: string;
+  cached_at: number;
+}
+
+// ─── KV 캐시 TTL ──────────────────────────────────────────────────────────────
+const CACHE_TTL_SECONDS = 60;
+const KV_PREFIX = "link:";
+
+// ─── Bypass 경로 목록 ─────────────────────────────────────────────────────────
 const BYPASS_EXACT = new Set([
   "/",
   "/dashboard",
@@ -62,9 +68,9 @@ const BYPASS_PREFIXES = [
   "/legal/",
   "/tools/",
   "/bio/",
-  "/f/",       // file download
-  "/p/",       // paste view
-  "/qr/",      // QR viewer
+  "/f/",    // 파일 다운로드
+  "/p/",    // 페이스트 뷰
+  "/qr/",   // QR 뷰어
 ];
 
 function shouldBypass(pathname: string): boolean {
@@ -72,12 +78,12 @@ function shouldBypass(pathname: string): boolean {
   for (const prefix of BYPASS_PREFIXES) {
     if (pathname.startsWith(prefix)) return true;
   }
-  // Static assets
+  // 정적 파일 (확장자 있는 경로)
   if (pathname.includes(".")) return true;
   return false;
 }
 
-// ─── Worker fetch handler ─────────────────────────────────────────────────────
+// ─── 메인 fetch 핸들러 ────────────────────────────────────────────────────────
 export default {
   async fetch(
     request: Request,
@@ -87,21 +93,20 @@ export default {
     const url = new URL(request.url);
     const { pathname } = url;
 
-    // ── 1. Bypass check ───────────────────────────────────────────────────────
+    // ── 1. Bypass ─────────────────────────────────────────────────────────────
     if (shouldBypass(pathname)) {
-      return fetch(request); // pass to origin
+      return fetch(request);
     }
 
-    // ── 2. Extract slug ───────────────────────────────────────────────────────
+    // ── 2. 슬러그 추출 ────────────────────────────────────────────────────────
     const segments = pathname.split("/").filter(Boolean);
     if (segments.length !== 1) {
-      // Sub-paths are handled by Next.js (e.g. /abc/locked)
+      // 서브경로 (예: /abc/locked) → Next.js 처리
       return fetch(request);
     }
     const slug = segments[0];
 
-    // ── 3. Ask VPS for redirect info ──────────────────────────────────────────
-    // Gather visitor context so VPS can record analytics without a second call.
+    // ── 3. 방문자 정보 수집 (analytics용) ────────────────────────────────────
     const ua = request.headers.get("user-agent") ?? "";
     const ip =
       request.headers.get("cf-connecting-ip") ??
@@ -112,53 +117,105 @@ export default {
     const region = request.headers.get("cf-region") ?? "";
     const referer = request.headers.get("referer") ?? "";
 
-    const lookupParams = new URLSearchParams({
-      slug,
-      ua,
-      ip,
-      country,
-      city,
-      region,
-      referer,
-    });
-
+    // ── 4. KV 캐시 확인 ───────────────────────────────────────────────────────
     let redirectUrl: string | null = null;
+    let cacheHit = false;
 
     try {
-      const lookupResp = await fetch(
-        `${env.APP_URL}/api/v1/internal/lookup?${lookupParams}`,
-        {
-          method: "GET",
-          headers: {
-            "X-Worker-Secret": env.WORKER_SECRET,
-            "User-Agent": "KRL.KR-EdgeWorker/1.0",
-          },
-          // CF: don't cache internally — caching is handled by the VPS response headers
-          cf: { cacheEverything: false },
-        } as RequestInit & { cf?: Record<string, unknown> }
+      const cached = await env.URL_CACHE.get<CacheEntry>(
+        `${KV_PREFIX}${slug}`,
+        "json"
       );
-
-      if (lookupResp.ok) {
-        const data = (await lookupResp.json()) as
-          | { redirect_url: string }
-          | { pass_through: true; reason: string };
-
-        if ("redirect_url" in data && data.redirect_url) {
-          redirectUrl = data.redirect_url;
-        }
-        // If pass_through — fall through to origin below
+      if (cached?.redirect_url) {
+        redirectUrl = cached.redirect_url;
+        cacheHit = true;
       }
-    } catch (err) {
-      // VPS unreachable → pass through so Next.js can handle or show error
-      console.error("[edge-worker] Lookup failed:", err);
+    } catch {
+      // KV 오류 → VPS로 폴백
     }
 
-    // ── 4. Redirect at the edge ───────────────────────────────────────────────
+    // ── 5. KV 미스: VPS /api/v1/internal/lookup 호출 ──────────────────────────
+    if (!redirectUrl) {
+      const lookupParams = new URLSearchParams({ slug });
+
+      try {
+        const lookupResp = await fetch(
+          `${env.APP_URL}/api/v1/internal/lookup?${lookupParams}`,
+          {
+            method: "GET",
+            headers: {
+              "X-Worker-Secret": env.WORKER_SECRET,
+              "User-Agent": "KRL.KR-EdgeWorker/1.0",
+            },
+          }
+        );
+
+        if (lookupResp.ok) {
+          const data = (await lookupResp.json()) as
+            | { redirect_url: string }
+            | { pass_through: true; reason: string };
+
+          if ("redirect_url" in data && data.redirect_url) {
+            redirectUrl = data.redirect_url;
+
+            // KV에 캐시 저장 (비동기 — 리다이렉트를 블로킹하지 않음)
+            const entry: CacheEntry = {
+              redirect_url: redirectUrl,
+              cached_at: Date.now(),
+            };
+            ctx.waitUntil(
+              env.URL_CACHE.put(
+                `${KV_PREFIX}${slug}`,
+                JSON.stringify(entry),
+                { expirationTtl: CACHE_TTL_SECONDS }
+              )
+            );
+          }
+          // pass_through → Next.js로 전달 (아래에서 처리)
+        }
+      } catch (err) {
+        console.error("[edge-worker] VPS lookup failed:", err);
+        // VPS 오류 → Next.js 패스스루
+      }
+    }
+
+    // ── 6. Analytics 비동기 기록 ─────────────────────────────────────────────
+    // 캐시 히트/미스 관계없이 항상 analytics 기록
+    if (redirectUrl) {
+      const analyticsParams = new URLSearchParams({
+        slug,
+        ua,
+        ip,
+        country,
+        city,
+        region,
+        referer,
+        cache_hit: cacheHit ? "1" : "0",
+      });
+
+      ctx.waitUntil(
+        fetch(
+          `${env.APP_URL}/api/v1/internal/click?${analyticsParams}`,
+          {
+            method: "POST",
+            headers: {
+              "X-Worker-Secret": env.WORKER_SECRET,
+              "User-Agent": "KRL.KR-EdgeWorker/1.0",
+              "Content-Length": "0",
+            },
+          }
+        ).catch(() => {
+          // analytics 실패 시 무시 — 리다이렉트에 영향 없음
+        })
+      );
+    }
+
+    // ── 7. 리다이렉트 또는 패스스루 ───────────────────────────────────────────
     if (redirectUrl) {
       return Response.redirect(redirectUrl, 302);
     }
 
-    // ── 5. Pass through to Next.js origin ────────────────────────────────────
+    // 링크 없음 / pass_through → Next.js가 404, 만료 등 처리
     return fetch(request);
   },
 };

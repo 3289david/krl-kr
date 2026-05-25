@@ -1,24 +1,33 @@
-# KRL.KR — Cloudflare Workers Configuration
+# KRL.KR — Edge Redirect Worker
 #
-# Workers 2개:
-#   1. krl-kr-edge   — 선택적 URL 리다이렉트 속도 향상용 (메인 앱은 VPS)
-#   2. krl-kr-email  — 이메일 수신함 필수 (*@mail.krl.kr)
+# URL: https://krl-kr-edge.rukkit.workers.dev
+#      https://krl.kr/* (production route)
 #
-# 배포 방법은 아래 README 참고
+# 배포:
+#   wrangler deploy
+#
+# 시크릿 설정 (한 번만):
+#   wrangler secret put WORKER_SECRET
+#
+# KV 네임스페이스 생성 (한 번만):
+#   wrangler kv namespace create URL_CACHE
+#   → 출력된 id를 아래 [[kv_namespaces]] id 에 넣으세요
 
-# ── Edge Redirect Worker (선택) ───────────────────────────────────────────────
 name = "krl-kr-edge"
 main = "worker/index.ts"
 compatibility_date = "2024-11-01"
-compatibility_flags = ["nodejs_compat"]
+workers_dev = true
 
 [vars]
 APP_URL = "https://krl.kr"
 
-# KV 네임스페이스 (edge worker 사용 시 필요, wrangler kv namespace create URL_CACHE)
+# KV 캐시 — URL 리다이렉트 데이터를 엣지에 캐시 (60초 TTL)
+# krl-kr-cache 워커와 동일한 네임스페이스를 공유합니다
 [[kv_namespaces]]
 binding = "URL_CACHE"
 id = "3c7365988cf848cb84d012c855145e80"
 
-# ── Email Worker 별도 배포 ────────────────────────────────────────────────────
-# wrangler deploy --config wrangler.email.toml
+# krl.kr 도메인의 슬러그 요청을 이 워커가 처리
+[[routes]]
+pattern = "krl.kr/*"
+zone_name = "krl.kr"

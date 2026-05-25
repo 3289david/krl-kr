@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDB } from "@/lib/env";
 import { requireAuth, hashPassword } from "@/lib/auth";
 import { isValidUrl, normalizeUrl } from "@/lib/utils";
+import { invalidateSlug } from "@/lib/cache";
 import { z } from "zod";
 
 const UpdateSchema = z.object({
@@ -26,7 +27,6 @@ export async function GET(
 ) {
   const { id } = await params;
   const db = getDB(request);
-  if (!db) return NextResponse.json({ error: "서비스를 이용할 수 없습니다." }, { status: 503 });
 
   const { user, error } = await requireAuth(db, request);
   if (error) return error;
@@ -49,15 +49,15 @@ export async function PATCH(
 ) {
   const { id } = await params;
   const db = getDB(request);
-  if (!db) return NextResponse.json({ error: "서비스를 이용할 수 없습니다." }, { status: 503 });
 
   const { user, error } = await requireAuth(db, request);
   if (error) return error;
 
+  // 기존 링크 조회 (슬러그 캐시 무효화에 필요)
   const existing = await db
-    .prepare("SELECT id FROM links WHERE id = ? AND user_id = ? LIMIT 1")
+    .prepare("SELECT id, slug FROM links WHERE id = ? AND user_id = ? LIMIT 1")
     .bind(id, user.id)
-    .first();
+    .first<{ id: string; slug: string }>();
 
   if (!existing) {
     return NextResponse.json({ error: "링크를 찾을 수 없습니다." }, { status: 404 });
@@ -109,6 +109,11 @@ export async function PATCH(
     updates.password_hash = data.password ? await hashPassword(data.password) : null;
   }
 
+  // 슬러그 변경 허용
+  if (data.slug !== undefined) {
+    updates.slug = data.slug;
+  }
+
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: "업데이트할 항목이 없습니다." }, { status: 400 });
   }
@@ -120,6 +125,15 @@ export async function PATCH(
     .prepare(`UPDATE links SET ${fields}, updated_at = ? WHERE id = ?`)
     .bind(...values, Date.now(), id)
     .run();
+
+  // 엣지 KV 캐시 무효화 (비동기 — 응답을 블로킹하지 않음)
+  const newSlug = typeof data.slug === "string" ? data.slug : null;
+  const slugsToInvalidate = [existing.slug];
+  if (newSlug && newSlug !== existing.slug) slugsToInvalidate.push(newSlug);
+  invalidateSlug(existing.slug).catch(console.warn);
+  if (newSlug && newSlug !== existing.slug) {
+    invalidateSlug(newSlug).catch(console.warn);
+  }
 
   const updated = await db
     .prepare("SELECT * FROM links WHERE id = ? LIMIT 1")
@@ -135,20 +149,27 @@ export async function DELETE(
 ) {
   const { id } = await params;
   const db = getDB(request);
-  if (!db) return NextResponse.json({ error: "서비스를 이용할 수 없습니다." }, { status: 503 });
 
   const { user, error } = await requireAuth(db, request);
   if (error) return error;
 
-  const result = await db
+  // 슬러그 먼저 조회 (삭제 후에는 조회 불가)
+  const link = await db
+    .prepare("SELECT slug FROM links WHERE id = ? AND user_id = ? LIMIT 1")
+    .bind(id, user.id)
+    .first<{ slug: string }>();
+
+  if (!link) {
+    return NextResponse.json({ error: "링크를 찾을 수 없습니다." }, { status: 404 });
+  }
+
+  await db
     .prepare("DELETE FROM links WHERE id = ? AND user_id = ?")
     .bind(id, user.id)
     .run();
 
-  const changes = (result.meta as { changes?: number })?.changes ?? 0;
-  if (changes === 0) {
-    return NextResponse.json({ error: "링크를 찾을 수 없습니다." }, { status: 404 });
-  }
+  // 엣지 KV 캐시 무효화
+  invalidateSlug(link.slug).catch(console.warn);
 
   return NextResponse.json({ success: true });
 }
