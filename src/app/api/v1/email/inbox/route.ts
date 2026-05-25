@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
       messages: messages.results.map((m) => ({
         id: m.id,
         alias: m.alias,
-        email: `${m.alias}@mail.krl.kr`,
+        email: `${m.alias}@krl.kr`,
         from: m.from_address,
         to: m.to_address,
         subject: m.subject,

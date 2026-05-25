@@ -42,7 +42,7 @@
 
 ### 기타
 - **Link-in-bio** — `krl.kr/bio/@danwoo`
-- **이메일 별칭** — `name@mail.krl.kr` (Cloudflare Email Routing)
+- **이메일 별칭** — `name@krl.kr` (Cloudflare Email Routing)
 - **앱 링크** — iOS/Android 자동 분기
 - **엣지 리다이렉트 룰** — 국가/디바이스 기반 분기
 

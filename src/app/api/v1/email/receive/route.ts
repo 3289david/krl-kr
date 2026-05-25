@@ -1,6 +1,6 @@
 /**
  * KRL.KR — Email Receive API
- * Called by Cloudflare Email Worker when email arrives at *@mail.krl.kr
+ * Called by Cloudflare Email Worker when email arrives at *@krl.kr
  * Protected by shared WORKER_SECRET
  */
 import { NextRequest, NextResponse } from "next/server";

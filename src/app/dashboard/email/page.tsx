@@ -164,7 +164,7 @@ export default function EmailInboxPage() {
               style={{ border: "none", borderRadius: 0, padding: "8px 14px", width: "180px", background: "transparent", fontSize: "0.875rem" }}
               onKeyDown={(e) => { if (e.key === "Enter") createAlias(); }}
             />
-            <span style={{ padding: "0 14px 0 0", fontSize: "0.8125rem", color: "var(--color-muted)", whiteSpace: "nowrap" }}>@mail.krl.kr</span>
+            <span style={{ padding: "0 14px 0 0", fontSize: "0.8125rem", color: "var(--color-muted)", whiteSpace: "nowrap" }}>@krl.kr</span>
           </div>
           <button
             onClick={createAlias}
@@ -287,7 +287,7 @@ export default function EmailInboxPage() {
                   {msg.preview || "(내용 없음)"}
                 </p>
                 <span style={{ fontSize: "0.6875rem", color: "var(--color-ash)", marginTop: "2px", display: "block" }}>
-                  {msg.alias}@mail.krl.kr
+                  {msg.alias}@krl.kr
                 </span>
               </button>
             ))

@@ -236,7 +236,7 @@ CREATE INDEX IF NOT EXISTS idx_json_bins_slug ON json_bins(slug);
 -- Email Messages (received via Cloudflare Email Worker)
 CREATE TABLE IF NOT EXISTS email_messages (
   id TEXT PRIMARY KEY,
-  alias TEXT NOT NULL,           -- recipient alias (e.g. "danwoo" from danwoo@mail.krl.kr)
+  alias TEXT NOT NULL,           -- recipient alias (e.g. "danwoo" from danwoo@krl.kr)
   user_id TEXT REFERENCES users(id) ON DELETE CASCADE,  -- null if alias not found
   from_address TEXT NOT NULL,
   to_address TEXT NOT NULL,

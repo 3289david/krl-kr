@@ -11,7 +11,7 @@
 #
 # Cloudflare 대시보드 설정:
 #   Email > Email Routing > Routing Rules
-#   Catch-all: *@mail.krl.kr → Worker (krl-kr-email)
+#   Catch-all: *@krl.kr → Worker (krl-kr-email)
 
 name = "krl-kr-email"
 main = "worker/email-worker.ts"

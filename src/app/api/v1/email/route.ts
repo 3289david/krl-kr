@@ -1,6 +1,6 @@
 /**
  * KRL.KR — Email Alias API
- * POST /api/v1/email  → 이메일 별칭 생성 (name@mail.krl.kr → 수신함 저장)
+ * POST /api/v1/email  → 이메일 별칭 생성 (name@krl.kr → 수신함 저장)
  * GET  /api/v1/email  → 내 별칭 목록
  * DELETE /api/v1/email?id=xxx → 별칭 삭제
  *
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
       aliases: result.results.map((a) => ({
         id: a.id,
         alias: a.alias,
-        email: `${a.alias}@mail.krl.kr`,
+        email: `${a.alias}@krl.kr`,
         forward_to: a.forward_to,
         is_active: a.is_active === 1,
         cf_configured: !!a.cf_rule_id,
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
 
     const { alias } = parsed.data;
     const aliasLower = alias.toLowerCase();
-    const fullEmail = `${aliasLower}@mail.krl.kr`;
+    const fullEmail = `${aliasLower}@krl.kr`;
 
     // 한도 체크 (모든 사용자 최대 5개)
     const currentCount = await db

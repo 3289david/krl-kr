@@ -53,7 +53,7 @@ export async function GET(
     return NextResponse.json({
       id: message.id,
       alias: message.alias,
-      email: `${message.alias}@mail.krl.kr`,
+      email: `${message.alias}@krl.kr`,
       from: message.from_address,
       to: message.to_address,
       subject: message.subject,

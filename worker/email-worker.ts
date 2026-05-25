@@ -1,13 +1,13 @@
 /**
  * KRL.KR — Cloudflare Email Worker
  *
- * Receives ALL emails sent to *@mail.krl.kr via Cloudflare Email Routing.
+ * Receives ALL emails sent to *@krl.kr via Cloudflare Email Routing.
  * Parses the raw email (MIME) and forwards the data to the KRL.KR VPS API
  * for storage. Users then view their inbox at /dashboard/email.
  *
  * Cloudflare Dashboard setup:
  *   Email > Email Routing > Routing Rules
- *   → Catch-all rule: *@mail.krl.kr → Worker (this worker)
+ *   → Catch-all rule: *@krl.kr → Worker (this worker)
  *
  * Deploy:
  *   wrangler deploy --config wrangler.email.toml
@@ -48,7 +48,7 @@ export default {
     const to = message.to;
     const from = message.from;
 
-    // Extract alias: danwoo@mail.krl.kr  →  "danwoo"
+    // Extract alias: danwoo@krl.kr  →  "danwoo"
     const alias = to.split("@")[0]?.toLowerCase() ?? "";
 
     if (!alias) {

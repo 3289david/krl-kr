@@ -90,7 +90,7 @@ export async function createEmailForwardingRule(
     return { ruleId: null, error: "Cloudflare API not configured" };
   }
 
-  const aliasEmail = `${alias}@mail.krl.kr`;
+  const aliasEmail = `${alias}@krl.kr`;
   const rule: CFEmailRule = {
     matchers: [{ type: "literal", field: "to", value: aliasEmail }],
     actions: [{ type: "forward", value: [forwardTo] }],
