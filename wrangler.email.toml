@@ -1,0 +1,7 @@
+name = "krl-kr-email"
+main = "worker/email-worker.ts"
+compatibility_date = "2024-11-01"
+
+[vars]
+APP_URL = "https://krl.kr"
+WORKER_SECRET = "REPLACE_WITH_SECURE_RANDOM_STRING"

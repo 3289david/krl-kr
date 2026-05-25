@@ -87,7 +87,7 @@ export default function SubdomainsPage() {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "24px", flexWrap: "wrap", gap: "16px" }}>
         <div>
           <h1 style={{ fontSize: "1.5rem", fontWeight: 600, letterSpacing: "-0.02em", marginBottom: "4px" }}>서브도메인</h1>
-          <p style={{ fontSize: "0.9375rem", color: "var(--color-muted)" }}>*.krl.kr 서브도메인을 관리하세요. (프로 플랜 전용)</p>
+          <p style={{ fontSize: "0.9375rem", color: "var(--color-muted)" }}>*.krl.kr 서브도메인을 관리하세요.</p>
         </div>
         <button onClick={() => setShowCreate(true)} className="btn btn-primary btn-pill" style={{ gap: "6px" }}>
           <PlusIcon size={16} />새 서브도메인

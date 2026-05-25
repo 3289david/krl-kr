@@ -4,10 +4,6 @@ import { requireAuth } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   const db = getDB(request);
-  if (!db) {
-    return NextResponse.json({ error: "서비스를 이용할 수 없습니다." }, { status: 503 });
-  }
-
   const { user, error } = await requireAuth(db, request);
   if (error) return error;
 

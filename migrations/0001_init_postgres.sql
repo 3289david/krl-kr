@@ -232,3 +232,23 @@ CREATE TABLE IF NOT EXISTS json_bins (
   updated_at BIGINT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_json_bins_slug ON json_bins(slug);
+
+-- Email Messages (received via Cloudflare Email Worker)
+CREATE TABLE IF NOT EXISTS email_messages (
+  id TEXT PRIMARY KEY,
+  alias TEXT NOT NULL,           -- recipient alias (e.g. "danwoo" from danwoo@mail.krl.kr)
+  user_id TEXT REFERENCES users(id) ON DELETE CASCADE,  -- null if alias not found
+  from_address TEXT NOT NULL,
+  to_address TEXT NOT NULL,
+  subject TEXT,
+  body_text TEXT,
+  body_html TEXT,
+  headers TEXT,                  -- JSON headers
+  size BIGINT NOT NULL DEFAULT 0,
+  is_read INTEGER NOT NULL DEFAULT 0,
+  received_at BIGINT NOT NULL,
+  created_at BIGINT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_email_messages_alias ON email_messages(alias);
+CREATE INDEX IF NOT EXISTS idx_email_messages_user_id ON email_messages(user_id);
+CREATE INDEX IF NOT EXISTS idx_email_messages_received_at ON email_messages(received_at DESC);

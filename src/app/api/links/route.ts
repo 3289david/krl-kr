@@ -81,23 +81,6 @@ export async function POST(request: NextRequest) {
   if (auth.error) return auth.error;
   const { user } = auth;
 
-  // Check plan limits
-  const linkCount = await db
-    .prepare("SELECT COUNT(*) as count FROM links WHERE user_id = ?")
-    .bind(user.id)
-    .first<{ count: number }>();
-
-  if (user.plan === "free" && (linkCount?.count ?? 0) >= 50) {
-    return NextResponse.json(
-      {
-        error: "무료 플랜에서는 최대 50개의 링크를 생성할 수 있습니다. 프로 플랜으로 업그레이드하세요.",
-        code: "PLAN_LIMIT_EXCEEDED",
-        upgrade_url: "https://krl.kr/pricing",
-      },
-      { status: 403 }
-    );
-  }
-
   const body = await request.json();
   const parsed = CreateLinkSchema.safeParse(body);
 

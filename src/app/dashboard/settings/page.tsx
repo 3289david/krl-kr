@@ -121,17 +121,6 @@ export default function SettingsPage() {
         <p style={{ fontSize: "0.9375rem", color: "var(--color-muted)" }}>계정 정보를 관리하세요.</p>
       </div>
 
-      {/* Current plan */}
-      <div style={{ background: "var(--color-lifted)", border: "1px solid var(--color-hairline)", borderRadius: "var(--radius-xl)", padding: "20px 24px", marginBottom: "24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div>
-          <p style={{ fontSize: "0.875rem", color: "var(--color-muted)", marginBottom: "4px" }}>현재 플랜</p>
-          <p style={{ fontWeight: 700, fontSize: "1.125rem" }}>{PLAN_LABELS[user?.plan ?? "free"]} 플랜</p>
-        </div>
-        {user?.plan === "free" && (
-          <a href="/pricing" className="btn btn-primary btn-sm btn-pill" style={{ textDecoration: "none" }}>업그레이드</a>
-        )}
-      </div>
-
       {/* Profile */}
       <div style={{ background: "var(--color-lifted)", border: "1px solid var(--color-hairline)", borderRadius: "var(--radius-xl)", padding: "24px", marginBottom: "20px" }}>
         <h3 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "20px" }}>프로필</h3>

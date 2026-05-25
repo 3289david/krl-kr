@@ -1,17 +1,10 @@
 /**
  * KRL.KR — Email Alias API
- * POST /api/v1/email  → 이메일 별칭 생성 (name@mail.krl.kr → 사용자 이메일 포워딩)
+ * POST /api/v1/email  → 이메일 별칭 생성 (name@mail.krl.kr → 수신함 저장)
  * GET  /api/v1/email  → 내 별칭 목록
  * DELETE /api/v1/email?id=xxx → 별칭 삭제
  *
- * 동작 방식:
- *  1. 사용자가 별칭 생성 요청
- *  2. DB에 저장 (email_aliases 테이블)
- *  3. Cloudflare Email Routing API로 실제 포워딩 룰 생성
- *     - 플랫폼 소유자의 CF API 토큰 사용 (사용자는 CF 계정 불필요)
- *     - name@mail.krl.kr → 사용자의 가입 이메일로 자동 전달
- *
- * 모든 사용자가 사용 가능 (free: 1개, pro: 5개, business: 무제한)
+ * 모든 사용자: 최대 5개 별칭 (플랜 무관)
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getDB } from "@/lib/env";
@@ -31,12 +24,7 @@ const CreateAliasSchema = z.object({
     ),
 });
 
-// 플랜별 최대 별칭 수
-const PLAN_ALIAS_LIMITS: Record<string, number> = {
-  free: 1,
-  pro: 5,
-  business: 999,
-};
+const ALIAS_LIMIT = 5; // 모든 사용자 동일
 
 // ─── GET /api/v1/email ────────────────────────────────────────────────────────
 export async function GET(request: NextRequest) {
@@ -62,8 +50,6 @@ export async function GET(request: NextRequest) {
         created_at: number;
       }>();
 
-    const limit = PLAN_ALIAS_LIMITS[user.plan] ?? 1;
-
     return NextResponse.json({
       aliases: result.results.map((a) => ({
         id: a.id,
@@ -74,9 +60,9 @@ export async function GET(request: NextRequest) {
         cf_configured: !!a.cf_rule_id,
         created_at: new Date(a.created_at).toISOString(),
       })),
-      limit,
+      limit: ALIAS_LIMIT,
       used: result.results.length,
-      remaining: Math.max(0, limit - result.results.length),
+      remaining: Math.max(0, ALIAS_LIMIT - result.results.length),
     });
   } catch (err) {
     console.error("[/api/v1/email GET]", err);
@@ -104,19 +90,17 @@ export async function POST(request: NextRequest) {
     const aliasLower = alias.toLowerCase();
     const fullEmail = `${aliasLower}@mail.krl.kr`;
 
-    // 플랜별 한도 체크
-    const limit = PLAN_ALIAS_LIMITS[user.plan] ?? 1;
+    // 한도 체크 (모든 사용자 최대 5개)
     const currentCount = await db
       .prepare("SELECT COUNT(*) as count FROM email_aliases WHERE user_id = ?")
       .bind(user.id)
       .first<{ count: number }>();
 
-    if ((currentCount?.count ?? 0) >= limit) {
+    if ((currentCount?.count ?? 0) >= ALIAS_LIMIT) {
       return NextResponse.json(
         {
-          error: `현재 플랜(${user.plan})에서는 최대 ${limit}개의 이메일 별칭을 만들 수 있습니다.`,
+          error: `이메일 별칭은 최대 ${ALIAS_LIMIT}개까지 만들 수 있습니다.`,
           code: "LIMIT_REACHED",
-          upgrade_url: "/pricing",
         },
         { status: 403 }
       );
@@ -151,8 +135,7 @@ export async function POST(request: NextRequest) {
     const now = Date.now();
     const aliasId = generateId("ema");
 
-    // ── 1. Cloudflare Email Routing API로 실제 포워딩 룰 생성 ─────────────────
-    //    플랫폼 소유자의 CF API 토큰 사용 → 사용자는 CF 계정 불필요
+    // ── 1. Cloudflare Email Routing API로 포워딩 룰 생성 시도 ─────────────────
     const { ruleId, error: cfError } = await createEmailForwardingRule(
       aliasLower,
       user.email
@@ -162,7 +145,6 @@ export async function POST(request: NextRequest) {
       console.warn(
         `[Email Alias] CF API 미설정 또는 오류 (alias: ${aliasLower}): ${cfError}`
       );
-      // CF 미설정 시에도 DB에는 저장 (CF 설정 후 나중에 활성화 가능)
     }
 
     // ── 2. DB에 저장 ──────────────────────────────────────────────────────────
@@ -186,8 +168,8 @@ export async function POST(request: NextRequest) {
         cf_configured: cfConfigured,
         created_at: new Date(now).toISOString(),
         message: cfConfigured
-          ? `${fullEmail} 주소로 오는 이메일이 ${user.email}로 자동 전달됩니다.`
-          : `별칭이 등록되었습니다. Cloudflare 설정 후 포워딩이 활성화됩니다.`,
+          ? `${fullEmail} 주소로 오는 이메일이 받은 편지함에 저장됩니다.`
+          : `별칭이 등록되었습니다. Cloudflare Email Worker 설정 후 수신이 활성화됩니다.`,
       },
       { status: 201 }
     );

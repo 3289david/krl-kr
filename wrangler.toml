@@ -1,10 +1,14 @@
-# KRL.KR — Cloudflare Worker (Optional Edge Redirect Booster)
-# This worker is OPTIONAL. The main app runs on VPS with Next.js.
-# Deploy this only if you want ultra-fast edge redirects via Cloudflare network.
+# KRL.KR — Cloudflare Workers Configuration
 #
-# Main app: VPS with Next.js (PostgreSQL + Redis + local storage)
-# This worker: Edge redirect cache only (fetches from main app if cache miss)
+# TWO workers in this project:
+#
+# 1. krl-kr-edge    — Optional URL redirect booster (main app on VPS)
+# 2. krl-kr-email   — REQUIRED for email inbox feature (*@mail.krl.kr)
+#
+# Deploy email worker: wrangler deploy --config wrangler.email.toml
+# Setup Cloudflare Email Routing: Email > Email Routing > add catch-all → this Worker
 
+# ── Default (edge redirect worker) ──────────────────────────────────────────
 name = "krl-kr-edge"
 main = "worker/index.ts"
 compatibility_date = "2024-11-01"
@@ -17,3 +21,6 @@ APP_URL = "https://krl.kr"
 # [[kv_namespaces]]
 # binding = "URL_CACHE"
 # id = "YOUR_KV_ID"
+
+# ── Email Worker ─────────────────────────────────────────────────────────────
+# Deploy separately: wrangler deploy --config wrangler.email.toml

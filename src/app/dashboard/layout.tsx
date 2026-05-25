@@ -1,7 +1,7 @@
 import Link from "next/link";
 import {
   HomeIcon, LinkIcon, BarChartIcon, QrCodeIcon,
-  SettingsIcon, KeyIcon, FileIcon, CodeIcon, WebhookIcon, UserIcon, GlobeIcon
+  SettingsIcon, KeyIcon, FileIcon, CodeIcon, WebhookIcon, UserIcon, GlobeIcon, EmailIcon
 } from "@/components/icons";
 
 function SidebarLink({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
@@ -55,6 +55,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <SidebarLink href="/dashboard/webhook" icon={<WebhookIcon size={17} />} label="웹훅 검사" />
         <SidebarLink href="/dashboard/bio" icon={<UserIcon size={17} />} label="Link-in-bio" />
         <SidebarLink href="/dashboard/subdomains" icon={<GlobeIcon size={17} />} label="서브도메인" />
+        <SidebarLink href="/dashboard/email" icon={<EmailIcon size={17} />} label="받은 편지함" />
 
         <div style={{ height: "1px", background: "var(--color-hairline)", margin: "8px 0" }} />
 
@@ -63,17 +64,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <SidebarLink href="/api/auth/logout" icon={<BarChartIcon size={17} />} label="로그아웃" />
 
         <div style={{ flex: 1 }} />
-        <div style={{ margin: "8px 0 0", padding: "16px", background: "var(--color-surface-card)", borderRadius: "var(--radius-lg)" }}>
-          <p style={{ fontSize: "0.8125rem", fontWeight: 600, marginBottom: "6px", color: "var(--color-ink)" }}>
-            프로로 업그레이드
-          </p>
-          <p style={{ fontSize: "0.75rem", color: "var(--color-muted)", marginBottom: "12px" }}>
-            무제한 링크, 고급 분석, 서브도메인
-          </p>
-          <Link href="/pricing" className="btn btn-primary btn-sm btn-pill" style={{ textDecoration: "none", justifyContent: "center", width: "100%", fontSize: "0.8125rem" }}>
-            업그레이드
-          </Link>
-        </div>
       </aside>
 
       <main style={{ flex: 1, overflow: "auto" }}>{children}</main>

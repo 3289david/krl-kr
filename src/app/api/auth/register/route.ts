@@ -28,13 +28,6 @@ export async function POST(request: NextRequest) {
     const { email, password, name } = parsed.data;
     const db = getDB(request);
 
-    if (!db) {
-      return NextResponse.json(
-        { error: "데이터베이스 연결에 실패했습니다.", code: "DB_ERROR" },
-        { status: 503 }
-      );
-    }
-
     // Check if email already exists
     const existing = await db
       .prepare("SELECT id FROM users WHERE email = ? LIMIT 1")
