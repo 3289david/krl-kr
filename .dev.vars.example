@@ -1,0 +1,9 @@
+# Cloudflare Workers 로컬 개발용 환경변수
+# 이 파일을 .dev.vars 로 복사해서 사용하세요
+# .dev.vars 는 gitignore 됩니다
+
+# Email Worker 시크릿 (VPS .env.local 의 WORKER_SECRET 과 동일한 값)
+WORKER_SECRET=your-32-char-random-secret-here
+
+# Edge Worker (선택)
+APP_URL=http://localhost:3000

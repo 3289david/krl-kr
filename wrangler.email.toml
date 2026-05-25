@@ -4,4 +4,8 @@ compatibility_date = "2024-11-01"
 
 [vars]
 APP_URL = "https://krl.kr"
-WORKER_SECRET = "REPLACE_WITH_SECURE_RANDOM_STRING"
+# WORKER_SECRET은 wrangler secret으로 관리합니다 (절대 여기에 넣지 마세요):
+#   wrangler secret put WORKER_SECRET --config wrangler.email.toml
+#
+# 로컬 개발: .dev.vars 파일 생성 (gitignore 됨)
+#   echo 'WORKER_SECRET=your-secret-here' > .dev.vars

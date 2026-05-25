@@ -1,14 +1,12 @@
 # KRL.KR — Cloudflare Workers Configuration
 #
-# TWO workers in this project:
+# Workers 2개:
+#   1. krl-kr-edge   — 선택적 URL 리다이렉트 속도 향상용 (메인 앱은 VPS)
+#   2. krl-kr-email  — 이메일 수신함 필수 (*@mail.krl.kr)
 #
-# 1. krl-kr-edge    — Optional URL redirect booster (main app on VPS)
-# 2. krl-kr-email   — REQUIRED for email inbox feature (*@mail.krl.kr)
-#
-# Deploy email worker: wrangler deploy --config wrangler.email.toml
-# Setup Cloudflare Email Routing: Email > Email Routing > add catch-all → this Worker
+# 배포 방법은 아래 README 참고
 
-# ── Default (edge redirect worker) ──────────────────────────────────────────
+# ── Edge Redirect Worker (선택) ───────────────────────────────────────────────
 name = "krl-kr-edge"
 main = "worker/index.ts"
 compatibility_date = "2024-11-01"
@@ -17,10 +15,10 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 APP_URL = "https://krl.kr"
 
-# Only needed if deploying the edge worker:
+# KV 네임스페이스 (edge worker 사용 시 필요, wrangler kv namespace create URL_CACHE)
 # [[kv_namespaces]]
 # binding = "URL_CACHE"
-# id = "YOUR_KV_ID"
+# id = "YOUR_KV_NAMESPACE_ID"
 
-# ── Email Worker ─────────────────────────────────────────────────────────────
-# Deploy separately: wrangler deploy --config wrangler.email.toml
+# ── Email Worker 별도 배포 ────────────────────────────────────────────────────
+# wrangler deploy --config wrangler.email.toml
