@@ -1,0 +1,46 @@
+name = "krl-kr"
+main = "worker/index.ts"
+compatibility_date = "2024-11-01"
+compatibility_flags = ["nodejs_compat"]
+
+# D1 Database
+[[d1_databases]]
+binding = "DB"
+database_name = "krl-kr-db"
+database_id = "REPLACE_WITH_YOUR_D1_ID"
+migrations_dir = "migrations"
+
+# KV Namespace for URL cache
+[[kv_namespaces]]
+binding = "URL_CACHE"
+id = "REPLACE_WITH_YOUR_KV_ID"
+
+# R2 Bucket for file storage
+[[r2_buckets]]
+binding = "STORAGE"
+bucket_name = "krl-kr-storage"
+
+# Environment Variables
+[vars]
+APP_URL = "https://krl.kr"
+APP_NAME = "KRL.KR"
+JWT_SECRET = "REPLACE_WITH_SECURE_SECRET"
+
+[env.development]
+[env.development.vars]
+APP_URL = "http://localhost:3000"
+APP_NAME = "KRL.KR (Dev)"
+
+# Cloudflare Pages integration
+[site]
+bucket = ".vercel/output/static"
+
+# Analytics Engine
+[[analytics_engine_datasets]]
+binding = "ANALYTICS"
+dataset = "krl_analytics"
+
+# Routes (only handle short links, not full app)
+[[routes]]
+pattern = "krl.kr/*"
+zone_name = "krl.kr"
