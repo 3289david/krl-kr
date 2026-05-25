@@ -1,0 +1,22 @@
+{
+  "name": "KRL.KR",
+  "short_name": "KRL.KR",
+  "description": "링크 단축, QR 코드, 파일 공유 — 무료 커뮤니티 서비스",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F3F0EE",
+  "theme_color": "#141413",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "16x16 32x32",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

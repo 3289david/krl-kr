@@ -41,12 +41,31 @@ export default async function SlugPage({ params, searchParams }: PageProps) {
   const query = await searchParams;
 
   // Look up the link
-  const link = await db
-    .prepare(
-      `SELECT * FROM links WHERE slug = ? AND is_active = 1 LIMIT 1`
-    )
-    .bind(slug)
-    .first<{
+  let link: {
+    id: string;
+    original_url: string;
+    password_hash: string | null;
+    expires_at: number | null;
+    max_clicks: number | null;
+    click_count: number;
+    is_dynamic: number;
+    ios_url: string | null;
+    android_url: string | null;
+    fallback_url: string | null;
+    geo_rules: string | null;
+    device_rules: string | null;
+    utm_source: string | null;
+    utm_medium: string | null;
+    utm_campaign: string | null;
+  } | null;
+
+  try {
+    link = await db
+      .prepare(
+        `SELECT * FROM links WHERE slug = ? AND is_active = 1 LIMIT 1`
+      )
+      .bind(slug)
+      .first<{
       id: string;
       original_url: string;
       password_hash: string | null;
@@ -63,6 +82,11 @@ export default async function SlugPage({ params, searchParams }: PageProps) {
       utm_medium: string | null;
       utm_campaign: string | null;
     }>();
+  } catch (err) {
+    console.error("[slug] DB error:", err);
+    // DB unavailable — show maintenance page instead of 500
+    return <ServiceUnavailablePage />;
+  }
 
   if (!link) {
     notFound();
@@ -133,13 +157,18 @@ export default async function SlugPage({ params, searchParams }: PageProps) {
   const ipHash = await md5(ip);
 
   // Check if unique (simplified — in production use KV)
-  const recentClick = await db
-    .prepare(
-      `SELECT id FROM clicks WHERE link_id = ? AND ip_hash = ? AND clicked_at > ? LIMIT 1`
-    )
-    .bind(link.id, ipHash, Date.now() - 24 * 60 * 60 * 1000)
-    .first();
-  const isUnique = !recentClick;
+  let isUnique = true;
+  try {
+    const recentClick = await db
+      .prepare(
+        `SELECT id FROM clicks WHERE link_id = ? AND ip_hash = ? AND clicked_at > ? LIMIT 1`
+      )
+      .bind(link.id, ipHash, Date.now() - 24 * 60 * 60 * 1000)
+      .first();
+    isUnique = !recentClick;
+  } catch {
+    // Analytics failure shouldn't block redirect
+  }
 
   // Record click (async — don't await to speed up redirect)
   const clickId = generateId("clk");
@@ -308,6 +337,62 @@ function ExpiredPage({ slug }: { slug: string }) {
           }}
         >
           새 링크 만들기
+        </a>
+      </div>
+    </div>
+  );
+}
+
+function ServiceUnavailablePage() {
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "var(--color-canvas)",
+        padding: "24px",
+        fontFamily: "var(--font-sans)",
+      }}
+    >
+      <div style={{ textAlign: "center", maxWidth: "400px" }}>
+        <div
+          style={{
+            width: "56px",
+            height: "56px",
+            borderRadius: "50%",
+            background: "var(--color-surface-card)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            margin: "0 auto 24px",
+          }}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: "var(--color-muted)" }}>
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          </svg>
+        </div>
+        <h1 style={{ fontSize: "1.5rem", fontWeight: 500, letterSpacing: "-0.02em", marginBottom: "12px" }}>
+          서비스 점검 중
+        </h1>
+        <p style={{ color: "var(--color-muted)", marginBottom: "32px" }}>
+          잠시 서버 점검 중입니다. 잠시 후 다시 시도해주세요.
+        </p>
+        <a
+          href="/"
+          style={{
+            display: "inline-flex",
+            padding: "10px 24px",
+            background: "var(--color-ink)",
+            color: "var(--color-canvas)",
+            borderRadius: "9999px",
+            textDecoration: "none",
+            fontSize: "0.9375rem",
+            fontWeight: 500,
+          }}
+        >
+          홈으로 돌아가기
         </a>
       </div>
     </div>

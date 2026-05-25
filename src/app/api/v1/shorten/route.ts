@@ -232,6 +232,13 @@ export async function POST(request: NextRequest) {
     );
   } catch (err) {
     console.error("[/api/v1/shorten] Error:", err);
+    const message = err instanceof Error ? err.message : "";
+    if (message.includes("DATABASE_URL") || message.includes("ECONNREFUSED") || message.includes("connect")) {
+      return NextResponse.json(
+        { error: "데이터베이스에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.", code: "DB_UNAVAILABLE" },
+        { status: 503 }
+      );
+    }
     return NextResponse.json(
       { error: "서버 오류가 발생했습니다.", code: "INTERNAL_ERROR" },
       { status: 500 }
