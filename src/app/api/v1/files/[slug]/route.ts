@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDB } from "@/lib/env";
 import { requireAuth, verifyPassword } from "@/lib/auth";
+import { getFile, deleteFile } from "@/lib/storage";
+
+export const runtime = "nodejs";
 
 interface FileRecord {
   id: string;
   user_id: string | null;
   slug: string;
   original_name: string;
-  r2_key: string;
+  storage_path: string;
   size: number;
   mime_type: string | null;
   password_hash: string | null;
@@ -17,24 +20,12 @@ interface FileRecord {
   created_at: number;
 }
 
-interface CloudflareRequest {
-  cloudflare?: {
-    env?: {
-      STORAGE?: {
-        get: (key: string) => Promise<{ body: ReadableStream; httpMetadata?: { contentType?: string } } | null>;
-        delete: (key: string) => Promise<void>;
-      };
-    };
-  };
-}
-
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params;
   const db = getDB(request);
-  if (!db) return NextResponse.json({ error: "서비스를 이용할 수 없습니다." }, { status: 503 });
 
   const file = await db
     .prepare("SELECT * FROM files WHERE slug = ? LIMIT 1")
@@ -79,34 +70,22 @@ export async function GET(
     .bind(slug)
     .run();
 
-  // Stream from R2
-  const cfReq = request as unknown as CloudflareRequest;
-  const storage = cfReq.cloudflare?.env?.STORAGE;
-  if (storage) {
-    const object = await storage.get(file.r2_key);
-    if (object) {
-      return new NextResponse(object.body, {
-        headers: {
-          "Content-Type": file.mime_type ?? "application/octet-stream",
-          "Content-Disposition": `attachment; filename="${encodeURIComponent(file.original_name)}"`,
-          "Content-Length": file.size.toString(),
-        },
-      });
-    }
+  // Stream from local disk
+  const buffer = await getFile(file.storage_path);
+  if (buffer) {
+    return new NextResponse(new Uint8Array(buffer), {
+      headers: {
+        "Content-Type": file.mime_type ?? "application/octet-stream",
+        "Content-Disposition": `attachment; filename="${encodeURIComponent(file.original_name)}"`,
+        "Content-Length": file.size.toString(),
+      },
+    });
   }
 
-  // R2 not available - return file info
-  return NextResponse.json({
-    id: file.id,
-    slug: file.slug,
-    original_name: file.original_name,
-    size: file.size,
-    mime_type: file.mime_type,
-    download_count: file.download_count + 1,
-    expires_at: file.expires_at ? new Date(file.expires_at).toISOString() : null,
-    created_at: new Date(file.created_at).toISOString(),
-    message: "파일 스토리지가 설정되지 않았습니다.",
-  });
+  return NextResponse.json(
+    { error: "파일을 찾을 수 없습니다. 스토리지에서 삭제되었을 수 있습니다." },
+    { status: 404 }
+  );
 }
 
 export async function DELETE(
@@ -115,26 +94,21 @@ export async function DELETE(
 ) {
   const { slug } = await params;
   const db = getDB(request);
-  if (!db) return NextResponse.json({ error: "서비스를 이용할 수 없습니다." }, { status: 503 });
 
   const { user, error } = await requireAuth(db, request);
   if (error) return error;
 
   const file = await db
-    .prepare("SELECT id, r2_key FROM files WHERE slug = ? AND user_id = ? LIMIT 1")
+    .prepare("SELECT id, storage_path FROM files WHERE slug = ? AND user_id = ? LIMIT 1")
     .bind(slug, user.id)
-    .first<{ id: string; r2_key: string }>();
+    .first<{ id: string; storage_path: string }>();
 
   if (!file) {
     return NextResponse.json({ error: "파일을 찾을 수 없습니다." }, { status: 404 });
   }
 
-  // Delete from R2
-  const cfReq = request as unknown as CloudflareRequest;
-  const storage = cfReq.cloudflare?.env?.STORAGE;
-  if (storage) {
-    await storage.delete(file.r2_key);
-  }
+  // Delete from local disk
+  await deleteFile(file.storage_path);
 
   await db
     .prepare("DELETE FROM files WHERE id = ?")

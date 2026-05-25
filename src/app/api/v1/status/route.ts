@@ -1,47 +1,39 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getDB } from "@/lib/env";
+import { NextResponse } from "next/server";
+import { getPool } from "@/lib/db/postgres";
+import { getRedis } from "@/lib/redis";
 
-export async function GET(request: NextRequest) {
-  const startTime = Date.now();
-  const services: Array<{
-    name: string;
-    status: "operational" | "degraded" | "outage";
-    latency_ms?: number;
-  }> = [];
+export const runtime = "nodejs";
 
-  // Check D1
-  let dbStatus: "operational" | "degraded" | "outage" = "outage";
-  let dbLatency: number | undefined;
+export async function GET() {
+  const services = [];
+  let overall: "operational" | "degraded" | "outage" = "operational";
+
+  // Check PostgreSQL
   try {
-    const db = getDB(request);
-    if (db) {
-      const t0 = Date.now();
-      await db.prepare("SELECT 1 as ok").first();
-      dbLatency = Date.now() - t0;
-      dbStatus = dbLatency < 1000 ? "operational" : "degraded";
-    }
+    await getPool().query("SELECT 1");
+    services.push({ name: "Database (PostgreSQL)", status: "operational" });
   } catch {
-    dbStatus = "outage";
+    services.push({ name: "Database (PostgreSQL)", status: "outage" });
+    overall = "outage";
   }
 
-  services.push({ name: "Database (D1)", status: dbStatus, latency_ms: dbLatency });
-  services.push({ name: "API", status: "operational", latency_ms: Date.now() - startTime });
-  services.push({ name: "File Storage (R2)", status: "operational" });
-  services.push({ name: "QR Service", status: "operational" });
-  services.push({ name: "Edge Network", status: "operational" });
+  // Check Redis
+  try {
+    await getRedis().ping();
+    services.push({ name: "Cache (Redis)", status: "operational" });
+  } catch {
+    services.push({ name: "Cache (Redis)", status: "degraded" });
+    if (overall === "operational") overall = "degraded";
+  }
 
-  const overallStatus =
-    services.some((s) => s.status === "outage")
-      ? "outage"
-      : services.some((s) => s.status === "degraded")
-      ? "degraded"
-      : "operational";
+  services.push({ name: "File Storage", status: "operational" });
+  services.push({ name: "QR Code Service", status: "operational" });
+  services.push({ name: "URL Shortener", status: "operational" });
 
   return NextResponse.json({
-    status: overallStatus,
+    status: overall,
     services,
     uptime: "99.9%",
-    checked_at: new Date().toISOString(),
-    version: "1.0.0",
+    timestamp: new Date().toISOString(),
   });
 }

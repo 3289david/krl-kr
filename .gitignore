@@ -36,3 +36,6 @@ yarn-error.log*
 
 # Cloudflare
 .wrangler
+
+# Local file storage (uploads)
+uploads/

@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
       "unknown";
 
     // Rate limit: 5 attempts per minute per IP
-    const rateLimit = checkRateLimit({
+    const rateLimit = await checkRateLimit({
       key: `login:${ip}`,
       limit: 5,
       windowMs: 60 * 1000,

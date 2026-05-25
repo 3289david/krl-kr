@@ -15,9 +15,9 @@ export default function AboutPage() {
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px", marginBottom: "64px" }}>
             {[
-              { icon: <ZapIcon size={22} />, title: "빠른 Edge 리다이렉트", desc: "Cloudflare의 전 세계 300개 이상의 PoP에서 밀리초 단위로 리다이렉트됩니다." },
+              { icon: <ZapIcon size={22} />, title: "빠른 리다이렉트", desc: "PostgreSQL + Redis 기반으로 최적화된 리다이렉트. 필요 시 Cloudflare CDN으로 엣지 부스트 가능." },
               { icon: <ShieldIcon size={22} />, title: "보안 우선", desc: "PBKDF2 비밀번호 해싱, JWT 인증, 비밀번호 보호 링크를 기본으로 제공합니다." },
-              { icon: <GlobeIcon size={22} />, title: "글로벌 CDN", desc: "Cloudflare Workers와 D1으로 구축하여 어디서든 빠른 응답 속도를 보장합니다." },
+              { icon: <GlobeIcon size={22} />, title: "완전한 자체 호스팅", desc: "PostgreSQL, Redis, 로컬 스토리지로 구성. 데이터는 내 서버에만 저장됩니다." },
             ].map((item) => (
               <div key={item.title} style={{ background: "var(--color-lifted)", border: "1px solid var(--color-hairline)", borderRadius: "var(--radius-xl)", padding: "24px" }}>
                 <div style={{ width: "44px", height: "44px", borderRadius: "var(--radius-sm)", background: "var(--color-surface-card)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--color-ink)", marginBottom: "16px" }}>
@@ -47,12 +47,12 @@ export default function AboutPage() {
             <h2 style={{ marginBottom: "20px" }}>기술 스택</h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "12px" }}>
               {[
-                { name: "Cloudflare Workers", desc: "엣지 컴퓨팅 런타임" },
-                { name: "Cloudflare D1", desc: "SQLite 기반 엣지 데이터베이스" },
-                { name: "Cloudflare R2", desc: "파일 스토리지 (S3 호환)" },
-                { name: "Next.js 15", desc: "React 풀스택 프레임워크" },
+                { name: "Next.js 15", desc: "React 풀스택 프레임워크 (App Router)" },
+                { name: "PostgreSQL 16", desc: "메인 데이터베이스 (pg 드라이버)" },
+                { name: "Redis 7", desc: "캐시 및 레이트 리밋" },
                 { name: "TypeScript", desc: "타입 안전 코드" },
-                { name: "Jose (JWT)", desc: "엣지 호환 인증" },
+                { name: "Nodemailer SMTP", desc: "트랜잭션 이메일 발송" },
+                { name: "Jose (JWT)", desc: "안전한 세션 인증" },
               ].map((tech) => (
                 <div key={tech.name} style={{ padding: "16px 20px", background: "var(--color-surface-card)", borderRadius: "var(--radius-lg)" }}>
                   <p style={{ fontWeight: 600, fontSize: "0.9375rem", marginBottom: "4px" }}>{tech.name}</p>
@@ -74,7 +74,7 @@ export default function AboutPage() {
                 <p style={{ color: "var(--color-muted)", fontSize: "0.9375rem", marginBottom: "8px" }}>개발자 및 창립자</p>
                 <p style={{ color: "var(--color-muted)", fontSize: "0.875rem", lineHeight: 1.6 }}>
                   KRL.KR을 혼자 설계하고 개발했습니다.
-                  Cloudflare의 엣지 인프라를 활용하여 빠르고 안정적인 서비스를 만들었습니다.
+                  PostgreSQL, Redis, Next.js로 구성된 VPS 기반 아키텍처로 빠르고 안정적인 서비스를 만들었습니다.
                 </p>
               </div>
             </div>

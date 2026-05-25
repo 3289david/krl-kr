@@ -2,23 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDB } from "@/lib/env";
 import { requireAuth, hashPassword, getSessionFromRequest } from "@/lib/auth";
 import { generateId, generateSlug } from "@/lib/utils";
+import { saveFile } from "@/lib/storage";
 
-interface CloudflareRequest {
-  cloudflare?: {
-    env?: {
-      STORAGE?: {
-        put: (key: string, body: ReadableStream | ArrayBuffer, options?: Record<string, unknown>) => Promise<unknown>;
-        get: (key: string) => Promise<{ body: ReadableStream; httpMetadata?: { contentType?: string } } | null>;
-        delete: (key: string) => Promise<void>;
-      };
-    };
-  };
-}
+export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
   try {
     const db = getDB(request);
-    if (!db) return NextResponse.json({ error: "서비스를 이용할 수 없습니다." }, { status: 503 });
 
     // Try to get user (optional)
     const session = await getSessionFromRequest(request);
@@ -30,7 +20,10 @@ export async function POST(request: NextRequest) {
       isAuthenticated = true;
     }
 
-    const maxSize = isAuthenticated ? 1024 * 1024 * 1024 : 100 * 1024 * 1024; // 1GB auth, 100MB anon
+    const maxSizeMB = isAuthenticated
+      ? parseInt(process.env.MAX_FILE_SIZE_MB_AUTH ?? "500")
+      : parseInt(process.env.MAX_FILE_SIZE_MB ?? "100");
+    const maxSize = maxSizeMB * 1024 * 1024;
 
     const contentType = request.headers.get("content-type") ?? "";
     if (!contentType.includes("multipart/form-data")) {
@@ -45,9 +38,8 @@ export async function POST(request: NextRequest) {
     }
 
     if (file.size > maxSize) {
-      const maxMB = maxSize / 1024 / 1024;
       return NextResponse.json(
-        { error: `파일 크기는 최대 ${maxMB >= 1024 ? `${maxMB / 1024}GB` : `${maxMB}MB`}입니다.` },
+        { error: `파일 크기는 최대 ${maxSizeMB}MB입니다.` },
         { status: 413 }
       );
     }
@@ -79,22 +71,16 @@ export async function POST(request: NextRequest) {
     }
 
     const fileId = generateId("fil");
-    const r2Key = `files/${fileId}/${file.name}`;
     const now = Date.now();
 
-    // Store in R2 if available
-    const cfReq = request as unknown as CloudflareRequest;
-    const storage = cfReq.cloudflare?.env?.STORAGE;
-    if (storage) {
-      const arrayBuffer = await file.arrayBuffer();
-      await storage.put(r2Key, arrayBuffer, {
-        httpMetadata: { contentType: file.type || "application/octet-stream" },
-      });
-    }
+    // Save to local disk
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const { key: storagePath } = await saveFile(buffer, file.name, file.type);
 
     await db
       .prepare(
-        `INSERT INTO files (id, user_id, slug, original_name, r2_key, size, mime_type, password_hash, expires_at, max_downloads, download_count, created_at)
+        `INSERT INTO files (id, user_id, slug, original_name, storage_path, size, mime_type, password_hash, expires_at, max_downloads, download_count, created_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)`
       )
       .bind(
@@ -102,7 +88,7 @@ export async function POST(request: NextRequest) {
         userId,
         slug,
         file.name,
-        r2Key,
+        storagePath,
         file.size,
         file.type || "application/octet-stream",
         passwordHash,
@@ -112,11 +98,12 @@ export async function POST(request: NextRequest) {
       )
       .run();
 
+    const appUrl = process.env.APP_URL ?? "https://krl.kr";
     return NextResponse.json(
       {
         id: fileId,
         slug,
-        url: `https://krl.kr/f/${slug}`,
+        url: `${appUrl}/f/${slug}`,
         original_name: file.name,
         size: file.size,
         mime_type: file.type,
@@ -136,7 +123,6 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const db = getDB(request);
-    if (!db) return NextResponse.json({ error: "서비스를 이용할 수 없습니다." }, { status: 503 });
 
     const { user, error } = await requireAuth(db, request);
     if (error) return error;

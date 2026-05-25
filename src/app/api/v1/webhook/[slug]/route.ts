@@ -3,6 +3,8 @@ import { getDB } from "@/lib/env";
 import { requireAuth } from "@/lib/auth";
 import { generateId } from "@/lib/utils";
 
+export const runtime = "nodejs";
+
 interface WebhookEndpoint {
   id: string;
   user_id: string | null;
@@ -20,7 +22,6 @@ async function handleWebhookRequest(
 ) {
   const { slug } = await params;
   const db = getDB(request);
-  if (!db) return NextResponse.json({ error: "서비스를 이용할 수 없습니다." }, { status: 503 });
 
   const { searchParams } = new URL(request.url);
   const isInspect = searchParams.get("inspect") === "1";
@@ -44,7 +45,7 @@ async function handleWebhookRequest(
     const requests = await db
       .prepare(
         `SELECT id, method, headers, body, query, ip, received_at
-         FROM webhook_inspections WHERE endpoint_id = ?
+         FROM webhook_requests WHERE endpoint_id = ?
          ORDER BY received_at DESC LIMIT 100`
       )
       .bind(endpoint.id)
@@ -55,7 +56,7 @@ async function handleWebhookRequest(
         id: endpoint.id,
         slug: endpoint.slug,
         label: endpoint.label,
-        url: `https://krl.kr/w/${slug}`,
+        url: `${process.env.APP_URL ?? "https://krl.kr"}/w/${slug}`,
         expires_at: endpoint.expires_at ? new Date(endpoint.expires_at).toISOString() : null,
         request_count: endpoint.request_count,
         created_at: new Date(endpoint.created_at).toISOString(),
@@ -94,16 +95,16 @@ async function handleWebhookRequest(
 
   const queryString = searchParams.toString();
 
-  const inspectionId = generateId("whi");
+  const requestId = generateId("whr");
   const now = Date.now();
 
   await db
     .prepare(
-      `INSERT INTO webhook_inspections (id, endpoint_id, method, headers, body, query, ip, received_at)
+      `INSERT INTO webhook_requests (id, endpoint_id, method, headers, body, query, ip, received_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .bind(
-      inspectionId,
+      requestId,
       endpoint.id,
       method,
       JSON.stringify(headers),
@@ -123,7 +124,7 @@ async function handleWebhookRequest(
   return NextResponse.json(
     {
       received: true,
-      id: inspectionId,
+      id: requestId,
       timestamp: new Date(now).toISOString(),
     },
     { status: 200 }
@@ -154,7 +155,6 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   const isManage = searchParams.get("manage") === "1";
   if (isManage) {
     const db = getDB(request);
-    if (!db) return NextResponse.json({ error: "서비스를 이용할 수 없습니다." }, { status: 503 });
 
     const { user, error } = await requireAuth(db, request);
     if (error) return error;

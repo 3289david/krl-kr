@@ -6,27 +6,15 @@ import { headers } from "next/headers";
 import { redirect, notFound } from "next/navigation";
 import { generateId, isExpired, md5 } from "@/lib/utils";
 import type { Metadata } from "next";
-import type { D1Database } from "@/lib/db";
+import { db } from "@/lib/db/postgres";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-// Get the D1 database binding from the request context
-// In production with Cloudflare Pages, this comes from the env
-function getDB(): D1Database | null {
-  return (globalThis as unknown as { DB?: D1Database }).DB ?? null;
-}
-
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-
-  // Try to fetch link metadata for OG tags
-  const db = getDB();
-  if (!db) {
-    return { title: `${slug} | KRL.KR` };
-  }
 
   try {
     const link = await db
@@ -51,13 +39,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function SlugPage({ params, searchParams }: PageProps) {
   const { slug } = await params;
   const query = await searchParams;
-
-  // Get DB
-  const db = getDB();
-  if (!db) {
-    // Development fallback — redirect to homepage
-    redirect("/");
-  }
 
   // Look up the link
   const link = await db

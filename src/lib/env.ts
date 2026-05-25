@@ -1,35 +1,36 @@
 /**
- * KRL.KR — Environment / Binding helpers
- * Extracts Cloudflare D1 binding from Next.js request context or globalThis
+ * KRL.KR — Database & Environment Helpers
+ * VPS mode: uses PostgreSQL (not Cloudflare D1)
  */
 import type { NextRequest } from "next/server";
-import type { D1Database } from "./db";
+import { db, type KRLDatabase } from "./db/postgres";
 
-interface CloudflareEnv {
-  DB?: D1Database;
-  URL_CACHE?: unknown;
-  STORAGE?: unknown;
-}
-
-interface CloudflareRequest {
-  cloudflare?: {
-    env?: CloudflareEnv;
-  };
+/**
+ * Gets the database instance.
+ * On VPS, this is always the PostgreSQL pool singleton.
+ * The request parameter is kept for API compatibility but unused.
+ */
+export function getDB(_request?: NextRequest): KRLDatabase {
+  return db;
 }
 
 /**
- * Gets the D1 database binding.
- * Works both in Cloudflare Pages (env binding) and local dev (globalThis fallback).
+ * Gets the upload directory for file storage.
  */
-export function getDB(request?: NextRequest): D1Database | null {
-  // Cloudflare Pages: env is attached to the request
-  if (request) {
-    const cfReq = request as unknown as CloudflareRequest;
-    if (cfReq.cloudflare?.env?.DB) {
-      return cfReq.cloudflare.env.DB;
-    }
-  }
-  // globalThis fallback (wrangler dev / CF Workers)
-  const global = globalThis as unknown as { DB?: D1Database };
-  return global.DB ?? null;
+export function getUploadDir(): string {
+  return process.env.UPLOAD_DIR ?? "/tmp/krl-uploads";
+}
+
+/**
+ * Gets the base URL of the application.
+ */
+export function getAppUrl(): string {
+  return process.env.APP_URL ?? "http://localhost:3000";
+}
+
+/**
+ * Gets the domain for short URLs.
+ */
+export function getShortDomain(): string {
+  return process.env.SHORT_DOMAIN ?? "krl.kr";
 }

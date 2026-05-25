@@ -1,0 +1,44 @@
+version: "3.8"
+
+services:
+  app:
+    build: .
+    container_name: krl-kr-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.local
+    volumes:
+      - uploads:/app/uploads
+    depends_on:
+      - db
+      - redis
+
+  db:
+    image: postgres:16-alpine
+    container_name: krl-kr-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: krlkr
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-krlkrpass}
+      POSTGRES_DB: krlkr
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./migrations/0001_init_postgres.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    container_name: krl-kr-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+
+volumes:
+  pgdata:
+  redisdata:
+  uploads:

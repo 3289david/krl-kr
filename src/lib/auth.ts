@@ -1,13 +1,15 @@
 /**
  * KRL.KR — Authentication
- * JWT-based auth with bcrypt password hashing
- * Compatible with Cloudflare Workers (edge runtime)
+ * JWT-based auth with PBKDF2 password hashing
+ * Runs on VPS (Node.js runtime)
  */
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { NextRequest } from "next/server";
-import type { D1Database, User } from "./db";
+import type { KRLDatabase } from "./db/postgres";
+import type { User } from "./db";
 import { getUserById } from "./db";
+import { checkRateLimitRedis } from "./redis";
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET ?? "krl-kr-dev-secret-change-in-production"
@@ -79,9 +81,8 @@ export function getSessionCookieOptions() {
   };
 }
 
-// ─── Password hashing (using Web Crypto for edge compatibility) ────────────────
+// ─── Password hashing (using Web Crypto — available in Node.js 18+) ───────────
 export async function hashPassword(password: string): Promise<string> {
-  // Use PBKDF2 via Web Crypto (edge-compatible)
   const encoder = new TextEncoder();
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const keyMaterial = await crypto.subtle.importKey(
@@ -141,7 +142,7 @@ export async function verifyPassword(password: string, stored: string): Promise<
 
 // ─── API Key auth ──────────────────────────────────────────────────────────────
 export async function authenticateApiKey(
-  db: D1Database,
+  db: KRLDatabase,
   apiKey: string
 ): Promise<User | null> {
   const result = await db
@@ -175,7 +176,7 @@ async function hashApiKey(key: string): Promise<string> {
 
 // ─── Auth middleware helper ───────────────────────────────────────────────────
 export async function requireAuth(
-  db: D1Database,
+  db: KRLDatabase,
   request: NextRequest
 ): Promise<{ user: User; error?: never } | { user?: never; error: Response }> {
   // Try cookie/JWT first
@@ -203,38 +204,48 @@ export async function requireAuth(
   };
 }
 
-// ─── Rate limiting (simple in-memory + KV) ────────────────────────────────────
+// ─── Rate limiting (Redis-backed, falls back to in-memory) ───────────────────
 interface RateLimitConfig {
   key: string;
   limit: number;
   windowMs: number;
 }
 
-// Simple in-memory rate limiter for edge (stateless per worker instance)
+// Fallback in-memory rate limiter (used when Redis is unavailable)
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 
-export function checkRateLimit(config: RateLimitConfig): {
+export async function checkRateLimit(config: RateLimitConfig): Promise<{
   allowed: boolean;
   remaining: number;
   resetAt: number;
-} {
-  const now = Date.now();
-  const existing = rateLimitMap.get(config.key);
+}> {
+  // Try Redis first
+  try {
+    return await checkRateLimitRedis(
+      config.key,
+      config.limit,
+      Math.ceil(config.windowMs / 1000)
+    );
+  } catch {
+    // Fallback to in-memory
+    const now = Date.now();
+    const existing = rateLimitMap.get(config.key);
 
-  if (!existing || now > existing.resetAt) {
-    const resetAt = now + config.windowMs;
-    rateLimitMap.set(config.key, { count: 1, resetAt });
-    return { allowed: true, remaining: config.limit - 1, resetAt };
+    if (!existing || now > existing.resetAt) {
+      const resetAt = now + config.windowMs;
+      rateLimitMap.set(config.key, { count: 1, resetAt });
+      return { allowed: true, remaining: config.limit - 1, resetAt };
+    }
+
+    if (existing.count >= config.limit) {
+      return { allowed: false, remaining: 0, resetAt: existing.resetAt };
+    }
+
+    existing.count++;
+    return {
+      allowed: true,
+      remaining: config.limit - existing.count,
+      resetAt: existing.resetAt,
+    };
   }
-
-  if (existing.count >= config.limit) {
-    return { allowed: false, remaining: 0, resetAt: existing.resetAt };
-  }
-
-  existing.count++;
-  return {
-    allowed: true,
-    remaining: config.limit - existing.count,
-    resetAt: existing.resetAt,
-  };
 }

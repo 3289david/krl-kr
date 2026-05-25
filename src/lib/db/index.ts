@@ -1,34 +1,11 @@
 /**
- * KRL.KR — Cloudflare D1 Database Client
- * Uses raw D1 bindings (compatible with Cloudflare Workers & Pages)
+ * KRL.KR — Database Types and Helpers
+ * Now uses PostgreSQL via the PostgresDatabase wrapper.
+ * D1Database is aliased to KRLDatabase for backward compatibility.
  */
 
-export type D1Database = {
-  prepare: (query: string) => D1PreparedStatement;
-  exec: (query: string) => Promise<D1ExecResult>;
-  batch: (statements: D1PreparedStatement[]) => Promise<D1Result[]>;
-  dump: () => Promise<ArrayBuffer>;
-};
-
-export type D1PreparedStatement = {
-  bind: (...values: unknown[]) => D1PreparedStatement;
-  first: <T = Record<string, unknown>>(col?: string) => Promise<T | null>;
-  run: <T = Record<string, unknown>>() => Promise<D1Result<T>>;
-  all: <T = Record<string, unknown>>() => Promise<D1Result<T>>;
-  raw: <T = unknown[]>(opts?: { columnNames: boolean }) => Promise<T[]>;
-};
-
-export type D1Result<T = Record<string, unknown>> = {
-  results: T[];
-  success: boolean;
-  meta: Record<string, unknown>;
-  error?: string;
-};
-
-export type D1ExecResult = {
-  count: number;
-  duration: number;
-};
+export type { KRLDatabase as D1Database } from "./postgres";
+import type { KRLDatabase } from "./postgres";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -98,7 +75,6 @@ export interface QrCode {
   user_id: string | null;
   style: string;
   logo_url: string | null;
-  r2_key: string | null;
   scan_count: number;
   created_at: number;
 }
@@ -117,14 +93,14 @@ export interface ApiKey {
 
 // ─── DB Helpers ───────────────────────────────────────────────────────────────
 
-export async function getLink(db: D1Database, slug: string): Promise<Link | null> {
+export async function getLink(db: KRLDatabase, slug: string): Promise<Link | null> {
   return db
     .prepare("SELECT * FROM links WHERE slug = ? AND is_active = 1 LIMIT 1")
     .bind(slug)
     .first<Link>();
 }
 
-export async function getLinkById(db: D1Database, id: string): Promise<Link | null> {
+export async function getLinkById(db: KRLDatabase, id: string): Promise<Link | null> {
   return db
     .prepare("SELECT * FROM links WHERE id = ? LIMIT 1")
     .bind(id)
@@ -132,7 +108,7 @@ export async function getLinkById(db: D1Database, id: string): Promise<Link | nu
 }
 
 export async function getLinksByUser(
-  db: D1Database,
+  db: KRLDatabase,
   userId: string,
   limit = 20,
   offset = 0
@@ -146,7 +122,7 @@ export async function getLinksByUser(
   return result.results;
 }
 
-export async function countLinksByUser(db: D1Database, userId: string): Promise<number> {
+export async function countLinksByUser(db: KRLDatabase, userId: string): Promise<number> {
   const result = await db
     .prepare("SELECT COUNT(*) as count FROM links WHERE user_id = ?")
     .bind(userId)
@@ -155,7 +131,7 @@ export async function countLinksByUser(db: D1Database, userId: string): Promise<
 }
 
 export async function createLink(
-  db: D1Database,
+  db: KRLDatabase,
   link: Omit<Link, "click_count" | "unique_count">
 ): Promise<void> {
   await db
@@ -184,7 +160,7 @@ export async function createLink(
 }
 
 export async function updateLink(
-  db: D1Database,
+  db: KRLDatabase,
   id: string,
   data: Partial<Link>
 ): Promise<void> {
@@ -203,7 +179,7 @@ export async function updateLink(
     .run();
 }
 
-export async function deleteLink(db: D1Database, id: string, userId: string): Promise<boolean> {
+export async function deleteLink(db: KRLDatabase, id: string, userId: string): Promise<boolean> {
   const result = await db
     .prepare("DELETE FROM links WHERE id = ? AND user_id = ?")
     .bind(id, userId)
@@ -212,7 +188,7 @@ export async function deleteLink(db: D1Database, id: string, userId: string): Pr
 }
 
 export async function incrementClickCount(
-  db: D1Database,
+  db: KRLDatabase,
   linkId: string,
   isUnique: boolean
 ): Promise<void> {
@@ -231,7 +207,7 @@ export async function incrementClickCount(
   }
 }
 
-export async function recordClick(db: D1Database, click: Click): Promise<void> {
+export async function recordClick(db: KRLDatabase, click: Click): Promise<void> {
   await db
     .prepare(
       `INSERT INTO clicks (
@@ -251,21 +227,21 @@ export async function recordClick(db: D1Database, click: Click): Promise<void> {
     .run();
 }
 
-export async function getUser(db: D1Database, email: string): Promise<User | null> {
+export async function getUser(db: KRLDatabase, email: string): Promise<User | null> {
   return db
     .prepare("SELECT * FROM users WHERE email = ? LIMIT 1")
     .bind(email)
     .first<User>();
 }
 
-export async function getUserById(db: D1Database, id: string): Promise<User | null> {
+export async function getUserById(db: KRLDatabase, id: string): Promise<User | null> {
   return db
     .prepare("SELECT * FROM users WHERE id = ? LIMIT 1")
     .bind(id)
     .first<User>();
 }
 
-export async function createUser(db: D1Database, user: User): Promise<void> {
+export async function createUser(db: KRLDatabase, user: User): Promise<void> {
   await db
     .prepare(
       `INSERT INTO users (id, email, name, password_hash, plan, api_key, avatar_url, verified, created_at, updated_at)
@@ -279,7 +255,7 @@ export async function createUser(db: D1Database, user: User): Promise<void> {
 }
 
 export async function getClickAnalytics(
-  db: D1Database,
+  db: KRLDatabase,
   linkId: string,
   days = 30
 ): Promise<{

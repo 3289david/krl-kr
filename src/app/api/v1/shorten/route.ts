@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
       request.headers.get("x-forwarded-for") ??
       "unknown";
 
-    const rateLimit = checkRateLimit({
+    const rateLimit = await checkRateLimit({
       key: `shorten:${ip}`,
       limit: 10,
       windowMs: 60 * 1000, // 10 per minute
