@@ -657,3 +657,91 @@ code, pre {
   backdrop-filter: blur(4px);
   z-index: 40;
 }
+
+/* ─── Pulse animation (used in webhook inspector) ───────────────────────── */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ─── Drag & Drop zone ───────────────────────────────────────────────────── */
+.drop-zone {
+  border: 2px dashed var(--color-hairline-strong);
+  border-radius: var(--radius-xl);
+  padding: 48px 32px;
+  text-align: center;
+  cursor: pointer;
+  background: var(--color-lifted);
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.drop-zone.active {
+  border-color: var(--color-ink);
+  background-color: var(--color-surface-card);
+}
+
+/* ─── Progress bar ───────────────────────────────────────────────────────── */
+.progress-bar-track {
+  height: 6px;
+  background: var(--color-hairline);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: var(--color-ink);
+  border-radius: var(--radius-pill);
+  transition: width 0.2s ease;
+}
+
+/* ─── Dashboard stat card ────────────────────────────────────────────────── */
+.stat-card {
+  background: var(--color-lifted);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-xl);
+  padding: 28px 32px;
+}
+
+/* ─── Modal overlay ──────────────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 20, 19, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.modal-box {
+  background: var(--color-lifted);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-xl);
+  padding: 32px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* ─── Bio page link button ───────────────────────────────────────────────── */
+.bio-link-btn {
+  display: block;
+  padding: 16px 24px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  text-align: center;
+  transition: opacity 0.15s;
+  border: 1px solid var(--color-hairline);
+  background: var(--color-lifted);
+  color: var(--color-ink);
+}
+
+.bio-link-btn:hover {
+  opacity: 0.75;
+}
