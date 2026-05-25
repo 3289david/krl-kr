@@ -66,17 +66,46 @@ export async function POST(request: NextRequest) {
       // Already validated above
     }
 
-    // Rate limiting (IP-based for unauthenticated)
     const ip =
       request.headers.get("cf-connecting-ip") ??
       request.headers.get("x-forwarded-for") ??
       "unknown";
 
-    const rateLimit = await checkRateLimit({
-      key: `shorten:${ip}`,
-      limit: 10,
-      windowMs: 60 * 1000, // 10 per minute
-    });
+    // Try to authenticate the user (optional for this endpoint)
+    let userId: string | null = null;
+    const db = getDB(request);
+
+    const apiKeyHeader =
+      request.headers.get("X-API-Key") ??
+      request.headers.get("Authorization")?.replace("Bearer ", "");
+
+    if (apiKeyHeader?.startsWith("krl_")) {
+      try {
+        const { authenticateApiKey } = await import("@/lib/auth");
+        const user = await authenticateApiKey(db, apiKeyHeader);
+        if (user) userId = user.id;
+      } catch {
+        // Auth failed, continue as anonymous
+      }
+    }
+
+    // Rate limiting:
+    // - Authenticated API key users: 3000 requests/day (unlimited link creation, API fairness)
+    // - Anonymous / session users: 10 per minute per IP
+    let rateLimit;
+    if (userId) {
+      rateLimit = await checkRateLimit({
+        key: `shorten:api:${userId}`,
+        limit: 3000,
+        windowMs: 24 * 60 * 60 * 1000, // 3000/day
+      });
+    } else {
+      rateLimit = await checkRateLimit({
+        key: `shorten:${ip}`,
+        limit: 20,
+        windowMs: 60 * 1000, // 20 per minute for anonymous
+      });
+    }
 
     if (!rateLimit.allowed) {
       return NextResponse.json(
@@ -89,26 +118,6 @@ export async function POST(request: NextRequest) {
           },
         }
       );
-    }
-
-    // Try to authenticate the user (optional for this endpoint)
-    let userId: string | null = null;
-    const db = getDB(request);
-
-    if (db) {
-      const apiKey =
-        request.headers.get("X-API-Key") ??
-        request.headers.get("Authorization")?.replace("Bearer ", "");
-
-      if (apiKey?.startsWith("krl_")) {
-        try {
-          const { authenticateApiKey } = await import("@/lib/auth");
-          const user = await authenticateApiKey(db, apiKey);
-          if (user) userId = user.id;
-        } catch {
-          // Auth failed, continue as anonymous
-        }
-      }
     }
 
     // Determine slug

@@ -455,6 +455,18 @@ export function EmailIcon({ size, className, strokeWidth }: IconProps) {
   );
 }
 
+export function LogOutIcon({ size, className, strokeWidth }: IconProps) {
+  const s = size ?? defaults.size;
+  const sw = strokeWidth ?? defaults.strokeWidth;
+  return (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <polyline points="16 17 21 12 16 7" />
+      <line x1="21" y1="12" x2="9" y2="12" />
+    </svg>
+  );
+}
+
 export function CloudflareIcon({ size, className }: IconProps) {
   const s = size ?? defaults.size;
   return (

@@ -1,6 +1,9 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getSession } from "@/lib/auth";
+import { LogoutButton } from "@/components/dashboard/logout-button";
 import {
-  HomeIcon, LinkIcon, BarChartIcon, QrCodeIcon,
+  HomeIcon, LinkIcon, QrCodeIcon,
   SettingsIcon, KeyIcon, FileIcon, CodeIcon, WebhookIcon, UserIcon, GlobeIcon, EmailIcon
 } from "@/components/icons";
 
@@ -13,7 +16,13 @@ function SidebarLink({ href, icon, label }: { href: string; icon: React.ReactNod
   );
 }
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  // Server-side auth guard
+  const session = await getSession();
+  if (!session) {
+    redirect("/login");
+  }
+
   return (
     <div style={{
       minHeight: "100vh", display: "flex",
@@ -61,7 +70,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         <SidebarLink href="/dashboard/api-keys" icon={<KeyIcon size={17} />} label="API 키" />
         <SidebarLink href="/dashboard/settings" icon={<SettingsIcon size={17} />} label="설정" />
-        <SidebarLink href="/api/auth/logout" icon={<BarChartIcon size={17} />} label="로그아웃" />
+
+        {/* Proper logout — POST request, not a GET link */}
+        <LogoutButton />
 
         <div style={{ flex: 1 }} />
       </aside>
