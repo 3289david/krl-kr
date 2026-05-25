@@ -73,8 +73,7 @@ export function Footer() {
             </p>
             {[
               { href: "/features", label: "기능 소개" },
-              { href: "/pricing", label: "요금제" },
-              { href: "/docs", label: "문서" },
+              { href: "/docs", label: "API 문서" },
               { href: "/changelog", label: "업데이트" },
               { href: "/status", label: "서비스 상태" },
             ].map((item) => (

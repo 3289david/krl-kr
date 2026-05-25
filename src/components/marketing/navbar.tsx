@@ -55,8 +55,7 @@ export function Navbar() {
           >
             {[
               { href: "/features", label: "기능" },
-              { href: "/pricing", label: "요금제" },
-              { href: "/docs", label: "문서" },
+              { href: "/docs", label: "API 문서" },
               { href: "/about", label: "소개" },
             ].map((item) => (
               <Link
@@ -151,8 +150,7 @@ export function Navbar() {
         >
           {[
             { href: "/features", label: "기능" },
-            { href: "/pricing", label: "요금제" },
-            { href: "/docs", label: "문서" },
+            { href: "/docs", label: "API 문서" },
             { href: "/about", label: "소개" },
             { href: "/login", label: "로그인" },
           ].map((item) => (

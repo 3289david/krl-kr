@@ -135,14 +135,14 @@ export default function FeaturesPage() {
           <div style={{ background: "var(--color-ink)", borderRadius: "var(--radius-xl)", padding: "64px", textAlign: "center" }}>
             <h2 style={{ color: "var(--color-canvas)", marginBottom: "16px" }}>지금 무료로 시작하세요</h2>
             <p style={{ color: "rgba(243,240,238,0.6)", fontSize: "1.0625rem", marginBottom: "32px" }}>
-              신용카드 불필요. 무료 플랜으로 즉시 시작하세요.
+              신용카드 불필요. 모든 기능 무료로 즉시 시작하세요.
             </p>
             <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
               <Link href="/register" className="btn btn-lg btn-pill" style={{ textDecoration: "none", background: "var(--color-canvas)", color: "var(--color-ink)" }}>
                 무료 계정 만들기
               </Link>
-              <Link href="/pricing" className="btn btn-lg btn-pill btn-ghost" style={{ textDecoration: "none", color: "var(--color-canvas)", border: "1px solid rgba(255,255,255,0.2)" }}>
-                요금제 보기
+              <Link href="/docs" className="btn btn-lg btn-pill btn-ghost" style={{ textDecoration: "none", color: "var(--color-canvas)", border: "1px solid rgba(255,255,255,0.2)" }}>
+                API 문서 보기
               </Link>
             </div>
           </div>
