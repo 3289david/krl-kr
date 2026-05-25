@@ -283,7 +283,7 @@ export default function TermsPage() {
         <Section title="부칙">
           <p>본 약관은 2025년 5월 25일부터 시행됩니다.</p>
           <p>
-            문의사항: <a href="mailto:contact@krl.kr" style={{ color: "var(--color-ink)" }}>contact@krl.kr</a>
+            문의사항: <a href="mailto:contact@rukkit.net" style={{ color: "var(--color-ink)" }}>contact@rukkit.net</a>
           </p>
         </Section>
 

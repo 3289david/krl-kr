@@ -62,7 +62,7 @@ const plans = [
     ],
     notIncluded: [],
     cta: "문의하기",
-    ctaHref: "mailto:support@krl.kr",
+    ctaHref: "mailto:contact@rukkit.net",
     featured: false,
   },
 ];

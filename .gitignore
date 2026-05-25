@@ -36,6 +36,7 @@ yarn-error.log*
 
 # Cloudflare
 .wrangler
-
+wrangler.toml
+wrangler.email.toml
 # Local file storage (uploads)
 uploads/

@@ -38,7 +38,7 @@ export default function RefundPolicyPage() {
               </p>
               <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                 {[
-                  "환불 신청은 support@krl.kr로 이메일을 보내주세요.",
+                  "환불 신청은 contact@rukkit.net로 이메일을 보내주세요.",
                   "이메일에 결제에 사용한 이메일 주소와 환불 사유(선택)를 기재해주세요.",
                   "영업일 기준 2~3일 이내에 환불 처리가 완료됩니다.",
                   "환불 금액은 결제에 사용한 원래 결제 수단으로 돌려드립니다.",
@@ -110,7 +110,7 @@ export default function RefundPolicyPage() {
                 취소 후에는 자동으로 무료 플랜으로 전환됩니다.
               </p>
               <p>
-                구독 취소는 대시보드 &gt; 설정 &gt; 플랜 관리에서 직접 하시거나, support@krl.kr로 요청하실 수 있습니다.
+                구독 취소는 대시보드 &gt; 설정 &gt; 플랜 관리에서 직접 하시거나, contact@rukkit.net로 요청하실 수 있습니다.
               </p>
             </section>
 
@@ -139,7 +139,7 @@ export default function RefundPolicyPage() {
               <p>환불 관련 문의 및 신청은 아래로 연락해주세요:</p>
               <div style={{ marginTop: "16px", padding: "20px 24px", background: "var(--color-lifted)", border: "1px solid var(--color-hairline)", borderRadius: "var(--radius-xl)" }}>
                 <p style={{ fontWeight: 600, marginBottom: "4px" }}>고객 지원 이메일</p>
-                <a href="mailto:support@krl.kr" style={{ color: "var(--color-ink)", fontFamily: "var(--font-mono)" }}>support@krl.kr</a>
+                <a href="mailto:contact@rukkit.net" style={{ color: "var(--color-ink)", fontFamily: "var(--font-mono)" }}>contact@rukkit.net</a>
                 <p style={{ color: "var(--color-muted)", fontSize: "0.875rem", marginTop: "8px" }}>영업일 기준 24시간 이내 답변 드립니다.</p>
               </div>
             </section>

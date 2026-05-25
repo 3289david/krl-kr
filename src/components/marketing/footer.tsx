@@ -244,7 +244,7 @@ export function Footer() {
             <div style={{ display: "flex", gap: "16px" }}>
               {[
                 {
-                  href: "https://github.com/krl-kr",
+                  href: "https://github.com/3289david/krl-kr",
                   label: "GitHub",
                   icon: (
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">

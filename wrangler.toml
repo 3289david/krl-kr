@@ -16,9 +16,9 @@ compatibility_flags = ["nodejs_compat"]
 APP_URL = "https://krl.kr"
 
 # KV 네임스페이스 (edge worker 사용 시 필요, wrangler kv namespace create URL_CACHE)
-# [[kv_namespaces]]
-# binding = "URL_CACHE"
-# id = "YOUR_KV_NAMESPACE_ID"
+[[kv_namespaces]]
+binding = "URL_CACHE"
+id = "3c7365988cf848cb84d012c855145e80"
 
 # ── Email Worker 별도 배포 ────────────────────────────────────────────────────
 # wrangler deploy --config wrangler.email.toml

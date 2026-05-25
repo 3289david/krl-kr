@@ -87,7 +87,7 @@ export default function AboutPage() {
               버그 리포트, 기능 제안, 협업 문의 모두 환영합니다.
             </p>
             <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
-              <a href="mailto:support@krl.kr" className="btn btn-pill" style={{ textDecoration: "none", background: "var(--color-canvas)", color: "var(--color-ink)" }}>
+              <a href="mailto:contact@rukkit.net" className="btn btn-pill" style={{ textDecoration: "none", background: "var(--color-canvas)", color: "var(--color-ink)" }}>
                 이메일 문의
               </a>
               <Link href="/support" className="btn btn-pill btn-ghost" style={{ textDecoration: "none", color: "var(--color-canvas)", border: "1px solid rgba(255,255,255,0.2)" }}>

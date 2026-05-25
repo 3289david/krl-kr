@@ -142,7 +142,7 @@ export default function CookiePolicyPage() {
               <h2 style={{ marginBottom: "16px", fontSize: "1.25rem" }}>7. 문의</h2>
               <p>
                 쿠키 관련 문의사항은{" "}
-                <a href="mailto:support@krl.kr" style={{ color: "var(--color-ink)" }}>support@krl.kr</a>
+                <a href="mailto:contact@rukkit.net" style={{ color: "var(--color-ink)" }}>contact@rukkit.net</a>
                 로 연락해주세요.
               </p>
             </section>

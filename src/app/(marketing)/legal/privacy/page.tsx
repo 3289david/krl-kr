@@ -215,7 +215,7 @@ export default function PrivacyPage() {
           </ul>
           <p>
             권리 행사는 서비스 내 설정 메뉴 또는 이메일(
-            <a href="mailto:privacy@krl.kr" style={{ color: "var(--color-ink)" }}>privacy@krl.kr</a>
+            <a href="mailto:contact@rukkit.net" style={{ color: "var(--color-ink)" }}>contact@rukkit.net</a>
             )을 통해 요청할 수 있으며, 회사는 요청 접수 후 10일 이내에 처리 결과를 통지합니다.
           </p>
         </Section>
@@ -266,7 +266,7 @@ export default function PrivacyPage() {
             title="개인정보 보호책임자"
             rows={[
               ["성명", "KRL.KR 개인정보 보호 담당자"],
-              ["이메일", "privacy@krl.kr"],
+              ["이메일", "contact@rukkit.net"],
               ["처리 기간", "요청 접수 후 10일 이내"],
             ]}
           />
@@ -306,7 +306,7 @@ export default function PrivacyPage() {
         >
           <p>
             이 페이지는 「개인정보 보호법」 제30조에 따라 작성된 개인정보처리방침입니다.
-            문의: <a href="mailto:privacy@krl.kr" style={{ color: "var(--color-ink)" }}>privacy@krl.kr</a>
+            문의: <a href="mailto:contact@rukkit.net" style={{ color: "var(--color-ink)" }}>contact@rukkit.net</a>
           </p>
         </div>
       </div>

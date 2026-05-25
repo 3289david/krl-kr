@@ -2,13 +2,18 @@
  * KRL.KR — Cloudflare Email Worker
  *
  * Receives ALL emails sent to *@mail.krl.kr via Cloudflare Email Routing.
- * Parses the email and sends it to the KRL.KR API for storage.
- * Users can then view their inbox at /dashboard/email.
+ * Parses the raw email (MIME) and forwards the data to the KRL.KR VPS API
+ * for storage. Users then view their inbox at /dashboard/email.
  *
- * Setup in Cloudflare Dashboard:
- * 1. Email > Email Routing > Routing Rules
- * 2. Add catch-all rule: *@mail.krl.kr → Worker (this worker)
- * 3. Deploy: wrangler deploy --config wrangler.email.toml
+ * Cloudflare Dashboard setup:
+ *   Email > Email Routing > Routing Rules
+ *   → Catch-all rule: *@mail.krl.kr → Worker (this worker)
+ *
+ * Deploy:
+ *   wrangler deploy --config wrangler.email.toml
+ *
+ * Secret (set once, never commit):
+ *   wrangler secret put WORKER_SECRET --config wrangler.email.toml
  */
 
 export interface EmailEnv {
@@ -16,47 +21,69 @@ export interface EmailEnv {
   WORKER_SECRET: string;
 }
 
-interface EmailMessage {
-  from: string;
-  to: string;
-  headers: Headers;
-  raw: ReadableStream;
-  rawSize: number;
+/**
+ * Cloudflare Email Workers – ForwardableEmailMessage
+ * (matches the runtime API; mirrors @cloudflare/workers-types)
+ */
+interface ForwardableEmailMessage {
+  readonly from: string;
+  readonly to: string;
+  readonly headers: Headers;
+  readonly raw: ReadableStream<Uint8Array>;
+  readonly rawSize: number;
   setReject(reason: string): void;
   forward(rcptTo: string, headers?: Headers): Promise<void>;
 }
 
 export default {
-  async email(message: EmailMessage, env: EmailEnv): Promise<void> {
+  /**
+   * `email` handler — invoked by Cloudflare for every inbound email.
+   */
+  async email(
+    message: ForwardableEmailMessage,
+    env: EmailEnv,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    _ctx: any
+  ): Promise<void> {
+    const to = message.to;
+    const from = message.from;
+
+    // Extract alias: danwoo@mail.krl.kr  →  "danwoo"
+    const alias = to.split("@")[0]?.toLowerCase() ?? "";
+
+    if (!alias) {
+      message.setReject("Invalid recipient");
+      return;
+    }
+
+    // Read raw email bytes (Cloudflare limit: 10 MB)
+    let rawEmail: string;
     try {
-      const to = message.to;
-      const from = message.from;
+      rawEmail = await streamToText(message.raw);
+    } catch (err) {
+      console.error("[email-worker] Failed to read raw email:", err);
+      message.setReject("Failed to read message body");
+      return;
+    }
 
-      // Extract alias from recipient (danwoo@mail.krl.kr → "danwoo")
-      const alias = to.split("@")[0]?.toLowerCase() ?? "";
+    // Flatten headers into a plain object
+    const headersObj: Record<string, string> = {};
+    message.headers.forEach((value: string, key: string) => {
+      headersObj[key.toLowerCase()] = value;
+    });
 
-      if (!alias) {
-        message.setReject("Invalid recipient");
-        return;
-      }
+    // Subject (fallback if missing)
+    const subject =
+      message.headers.get("subject") ??
+      headersObj["subject"] ??
+      "(제목 없음)";
 
-      // Read raw email (max 10MB)
-      const rawEmail = await new Response(message.raw).text();
+    // Parse MIME body
+    const { bodyText, bodyHtml } = parseEmailBody(rawEmail);
 
-      // Parse headers
-      const headersObj: Record<string, string> = {};
-      message.headers.forEach((value: string, key: string) => {
-        headersObj[key] = value;
-      });
-
-      // Extract subject from headers
-      const subject = message.headers.get("subject") ?? "(제목 없음)";
-
-      // Extract body parts
-      const { bodyText, bodyHtml } = parseEmailBody(rawEmail);
-
-      // Send to KRL.KR API
-      const response = await fetch(`${env.APP_URL}/api/v1/email/receive`, {
+    // ── POST to KRL.KR VPS API ───────────────────────────────────────────────
+    try {
+      const resp = await fetch(`${env.APP_URL}/api/v1/email/receive`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -75,81 +102,175 @@ export default {
         }),
       });
 
-      if (!response.ok) {
-        console.error(`Failed to store email: ${response.status} ${await response.text()}`);
+      if (!resp.ok) {
+        const body = await resp.text().catch(() => "(no body)");
+        console.error(
+          `[email-worker] API error ${resp.status}: ${body}`
+        );
+        // Don't reject the message — delivery already happened at the SMTP layer.
+        // Cloudflare won't retry, so we silently log.
+      } else {
+        console.log(
+          `[email-worker] Stored email for alias "${alias}" (${message.rawSize} bytes)`
+        );
       }
     } catch (err) {
-      console.error("Email worker error:", err);
+      console.error("[email-worker] Network error sending to API:", err);
+      // Same reasoning as above — don't reject.
     }
   },
 };
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
 /**
- * Simple MIME email body parser.
- * Extracts text/plain and text/html parts from raw email.
+ * Read a ReadableStream<Uint8Array> to a UTF-8 string.
  */
-function parseEmailBody(raw: string): { bodyText: string; bodyHtml: string } {
+async function streamToText(
+  stream: ReadableStream<Uint8Array>
+): Promise<string> {
+  const reader = stream.getReader();
+  const chunks: Uint8Array[] = [];
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (value) chunks.push(value);
+  }
+
+  // Concatenate all chunks
+  const totalLength = chunks.reduce((acc, c) => acc + c.length, 0);
+  const merged = new Uint8Array(totalLength);
+  let offset = 0;
+  for (const chunk of chunks) {
+    merged.set(chunk, offset);
+    offset += chunk.length;
+  }
+
+  return new TextDecoder("utf-8", { fatal: false }).decode(merged);
+}
+
+/**
+ * Minimal MIME email body parser.
+ * Supports:
+ *   - Simple (non-multipart) emails
+ *   - multipart/alternative with text/plain and text/html parts
+ *   - base64 and quoted-printable content-transfer-encoding
+ *   - Nested multipart (takes the first matching part at any depth)
+ */
+function parseEmailBody(raw: string): {
+  bodyText: string;
+  bodyHtml: string;
+} {
   let bodyText = "";
   let bodyHtml = "";
 
-  // Find boundary
-  const boundaryMatch = raw.match(/boundary=["']?([^"'\r\n;]+)["']?/i);
+  // Normalize line endings
+  const normalized = raw.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+
+  // Split header section from the first body
+  const headerBodySplit = normalized.indexOf("\n\n");
+  if (headerBodySplit === -1) {
+    return { bodyText: normalized.trim(), bodyHtml: "" };
+  }
+
+  const topHeaders = normalized.substring(0, headerBodySplit).toLowerCase();
+
+  // Check for a boundary (multipart)
+  const boundaryMatch = topHeaders.match(
+    /content-type:[^\n]*boundary=["']?([^"'\n;]+)["']?/i
+  ) ?? normalized.match(/boundary=["']?([^"'\n;]+)["']?/i);
 
   if (!boundaryMatch) {
-    // Simple non-multipart email
-    const headerEnd = raw.indexOf("\r\n\r\n");
-    if (headerEnd !== -1) {
-      bodyText = raw.substring(headerEnd + 4).trim();
-    } else {
-      const headerEnd2 = raw.indexOf("\n\n");
-      if (headerEnd2 !== -1) {
-        bodyText = raw.substring(headerEnd2 + 2).trim();
-      }
-    }
+    // Plain (non-multipart) message
+    const body = normalized.substring(headerBodySplit + 2);
+    bodyText = decodeBody(body, topHeaders).trim();
     return { bodyText, bodyHtml };
   }
 
-  const boundary = boundaryMatch[1];
-  const parts = raw.split(`--${boundary}`);
+  const boundary = boundaryMatch[1].trim();
+  parseParts(normalized, boundary, (partHeaders, partBody) => {
+    const ct = partHeaders.match(/content-type:\s*([^\n;]+)/i)?.[1]?.trim() ?? "";
+    const lct = ct.toLowerCase();
 
-  for (const part of parts) {
-    if (part.startsWith("--") || part.trim() === "") continue;
-
-    const headerEnd = part.indexOf("\r\n\r\n");
-    if (headerEnd === -1) continue;
-
-    const partHeaders = part.substring(0, headerEnd).toLowerCase();
-    const partBody = part.substring(headerEnd + 4);
-
-    if (partHeaders.includes("content-type: text/plain")) {
-      bodyText = decodeBody(partBody, partHeaders);
-    } else if (partHeaders.includes("content-type: text/html")) {
-      bodyHtml = decodeBody(partBody, partHeaders);
+    if (!bodyText && lct.startsWith("text/plain")) {
+      bodyText = decodeBody(partBody, partHeaders).trim();
+    } else if (!bodyHtml && lct.startsWith("text/html")) {
+      bodyHtml = decodeBody(partBody, partHeaders).trim();
+    } else if (lct.startsWith("multipart/")) {
+      // Nested multipart — recurse
+      const innerBoundaryMatch = partHeaders.match(
+        /boundary=["']?([^"'\n;]+)["']?/i
+      );
+      if (innerBoundaryMatch) {
+        const innerBoundary = innerBoundaryMatch[1].trim();
+        parseParts(partBody, innerBoundary, (ih, ib) => {
+          const ict = (ih.match(/content-type:\s*([^\n;]+)/i)?.[1] ?? "").trim().toLowerCase();
+          if (!bodyText && ict.startsWith("text/plain")) {
+            bodyText = decodeBody(ib, ih).trim();
+          } else if (!bodyHtml && ict.startsWith("text/html")) {
+            bodyHtml = decodeBody(ib, ih).trim();
+          }
+        });
+      }
     }
-  }
+  });
 
   return { bodyText, bodyHtml };
 }
 
-function decodeBody(body: string, headers: string): string {
-  const isBase64 = headers.includes("content-transfer-encoding: base64");
-  const isQP = headers.includes("content-transfer-encoding: quoted-printable");
+/**
+ * Iterate over MIME parts separated by `--boundary`.
+ * Calls `callback(headers, body)` for each complete part.
+ */
+function parseParts(
+  text: string,
+  boundary: string,
+  callback: (partHeaders: string, partBody: string) => void
+): void {
+  const delimiter = `\n--${boundary}`;
+  const parts = text.split(delimiter);
 
-  if (isBase64) {
+  for (const part of parts) {
+    // Skip preamble, epilogue, and end boundary ("--")
+    const trimmed = part.trimStart();
+    if (trimmed.startsWith("--") || trimmed.trim() === "") continue;
+
+    // Strip any leading newline after boundary marker
+    const clean = trimmed.startsWith("\n") ? trimmed.substring(1) : trimmed;
+
+    const sepIdx = clean.indexOf("\n\n");
+    if (sepIdx === -1) continue;
+
+    const partHeaders = clean.substring(0, sepIdx);
+    const partBody = clean.substring(sepIdx + 2);
+
+    callback(partHeaders, partBody);
+  }
+}
+
+/**
+ * Decode a MIME body part according to Content-Transfer-Encoding.
+ */
+function decodeBody(body: string, headers: string): string {
+  const lh = headers.toLowerCase();
+
+  if (lh.includes("content-transfer-encoding: base64")) {
     try {
-      return atob(body.replace(/\s/g, ""));
+      // Remove all whitespace before decoding
+      return atob(body.replace(/\s+/g, ""));
     } catch {
       return body;
     }
   }
 
-  if (isQP) {
+  if (lh.includes("content-transfer-encoding: quoted-printable")) {
     return body
-      .replace(/=\r\n/g, "")
-      .replace(/=([0-9A-F]{2})/gi, (_, hex) =>
+      .replace(/=\n/g, "")          // soft line breaks
+      .replace(/=([0-9A-Fa-f]{2})/g, (_, hex) =>
         String.fromCharCode(parseInt(hex, 16))
       );
   }
 
-  return body.trim();
+  return body;
 }

@@ -139,7 +139,7 @@ export default function StatusPage() {
 
           <p style={{ textAlign: "center", color: "var(--color-muted)", fontSize: "0.875rem", marginTop: "32px" }}>
             문제가 있으신가요?{" "}
-            <a href="mailto:support@krl.kr" style={{ color: "var(--color-ink)" }}>support@krl.kr</a>로 문의해주세요.
+            <a href="mailto:contact@rukkit.net" style={{ color: "var(--color-ink)" }}>contact@rukkit.net</a>로 문의해주세요.
           </p>
         </div>
       </section>

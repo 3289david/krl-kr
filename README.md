@@ -77,7 +77,7 @@ Cloudflare (선택적):
 ## 빠른 시작 (Docker Compose)
 
 ```bash
-git clone https://github.com/DavidStacks/krl-kr
+git clone https://github.com/3289david/krl-kr
 cd krl-kr
 cp .env.example .env.local
 # .env.local 파일을 편집하세요
@@ -116,7 +116,7 @@ psql postgresql://krlkr:yourpassword@localhost/krlkr -f migrations/0001_init_pos
 ### 3. 앱 설치
 
 ```bash
-git clone https://github.com/DavidStacks/krl-kr /var/www/krl-kr
+git clone https://github.com/3289david/krl-kr /var/www/krl-kr
 cd /var/www/krl-kr
 npm install
 cp .env.example .env.local

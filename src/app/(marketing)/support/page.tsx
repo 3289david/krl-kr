@@ -64,7 +64,7 @@ export default function SupportPage() {
             <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "12px" }}>
               {[
                 "주변에 KRL.KR을 추천해주세요",
-                "버그를 발견하면 support@krl.kr로 알려주세요",
+                "버그를 발견하면 contact@rukkit.net로 알려주세요",
                 "기능 제안을 보내주세요",
                 "프로/비즈니스 플랜을 구독해주세요",
               ].map((item) => (
