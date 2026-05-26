@@ -45,7 +45,7 @@ export default function PublicWebhookPage() {
       });
       const data = await res.json();
       if (res.ok) {
-        setEndpoint({ slug: data.slug, url: data.webhook_url, label: data.label });
+        setEndpoint({ slug: data.slug, url: data.url ?? `https://krl.kr/api/v1/webhook/${data.slug}`, label: data.label });
         setRequests([]);
         setSelected(null);
       }

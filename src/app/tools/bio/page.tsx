@@ -1,12 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getSession } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: "Link-in-bio | KRL.KR",
   description: "인스타그램, 틱톡용 링크 모음 페이지를 무료로 만드세요.",
 };
 
-export default function BioPage() {
+export default async function BioPage() {
+  // If already logged in, redirect to dashboard
+  const session = await getSession();
+  if (session) redirect("/dashboard/bio");
+
   return (
     <main style={{ minHeight: "100vh", background: "var(--color-canvas)", fontFamily: "var(--font-sans)" }}>
       <section className="section">

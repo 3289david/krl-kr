@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
       {
         id: endpointId,
         slug,
-        url: `https://krl.kr/w/${slug}`,
+        url: `https://krl.kr/api/v1/webhook/${slug}`,
         inspect_url: `https://krl.kr/api/v1/webhook/${slug}?inspect=1`,
         label: data.label ?? null,
         expires_at: new Date(expiresAt).toISOString(),

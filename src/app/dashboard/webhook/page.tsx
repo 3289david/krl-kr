@@ -43,6 +43,7 @@ export default function WebhookPage() {
       .then((d) => {
         const eps: WebhookEndpoint[] = (d.endpoints ?? []).map((e: Record<string, unknown>) => ({
           ...e,
+          expires_at: e.expires_at ? new Date(Number(e.expires_at)).toISOString() : null,
           url: `https://krl.kr/api/v1/webhook/${e.slug}`,
         }));
         setEndpoints(eps);

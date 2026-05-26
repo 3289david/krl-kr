@@ -13,7 +13,7 @@ export default function PublicPastePage() {
   const [language, setLanguage] = useState("plaintext");
   const [isPublic, setIsPublic] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<{ slug: string; short_url: string } | null>(null);
+  const [result, setResult] = useState<{ slug: string; url: string } | null>(null);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
 
@@ -40,7 +40,7 @@ export default function PublicPastePage() {
 
   function copyLink() {
     if (!result) return;
-    navigator.clipboard.writeText(result.short_url).then(() => {
+    navigator.clipboard.writeText(result.url).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
@@ -79,7 +79,7 @@ export default function PublicPastePage() {
               <div style={{ display: "flex", gap: "8px", marginBottom: "24px" }}>
                 <input
                   readOnly
-                  value={result.short_url}
+                  value={result.url}
                   className="input"
                   style={{ flex: 1, fontFamily: "var(--font-mono)", fontSize: "0.9rem" }}
                 />
