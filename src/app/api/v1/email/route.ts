@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
         forward_to: a.forward_to,
         is_active: a.is_active === 1,
         cf_configured: !!a.cf_rule_id,
-        created_at: new Date(a.created_at).toISOString(),
+        created_at: new Date(Number(a.created_at)).toISOString(),
       })),
       limit: ALIAS_LIMIT,
       used: result.results.length,
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
       .bind(user.id)
       .first<{ count: number }>();
 
-    if ((currentCount?.count ?? 0) >= ALIAS_LIMIT) {
+    if (Number(currentCount?.count ?? 0) >= ALIAS_LIMIT) {
       return NextResponse.json(
         {
           error: `이메일 별칭은 최대 ${ALIAS_LIMIT}개까지 만들 수 있습니다.`,

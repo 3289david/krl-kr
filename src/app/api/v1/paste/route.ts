@@ -136,10 +136,15 @@ export async function GET(request: NextRequest) {
     const total = countResult?.count ?? 0;
 
     return NextResponse.json({
-      pastes: result.results,
-      total,
+      pastes: result.results.map((p) => ({
+        ...p,
+        created_at: Number(p.created_at),
+        expires_at: p.expires_at != null ? Number(p.expires_at) : null,
+        view_count: Number(p.view_count ?? 0),
+      })),
+      total: Number(total),
       page,
-      pages: Math.ceil(total / limit),
+      pages: Math.ceil(Number(total) / limit),
     });
   } catch (err) {
     console.error("[/api/v1/paste GET] Error:", err);
