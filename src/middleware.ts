@@ -24,6 +24,11 @@ const RESERVED_PATHS = new Set([
   "legal",
   "qr",
   "tools",
+  "f",
+  "p",
+  "bio",
+  "community",
+  "support",
   "_next",
   "favicon.ico",
   "icon.svg",
@@ -31,6 +36,8 @@ const RESERVED_PATHS = new Set([
   "robots.txt",
   "sitemap.xml",
   "og-image.png",
+  "apple-icon.png",
+  "apple-touch-icon.png",
 ]);
 
 export async function middleware(request: NextRequest) {

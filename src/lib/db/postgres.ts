@@ -81,7 +81,9 @@ class PostgresPreparedStatement {
     col?: string
   ): Promise<T | null> {
     const pool = getPool();
-    const pgSql = convertPlaceholders(convertSqliteToPg(this.sql + " LIMIT 1"));
+    // Only append LIMIT 1 if the query doesn't already have a LIMIT clause
+    const sqlWithLimit = /LIMIT\s+\d+/i.test(this.sql) ? this.sql : this.sql + " LIMIT 1";
+    const pgSql = convertPlaceholders(convertSqliteToPg(sqlWithLimit));
     try {
       const result = await pool.query<T>(pgSql, this.params as unknown[]);
       if (result.rows.length === 0) return null;
