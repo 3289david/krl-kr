@@ -49,7 +49,14 @@ function Endpoint({ method, path, desc, auth }: { method: string; path: string; 
       <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "8px", marginBottom: "8px" }}>
         <Method m={method} />
         <code style={{ fontFamily: "var(--font-mono)", fontSize: "0.9rem", color: "var(--color-ink)", flex: 1 }}>{path}</code>
-        {auth && <span style={{ fontSize: "0.75rem", color: "var(--color-muted)", background: "var(--color-surface-card)", padding: "2px 8px", borderRadius: "var(--radius-pill)" }}>🔑 인증 필요</span>}
+        {auth && (
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "0.75rem", color: "var(--color-muted)", background: "var(--color-surface-card)", padding: "2px 8px", borderRadius: "var(--radius-pill)" }}>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            인증 필요
+          </span>
+        )}
       </div>
       <p style={{ fontSize: "0.875rem", color: "var(--color-muted)", margin: 0 }}>{desc}</p>
     </div>

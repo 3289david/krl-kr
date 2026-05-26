@@ -60,10 +60,10 @@ export default function BioPage() {
             <p style={{ color: "var(--color-muted)", fontSize: "0.875rem", marginBottom: "24px" }}>링크 모음 페이지 예시</p>
 
             {[
-              "🌐 내 블로그",
-              "🛒 쇼핑몰 바로가기",
-              "📸 인스타그램",
-              "🎵 유튜브 채널",
+              "내 블로그",
+              "쇼핑몰 바로가기",
+              "인스타그램",
+              "유튜브 채널",
             ].map((label) => (
               <div key={label} style={{
                 padding: "12px 20px",

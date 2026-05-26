@@ -51,10 +51,17 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({
-      links,
-      total,
+      links: links.map((l) => ({
+        ...l,
+        created_at: Number(l.created_at),
+        updated_at: l.updated_at != null ? Number(l.updated_at) : null,
+        expires_at: l.expires_at != null ? Number(l.expires_at) : null,
+        click_count: Number(l.click_count ?? 0),
+        unique_count: Number(l.unique_count ?? 0),
+      })),
+      total: Number(total),
       page,
-      pages: Math.ceil(total / limit),
+      pages: Math.ceil(Number(total) / limit),
       limit,
     });
   } catch (err) {
