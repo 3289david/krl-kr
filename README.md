@@ -1,348 +1,189 @@
 # KRL.KR
 
-> 링크를 더 스마트하게. URL 단축 + QR + 분석 + 서브도메인 + 개발자 도구 올인원 플랫폼
-
-[English](#english) | 한국어
-
----
-
-## 기능 (Features)
-
-### URL 단축
-- 커스텀 슬러그 (`krl.kr/youtube`)
-- 만료 날짜 / 시간
-- 비밀번호 보호
-- 최대 클릭 수 제한
-- 다이나믹 링크 (목적지 변경 가능)
-
-### 분석 (Analytics)
-- 실시간 클릭 추적
-- 국가 / 지역별 분포
-- 디바이스 / 브라우저 통계
-- 유입 경로 분석
-- 일별 클릭 차트
-
-### QR 코드
-- SVG / PNG 다운로드
-- 색상 / 크기 커스텀
-- 다이나믹 QR (링크 변경 시 QR 그대로)
-- 스캔 통계
-
-### 서브도메인 서비스
-- `danwoo.krl.kr` — GitHub Pages / Vercel / HTML / 리다이렉트 연결
-- 4글자 이상 슬러그만 허용
-- Cloudflare DNS API로 즉시 활성화
-
-### 개발자 도구
-- **Pastebin** — 코드/로그 공유, 만료 링크, 비밀번호
-- **파일 공유** — 드래그앤드롭, 만료, 다운로드 제한
-- **웹훅 인스펙터** — 실시간 HTTP 요청 모니터링
-- **JSON 호스팅** — Mock API, 설정 파일 즉시 배포
-- **REST API** — 완전한 API, API 키 인증
-
-### 기타
-- **Link-in-bio** — `krl.kr/bio/@danwoo`
-- **이메일 별칭** — `name@krl.kr` (Cloudflare Email Routing)
-- **앱 링크** — iOS/Android 자동 분기
-- **엣지 리다이렉트 룰** — 국가/디바이스 기반 분기
+> 무료 링크 단축 · QR 코드 · 파일 공유 · 서브도메인 · 커뮤니티 서비스  
+> **[krl.kr](https://krl.kr)** — 한국형 커뮤니티 유틸리티
 
 ---
 
-## 아키텍처
+## 주요 기능
 
-```
-+---------------------------------------------+
-|                   VPS (주 서버)               |
-|                                             |
-|  +--------------+  +-------------------+   |
-|  |  Next.js App  |  |   PostgreSQL DB    |   |
-|  |  (Port 3000)  |  |   (Port 5432)     |   |
-|  +--------------+  +-------------------+   |
-|                                             |
-|  +--------------+  +-------------------+   |
-|  |    Redis      |  |  Local Storage    |   |
-|  |  (Port 6379)  |  |  /var/uploads/    |   |
-|  +--------------+  +-------------------+   |
-+---------------------------------------------+
-              ^ Nginx (Port 80/443)
+### 링크 & QR
+| 기능 | 설명 |
+|------|------|
+| URL 단축 | `krl.kr/abc`, `krl.kr/youtube` — 로그인 없이 바로 사용 |
+| 원하는 주소 설정 | `krl.kr/내주소` 형태로 직접 설정 |
+| 다이나믹 링크 | QR 코드 유지하면서 목적지 URL 변경 |
+| 임시 링크 | 시간 또는 클릭 횟수 후 자동 만료 |
+| 앱 링크 | Android/iOS별 다른 주소로 분기 |
+| QR 코드 | SVG·PNG 다운로드, 로고 삽입, 색상 변경, 스캔 통계 |
 
-Cloudflare (선택적):
-- DNS 프록시 (CDN + DDoS 방어)
-- 서브도메인 DNS 레코드 생성 API
-- 이메일 포워딩 룰 생성 API
-```
+### 파일 & 공유
+| 기능 | 설명 |
+|------|------|
+| 파일 공유 | 드래그앤드롭 업로드, 만료 설정, 다운로드 횟수 제한 |
+| 코드·텍스트 공유 | 14개 언어 문법 강조, 만료, 비밀번호 |
+| 이메일 수신함 | `이름@krl.kr` 주소로 메일 수신 후 웹에서 확인 |
+| 웹훅 테스트 | HTTP 요청 실시간 캡처 및 검사 |
+
+### 웹사이트
+| 기능 | 설명 |
+|------|------|
+| 서브도메인 | `내이름.krl.kr` — GitHub Pages, Vercel, HTML 직접 연결 |
+| 즉시 배포 | HTML 파일 업로드 → HTTPS 자동 적용 |
+| Link-in-bio | `krl.kr/@닉네임` — 인스타·틱톡 프로필 링크 모음 |
+| 임시 서브도메인 | `tmp123.krl.kr` — 테스트용, 1시간 후 자동 삭제 |
+
+### 분석
+- 국가·도시별 클릭 분포
+- 기기 타입 (데스크톱/모바일/태블릿)
+- 브라우저·운영체제
+- 유입 경로 추적
+- 일별·주별·월별 차트
+
+### 자동화 (API)
+- Bearer 토큰 / API 키 인증
+- 3,000 요청/일 (인증 사용자)
+- JSON 응답
+- Discord Bot, CI/CD, 스크립트 연동 가능
 
 ---
 
-## 빠른 시작 (Docker Compose)
+## 기술 스택
+
+| 항목 | 기술 |
+|------|------|
+| 프레임워크 | Next.js 15 (App Router) |
+| 데이터베이스 | PostgreSQL (VPS) |
+| 캐시 | Redis (ioredis) |
+| 인증 | JWT (jose) + PBKDF2 해시 |
+| 스토리지 | 로컬 디스크 (VPS) |
+| Edge | Cloudflare Workers (리다이렉트 캐시) |
+| 이메일 | Cloudflare Email Workers |
+| 배포 | VPS (Ubuntu) + PM2 |
+
+---
+
+## 로컬 개발
+
+### 요구사항
+- Node.js 18+
+- PostgreSQL 14+
+- Redis 6+
+
+### 설정
 
 ```bash
-git clone https://github.com/3289david/krl-kr
+# 저장소 복제
+git clone https://github.com/3289david/krl-kr.git
 cd krl-kr
-cp .env.example .env.local
-# .env.local 파일을 편집하세요
 
-docker-compose up -d
-```
-
-마이그레이션은 자동으로 실행됩니다 (`docker-entrypoint-initdb.d/`).
-
----
-
-## 수동 설치
-
-### 1. 의존성
-
-```bash
-# Ubuntu/Debian
-apt install -y nodejs npm postgresql redis-server nginx
-
-# Node.js 최신 버전 (권장)
-curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-apt install -y nodejs
-```
-
-### 2. 데이터베이스 설정
-
-```bash
-sudo -u postgres psql
-CREATE USER krlkr WITH PASSWORD 'yourpassword';
-CREATE DATABASE krlkr OWNER krlkr;
-\q
-
-psql postgresql://krlkr:yourpassword@localhost/krlkr -f migrations/0001_init_postgres.sql
-```
-
-### 3. 앱 설치
-
-```bash
-git clone https://github.com/3289david/krl-kr /var/www/krl-kr
-cd /var/www/krl-kr
-npm install
-cp .env.example .env.local
-nano .env.local  # 환경변수 수정
-
-npm run build
-npm start
-```
-
-### 4. Nginx 설정
-
-```nginx
-server {
-    listen 80;
-    server_name krl.kr www.krl.kr;
-
-    client_max_body_size 500M;
-
-    location / {
-        proxy_pass http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_cache_bypass $http_upgrade;
-    }
-
-    # 업로드 파일 직접 서빙
-    location /uploads/ {
-        alias /var/www/krl-kr/uploads/;
-        expires 30d;
-        add_header Cache-Control "public, immutable";
-    }
-}
-```
-
-### 5. Systemd 서비스
-
-```ini
-[Unit]
-Description=KRL.KR
-After=network.target postgresql.service redis.service
-
-[Service]
-Type=simple
-User=www-data
-WorkingDirectory=/var/www/krl-kr
-ExecStart=/usr/bin/node .next/standalone/server.js
-Restart=on-failure
-Environment=NODE_ENV=production
-EnvironmentFile=/var/www/krl-kr/.env.local
-
-[Install]
-WantedBy=multi-user.target
-```
-
-```bash
-systemctl enable krl-kr
-systemctl start krl-kr
-```
-
----
-
-## 환경변수
-
-| 변수 | 설명 | 필수 |
-|------|------|------|
-| `DATABASE_URL` | PostgreSQL 연결 URL | 필수 |
-| `REDIS_URL` | Redis 연결 URL | 필수 |
-| `JWT_SECRET` | JWT 서명 비밀키 (64자+) | 필수 |
-| `APP_URL` | 앱 기본 URL | 필수 |
-| `SMTP_HOST` | SMTP 서버 주소 | 필수 |
-| `SMTP_USER` | SMTP 사용자 | 필수 |
-| `SMTP_PASS` | SMTP 비밀번호 | 필수 |
-| `UPLOAD_DIR` | 파일 업로드 경로 | 선택 |
-| `MAX_FILE_SIZE_MB` | 익명 파일 크기 제한 (기본: 100) | 선택 |
-| `CLOUDFLARE_API_TOKEN` | CF API 토큰 (서브도메인/이메일 기능) | 선택 |
-| `CLOUDFLARE_ZONE_ID` | CF 존 ID | 선택 |
-
----
-
-## API 레퍼런스
-
-### 인증 불필요 (로그인 없이 사용 가능)
-
-```
-POST /api/v1/shorten          URL 단축
-POST /api/v1/qr               QR 코드 생성
-POST /api/v1/paste            Pastebin 생성
-GET  /api/v1/paste/:slug      Paste 조회
-POST /api/v1/files            파일 업로드
-GET  /api/v1/files/:slug      파일 다운로드
-POST /api/v1/webhook          웹훅 엔드포인트 생성
-```
-
-### 인증 필요
-
-```
-# Authorization: Bearer YOUR_JWT_TOKEN
-# 또는 X-API-Key: krl_YOUR_API_KEY
-
-GET    /api/v1/links           내 링크 목록
-POST   /api/v1/links           링크 생성
-PATCH  /api/v1/links/:id       링크 수정
-DELETE /api/v1/links/:id       링크 삭제
-GET    /api/v1/links/:id/stats 클릭 분석
-GET    /api/auth/me            내 정보
-```
-
-### URL 단축 예시
-
-```bash
-curl -X POST https://krl.kr/api/v1/shorten \
-  -H "Content-Type: application/json" \
-  -d '{
-    "url": "https://example.com/very-long-url",
-    "slug": "mylink",
-    "expires_at": "2025-12-31"
-  }'
-
-# 응답
-{
-  "slug": "mylink",
-  "short_url": "https://krl.kr/mylink",
-  "id": "lnk_abc123"
-}
-```
-
----
-
-## 로그인 없이 사용 가능한 기능
-
-- URL 단축 (시간당 20개 익명 제한)
-- QR 코드 생성
-- Pastebin (코드/텍스트 공유)
-- 파일 공유 (최대 100MB)
-- 웹훅 엔드포인트
-- Link-in-bio 페이지 조회
-- API (기본 기능)
-
-## 로그인 필요 기능
-
-- 클릭 분석 / 통계
-- 링크 수정 / 삭제
-- 서브도메인 서비스
-- 이메일 별칭
-- 무제한 파일 (최대 500MB)
-- API 키 관리
-
----
-
-## 개발 환경
-
-```bash
 # 의존성 설치
 npm install
 
-# 로컬 PostgreSQL + Redis 실행 (Docker)
-docker run -d --name krl-pg \
-  -e POSTGRES_PASSWORD=krlkr \
-  -e POSTGRES_USER=krlkr \
-  -e POSTGRES_DB=krlkr \
-  -p 5432:5432 postgres:16-alpine
+# 환경변수 설정
+cp .env.example .env.local
+# .env.local 파일을 편집하여 DATABASE_URL 등 설정
 
-docker run -d --name krl-redis -p 6379:6379 redis:7-alpine
-
-# 스키마 적용
-psql postgresql://krlkr:krlkr@localhost/krlkr -f migrations/0001_init_postgres.sql
-
-# .env.local 설정
-# DATABASE_URL=postgresql://krlkr:krlkr@localhost/krlkr
-# REDIS_URL=redis://localhost:6379
-# JWT_SECRET=dev-secret-only-change-in-production
-
-# 개발 서버 시작
+# 개발 서버 실행
 npm run dev
 ```
 
----
+### 환경변수 (.env.local)
 
-<a name="english"></a>
-
-## English
-
-KRL.KR is an all-in-one link management platform built on VPS with PostgreSQL, Redis, and Next.js 15. Cloudflare is used **optionally** only for:
-
-1. **DNS API** — to create user subdomains (`user.krl.kr`)
-2. **Email Routing API** — to set up email alias forwarding
-3. **CDN proxy** — optional DDoS protection (user's choice)
-
-All core functionality runs on your own VPS with no Cloudflare dependency.
-
-### Tech Stack
-
-- **Runtime**: Node.js 20 + Next.js 15 App Router
-- **Database**: PostgreSQL 16 (via `pg` connection pool)
-- **Cache**: Redis 7 (via `ioredis`)
-- **Storage**: Local filesystem (`uploads/` directory)
-- **Email**: Nodemailer SMTP
-- **Auth**: JWT (jose) + PBKDF2 password hashing
-
-### Self-Hosting
-
-1. Clone this repo
-2. Set up PostgreSQL and Redis on your VPS
-3. Copy `.env.example` to `.env.local` and configure
-4. Run `npm install && npm run build && npm start`
-5. Set up Nginx as reverse proxy
-
-### Docker Compose
-
-```bash
-cp .env.example .env.local
-# Edit .env.local
-docker-compose up -d
+```env
+DATABASE_URL=postgresql://user:password@localhost:5432/krlkr
+REDIS_URL=redis://localhost:6379
+JWT_SECRET=your-64-char-hex-secret
+APP_URL=http://localhost:3000
+SHORT_DOMAIN=localhost:3000
 ```
 
-### Contributing
+---
 
-PRs welcome. Open an issue first for large changes.
+## 데이터베이스 초기화
+
+```bash
+psql -U postgres -d krlkr -f schema.sql
+```
 
 ---
 
-Support: [buymeacoffee.com/rukkitofficial](https://buymeacoffee.com/rukkitofficial)
+## Cloudflare Workers 배포 (선택사항)
 
-License: MIT
+Edge 리다이렉트, 이메일 수신, 캐시 관리를 위한 Workers.
+
+```bash
+# Edge redirect worker
+wrangler deploy
+
+# Email worker
+wrangler deploy --config wrangler.email.toml
+
+# Cache management worker
+wrangler deploy --config wrangler.cache.toml
+```
+
+Workers 시크릿 설정:
+```bash
+wrangler secret put WORKER_SECRET
+wrangler secret put APP_URL
+```
+
+---
+
+## 프로덕션 배포 (VPS)
+
+```bash
+npm run build
+pm2 start ecosystem.config.js
+```
+
+---
+
+## 디렉토리 구조
+
+```
+src/
+├── app/
+│   ├── (marketing)/     # 공개 마케팅 페이지
+│   ├── (auth)/          # 로그인, 회원가입
+│   ├── dashboard/       # 로그인 후 관리 페이지
+│   ├── api/             # API 라우트
+│   └── [slug]/          # 단축 링크 리다이렉트
+├── components/
+│   ├── layout/          # SiteHeader, DashboardTabs
+│   ├── marketing/       # Footer
+│   └── icons/           # SVG 아이콘
+├── lib/
+│   ├── db/              # PostgreSQL 클라이언트
+│   ├── auth.ts          # JWT, 비밀번호 해시
+│   ├── redis.ts         # Redis 클라이언트
+│   ├── cache.ts         # Cloudflare KV 캐시
+│   └── api-error.ts     # API 오류 처리 헬퍼
+└── middleware.ts         # 슬러그 라우팅
+worker/
+├── index.ts             # Edge redirect worker
+├── email-worker.ts      # Email receive worker
+└── cache-worker.ts      # Cache management worker
+```
+
+---
+
+## 기여하기
+
+1. 이슈를 먼저 등록해주세요
+2. Fork → 브랜치 생성 → PR
+3. 코드 스타일: ESLint + TypeScript strict
+
+---
+
+## 라이선스
+
+MIT License — 자유롭게 사용, 수정, 배포 가능합니다.
+
+---
+
+## 문의
+
+- 이메일: contact@rukkit.net
+- GitHub Issues: [github.com/3289david/krl-kr/issues](https://github.com/3289david/krl-kr/issues)

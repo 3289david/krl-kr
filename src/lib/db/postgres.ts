@@ -18,12 +18,30 @@ export function getPool(): Pool {
         ? { rejectUnauthorized: false }
         : false,
       max: 20,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 2000,
+      min: 2,                        // Keep at least 2 connections alive
+      idleTimeoutMillis: 600000,     // 10분 — 연결 유지 시간 대폭 증가
+      connectionTimeoutMillis: 10000, // 10초 — 연결 시도 타임아웃
+      allowExitOnIdle: false,        // 서버 종료 방지
     });
     _pool.on("error", (err) => {
-      console.error("PostgreSQL pool error:", err);
+      console.error("PostgreSQL pool error (idle client):", err);
+      // 풀이 완전히 죽었을 때 재생성 허용
+      if ((err as NodeJS.ErrnoException).code === "ECONNRESET" ||
+          (err as NodeJS.ErrnoException).code === "ECONNREFUSED") {
+        console.warn("Pool connection lost — will reconnect on next query");
+        _pool = null;
+      }
     });
+
+    // Keep-alive: ping every 4 minutes to prevent idle disconnects
+    setInterval(async () => {
+      if (!_pool) return;
+      try {
+        await _pool.query("SELECT 1");
+      } catch {
+        // silently ignore keep-alive failures
+      }
+    }, 4 * 60 * 1000);
   }
   return _pool;
 }

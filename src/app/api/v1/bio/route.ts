@@ -1,3 +1,4 @@
+import { handleAPIError } from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 import { getDB } from "@/lib/env";
 import { requireAuth } from "@/lib/auth";

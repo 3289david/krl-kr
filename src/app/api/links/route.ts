@@ -8,6 +8,7 @@ import { getDB } from "@/lib/env";
 import { z } from "zod";
 import { generateId, generateSlug, isValidUrl, isValidSlug, normalizeUrl } from "@/lib/utils";
 import { requireAuth } from "@/lib/auth";
+import { handleAPIError } from "@/lib/api-error";
 
 const CreateLinkSchema = z.object({
   url: z.string().min(1),
@@ -28,10 +29,8 @@ const CreateLinkSchema = z.object({
 });
 
 export async function GET(request: NextRequest) {
+  try {
   const db = getDB(request);
-  if (!db) {
-    return NextResponse.json({ error: "DB_ERROR", links: [] }, { status: 503 });
-  }
 
   const auth = await requireAuth(db, request);
   if (auth.error) return auth.error;
@@ -69,13 +68,12 @@ export async function GET(request: NextRequest) {
     page,
     limit,
   });
+  } catch (err) { return handleAPIError(err, "GET /api/links"); }
 }
 
 export async function POST(request: NextRequest) {
+  try {
   const db = getDB(request);
-  if (!db) {
-    return NextResponse.json({ error: "DB_ERROR" }, { status: 503 });
-  }
 
   const auth = await requireAuth(db, request);
   if (auth.error) return auth.error;
@@ -185,4 +183,5 @@ export async function POST(request: NextRequest) {
     },
     { status: 201 }
   );
+  } catch (err) { return handleAPIError(err, "POST /api/links"); }
 }
