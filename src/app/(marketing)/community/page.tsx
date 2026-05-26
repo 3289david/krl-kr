@@ -6,65 +6,15 @@ export const metadata: Metadata = {
   description: "KRL.KR 사용자 커뮤니티 — 공지사항, 자유게시판, 기능 제안",
 };
 
-const NOTICES = [
-  { id: 1, title: "KRL.KR 서비스 오픈 안내", date: "2026-05-26", views: 1024 },
-  { id: 2, title: "이메일 수신함 기능 추가 안내", date: "2026-05-20", views: 342 },
-  { id: 3, title: "서브도메인 서비스 신청 방법", date: "2026-05-15", views: 891 },
-];
-
-const FREE_BOARD = [
-  { id: 10, title: "링크 만들어봤는데 진짜 빠르네요", author: "익명", date: "2026-05-26", views: 88, replies: 3 },
-  { id: 11, title: "서브도메인 신청했는데 얼마나 걸리나요?", author: "사용자123", date: "2026-05-25", views: 62, replies: 5 },
-  { id: 12, title: "QR 코드 로고 삽입 언제 되나요", author: "홍길동", date: "2026-05-24", views: 143, replies: 2 },
-  { id: 13, title: "API 사용해서 디스코드봇 만들었습니다", author: "개발자", date: "2026-05-23", views: 287, replies: 11 },
-  { id: 14, title: "파일 공유 링크 만료 기간 설정 어떻게 하나요", author: "익명", date: "2026-05-22", views: 54, replies: 1 },
-];
-
-const FEATURE_REQUESTS = [
-  { id: 20, title: "링크 폴더/그룹 기능 추가 요청", author: "요청자", date: "2026-05-24", votes: 47, replies: 8 },
-  { id: 21, title: "Link-in-bio 다크 테마 추가", author: "디자이너", date: "2026-05-22", votes: 33, replies: 4 },
-  { id: 22, title: "이메일 별칭 여러 개 만들기", author: "사용자", date: "2026-05-21", votes: 28, replies: 6 },
-  { id: 23, title: "QR 코드 배치 다운로드", author: "마케터", date: "2026-05-19", votes: 19, replies: 2 },
-];
-
-function BoardTable({ rows, type }: {
-  rows: Array<{ id: number; title: string; author?: string; date: string; views?: number; replies?: number; votes?: number }>;
-  type: "notice" | "free" | "request";
-}) {
+function EmptyState({ message }: { message: string }) {
   return (
-    <div style={{ border: "1px solid var(--color-hairline)", borderRadius: "10px", overflow: "hidden" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse" }}>
-        <thead>
-          <tr style={{ background: "var(--color-lifted)", borderBottom: "1px solid var(--color-hairline)" }}>
-            <th style={{ padding: "10px 16px", textAlign: "left", fontSize: "0.8125rem", fontWeight: 700, color: "var(--color-muted)", width: type === "notice" ? "60%" : "50%" }}>제목</th>
-            {type !== "notice" && <th style={{ padding: "10px 16px", textAlign: "left", fontSize: "0.8125rem", fontWeight: 700, color: "var(--color-muted)", width: "12%" }}>글쓴이</th>}
-            <th style={{ padding: "10px 16px", textAlign: "right", fontSize: "0.8125rem", fontWeight: 700, color: "var(--color-muted)", width: "14%" }}>날짜</th>
-            {type === "request"
-              ? <th style={{ padding: "10px 16px", textAlign: "right", fontSize: "0.8125rem", fontWeight: 700, color: "var(--color-muted)", width: "10%" }}>추천</th>
-              : <th style={{ padding: "10px 16px", textAlign: "right", fontSize: "0.8125rem", fontWeight: 700, color: "var(--color-muted)", width: "10%" }}>조회</th>}
-            {type !== "notice" && <th style={{ padding: "10px 16px", textAlign: "right", fontSize: "0.8125rem", fontWeight: 700, color: "var(--color-muted)", width: "8%" }}>댓글</th>}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row, i) => (
-            <tr key={row.id} style={{ borderBottom: i < rows.length - 1 ? "1px solid var(--color-hairline)" : "none", background: "var(--color-white)" }}>
-              <td style={{ padding: "12px 16px" }}>
-                <Link href={`/community/${row.id}`} style={{
-                  fontSize: "0.9rem", fontWeight: 500, color: "var(--color-ink)", textDecoration: "none",
-                }}>
-                  {row.title}
-                </Link>
-              </td>
-              {type !== "notice" && <td style={{ padding: "12px 16px", fontSize: "0.8125rem", color: "var(--color-muted)" }}>{row.author}</td>}
-              <td style={{ padding: "12px 16px", fontSize: "0.8125rem", color: "var(--color-muted)", textAlign: "right", whiteSpace: "nowrap" }}>{row.date?.slice(5)}</td>
-              {type === "request"
-                ? <td style={{ padding: "12px 16px", fontSize: "0.8125rem", color: "var(--color-muted)", textAlign: "right", fontWeight: 600 }}>{row.votes}</td>
-                : <td style={{ padding: "12px 16px", fontSize: "0.8125rem", color: "var(--color-muted)", textAlign: "right" }}>{row.views}</td>}
-              {type !== "notice" && <td style={{ padding: "12px 16px", fontSize: "0.8125rem", color: "var(--color-muted)", textAlign: "right" }}>{row.replies}</td>}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div style={{
+      border: "1px solid var(--color-hairline)", borderRadius: "10px",
+      padding: "48px 24px", textAlign: "center",
+      color: "var(--color-muted)", fontSize: "0.875rem",
+      background: "var(--color-white)",
+    }}>
+      {message}
     </div>
   );
 }
@@ -105,7 +55,7 @@ export default function CommunityPage() {
             </h2>
             <Link href="/community/notices" style={{ fontSize: "0.8125rem", color: "var(--color-muted)", textDecoration: "none" }}>전체보기</Link>
           </div>
-          <BoardTable rows={NOTICES} type="notice" />
+          <EmptyState message="아직 공지사항이 없습니다." />
         </section>
 
         {/* 자유게시판 */}
@@ -121,7 +71,7 @@ export default function CommunityPage() {
             </h2>
             <Link href="/community/board" style={{ fontSize: "0.8125rem", color: "var(--color-muted)", textDecoration: "none" }}>전체보기</Link>
           </div>
-          <BoardTable rows={FREE_BOARD} type="free" />
+          <EmptyState message="아직 게시물이 없습니다." />
         </section>
 
         {/* 기능 제안 */}
@@ -137,7 +87,7 @@ export default function CommunityPage() {
             </h2>
             <Link href="/community/requests" style={{ fontSize: "0.8125rem", color: "var(--color-muted)", textDecoration: "none" }}>전체보기</Link>
           </div>
-          <BoardTable rows={FEATURE_REQUESTS} type="request" />
+          <EmptyState message="아직 기능 제안이 없습니다." />
         </section>
       </div>
     </main>

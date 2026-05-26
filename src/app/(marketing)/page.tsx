@@ -94,7 +94,14 @@ function ShortenForm() {
               whiteSpace: "nowrap",
             }}
           >
-            {loading ? "처리중…" : "✅ URL 만들기"}
+            {loading ? "처리중…" : (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                URL 만들기
+              </span>
+            )}
           </button>
         </div>
       </form>
@@ -144,7 +151,14 @@ function ShortenForm() {
                 fontFamily: "var(--font-sans)", transition: "all 0.15s",
               }}
             >
-              {copied ? "✓ 복사됨" : "복사"}
+              {copied ? (
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  복사됨
+                </span>
+              ) : "복사"}
             </button>
             <Link
               href="/dashboard/links"
@@ -177,12 +191,6 @@ function ShortenForm() {
 
 // ─── Static data ──────────────────────────────────────────────────────────────
 
-const STATS = [
-  { value: "2.4만+", label: "생성된 링크" },
-  { value: "18만+", label: "누적 클릭 수" },
-  { value: "3,200+", label: "가입 사용자" },
-];
-
 const FEATURES = [
   {
     icon: "M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1",
@@ -213,30 +221,6 @@ const TOOLS = [
   { href: "/tools/webhook", label: "웹훅 테스트", desc: "HTTP 요청 실시간 확인", icon: "M18 16.98h-5.99c-1.1 0-1.95.68-2.23 1.61A3 3 0 012 17c0-1.66 1.34-3 3-3h.5M12 3C9.24 3 7 5.24 7 8c0 2.16 1.28 3.99 3.12 4.82" },
   { href: "/tools/bio", label: "Link-in-bio", desc: "krl.kr/@닉네임 프로필", icon: "M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z" },
   { href: "/dashboard/subdomains", label: "서브도메인", desc: "내이름.krl.kr 주소", icon: "M12 2a10 10 0 100 20A10 10 0 0012 2zM2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" },
-];
-
-const NOTICES = [
-  { id: 1, title: "KRL.KR 서비스 오픈 안내", date: "05-26", views: 1024 },
-  { id: 2, title: "이메일 수신함 기능 추가 안내", date: "05-20", views: 342 },
-  { id: 3, title: "서브도메인 서비스 신청 방법", date: "05-15", views: 891 },
-  { id: 4, title: "API v1 공개 & 문서 업데이트", date: "05-10", views: 654 },
-  { id: 5, title: "파일 공유 최대 100MB로 상향", date: "05-05", views: 521 },
-];
-
-const FREE_BOARD = [
-  { id: 10, title: "링크 만들어봤는데 진짜 빠르네요", author: "익명", date: "05-26", views: 88, replies: 3 },
-  { id: 11, title: "서브도메인 신청했는데 얼마나 걸리나요?", author: "사용자123", date: "05-25", views: 62, replies: 5 },
-  { id: 12, title: "QR 코드 로고 삽입 언제 되나요", author: "홍길동", date: "05-24", views: 143, replies: 2 },
-  { id: 13, title: "API 써서 디스코드봇 만들었습니다", author: "개발자", date: "05-23", views: 287, replies: 11 },
-  { id: 14, title: "파일 공유 만료 기간 설정 방법?", author: "익명", date: "05-22", views: 54, replies: 1 },
-];
-
-const FEATURE_REQUESTS = [
-  { id: 20, title: "링크 폴더/그룹 기능 요청", author: "요청자", date: "05-24", votes: 47, replies: 8 },
-  { id: 21, title: "Link-in-bio 다크 테마", author: "디자이너", date: "05-22", votes: 33, replies: 4 },
-  { id: 22, title: "이메일 별칭 여러 개 만들기", author: "사용자", date: "05-21", votes: 28, replies: 6 },
-  { id: 23, title: "QR 코드 배치 다운로드", author: "마케터", date: "05-19", votes: 19, replies: 2 },
-  { id: 24, title: "Slack/Discord Webhook 알림", author: "개발자A", date: "05-18", votes: 15, replies: 3 },
 ];
 
 // ─── Board sub-component ──────────────────────────────────────────────────────
@@ -347,40 +331,6 @@ export default function HomePage() {
             <ShortenForm />
           </div>
 
-          {/* Stats strip */}
-          <div style={{
-            display: "flex", justifyContent: "center", gap: "0",
-            marginTop: "44px",
-            border: "1px solid var(--color-hairline)",
-            borderRadius: "12px",
-            overflow: "hidden",
-            maxWidth: "480px",
-            margin: "44px auto 0",
-            background: "var(--color-white)",
-          }}>
-            {STATS.map((s, i) => (
-              <div key={s.label} style={{
-                flex: 1,
-                padding: "16px 20px",
-                textAlign: "center",
-                borderRight: i < STATS.length - 1 ? "1px solid var(--color-hairline)" : "none",
-              }}>
-                <div style={{
-                  fontSize: "1.25rem", fontWeight: 700,
-                  letterSpacing: "-0.02em", color: "var(--color-ink)",
-                  fontFamily: "var(--font-mono)",
-                }}>
-                  {s.value}
-                </div>
-                <div style={{
-                  fontSize: "0.75rem", color: "var(--color-muted)",
-                  marginTop: "2px",
-                }}>
-                  {s.label}
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
@@ -515,30 +465,9 @@ export default function HomePage() {
                 </svg>
               }
             >
-              {NOTICES.map((row, i) => (
-                <div key={row.id} style={{
-                  display: "flex", alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "10px 18px",
-                  borderBottom: i < NOTICES.length - 1 ? "1px solid var(--color-hairline)" : "none",
-                  gap: "8px",
-                }}>
-                  <Link href={`/community/${row.id}`} style={{
-                    fontSize: "0.855rem", fontWeight: 500,
-                    color: "var(--color-ink)", textDecoration: "none",
-                    flexShrink: 1,
-                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                  }}>
-                    {row.title}
-                  </Link>
-                  <div style={{ display: "flex", gap: "10px", flexShrink: 0, alignItems: "center" }}>
-                    <span style={{ fontSize: "0.75rem", color: "var(--color-muted)" }}>{row.date}</span>
-                    <span style={{ fontSize: "0.75rem", color: "var(--color-muted)" }}>
-                      👁 {row.views.toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-              ))}
+              <div style={{ padding: "32px 18px", textAlign: "center", color: "var(--color-muted)", fontSize: "0.8125rem" }}>
+                아직 공지사항이 없습니다.
+              </div>
             </BoardSection>
 
             {/* 자유게시판 */}
@@ -553,41 +482,9 @@ export default function HomePage() {
                 </svg>
               }
             >
-              {FREE_BOARD.map((row, i) => (
-                <div key={row.id} style={{
-                  display: "flex", alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "10px 18px",
-                  borderBottom: i < FREE_BOARD.length - 1 ? "1px solid var(--color-hairline)" : "none",
-                  gap: "8px",
-                }}>
-                  <Link href={`/community/${row.id}`} style={{
-                    fontSize: "0.855rem", fontWeight: 500,
-                    color: "var(--color-ink)", textDecoration: "none",
-                    flexShrink: 1,
-                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                  }}>
-                    {row.title}
-                    {row.replies > 0 && (
-                      <span style={{
-                        marginLeft: "5px",
-                        fontSize: "0.75rem",
-                        color: "var(--color-arc)",
-                        fontWeight: 700,
-                      }}>
-                        [{row.replies}]
-                      </span>
-                    )}
-                  </Link>
-                  <div style={{ display: "flex", gap: "10px", flexShrink: 0, alignItems: "center" }}>
-                    <span style={{ fontSize: "0.75rem", color: "var(--color-muted)" }}>{row.author}</span>
-                    <span style={{ fontSize: "0.75rem", color: "var(--color-muted)" }}>{row.date}</span>
-                    <span style={{ fontSize: "0.75rem", color: "var(--color-muted)" }}>
-                      👁 {row.views}
-                    </span>
-                  </div>
-                </div>
-              ))}
+              <div style={{ padding: "32px 18px", textAlign: "center", color: "var(--color-muted)", fontSize: "0.8125rem" }}>
+                아직 게시물이 없습니다.
+              </div>
             </BoardSection>
 
             {/* 기능 제안 */}
@@ -603,34 +500,9 @@ export default function HomePage() {
                 </svg>
               }
             >
-              {FEATURE_REQUESTS.map((row, i) => (
-                <div key={row.id} style={{
-                  display: "flex", alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "10px 18px",
-                  borderBottom: i < FEATURE_REQUESTS.length - 1 ? "1px solid var(--color-hairline)" : "none",
-                  gap: "8px",
-                }}>
-                  <Link href={`/community/${row.id}`} style={{
-                    fontSize: "0.855rem", fontWeight: 500,
-                    color: "var(--color-ink)", textDecoration: "none",
-                    flexShrink: 1,
-                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                  }}>
-                    {row.title}
-                  </Link>
-                  <div style={{ display: "flex", gap: "8px", flexShrink: 0, alignItems: "center" }}>
-                    <span style={{
-                      display: "inline-flex", alignItems: "center", gap: "3px",
-                      fontSize: "0.75rem", color: "var(--color-success)",
-                      fontWeight: 700,
-                    }}>
-                      ▲ {row.votes}
-                    </span>
-                    <span style={{ fontSize: "0.75rem", color: "var(--color-muted)" }}>{row.date}</span>
-                  </div>
-                </div>
-              ))}
+              <div style={{ padding: "32px 18px", textAlign: "center", color: "var(--color-muted)", fontSize: "0.8125rem" }}>
+                아직 기능 제안이 없습니다.
+              </div>
             </BoardSection>
           </div>
         </div>
