@@ -10,7 +10,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDB } from "@/lib/env";
 import { requireAuth } from "@/lib/auth";
 import { generateId } from "@/lib/utils";
-import { createEmailForwardingRule, deleteEmailForwardingRule } from "@/lib/email";
+import { deleteEmailForwardingRule } from "@/lib/email";
 import { z } from "zod";
 
 const CreateAliasSchema = z.object({
@@ -135,28 +135,14 @@ export async function POST(request: NextRequest) {
     const now = Date.now();
     const aliasId = generateId("ema");
 
-    // ── 1. Cloudflare Email Routing API로 포워딩 룰 생성 시도 ─────────────────
-    const { ruleId, error: cfError } = await createEmailForwardingRule(
-      aliasLower,
-      user.email
-    );
-
-    if (cfError && !ruleId) {
-      console.warn(
-        `[Email Alias] CF API 미설정 또는 오류 (alias: ${aliasLower}): ${cfError}`
-      );
-    }
-
-    // ── 2. DB에 저장 ──────────────────────────────────────────────────────────
+    // ── 1. DB에 저장 (Worker catch-all 방식 — CF Email Routing 불필요) ────────
     await db
       .prepare(
         `INSERT INTO email_aliases (id, user_id, alias, forward_to, cf_rule_id, is_active, created_at)
-         VALUES (?, ?, ?, ?, ?, 1, ?)`
+         VALUES (?, ?, ?, ?, NULL, 1, ?)`
       )
-      .bind(aliasId, user.id, aliasLower, user.email, ruleId ?? null, now)
+      .bind(aliasId, user.id, aliasLower, user.email, now)
       .run();
-
-    const cfConfigured = !!ruleId;
 
     return NextResponse.json(
       {
@@ -165,11 +151,9 @@ export async function POST(request: NextRequest) {
         email: fullEmail,
         forward_to: user.email,
         is_active: true,
-        cf_configured: cfConfigured,
+        cf_configured: true,  // Worker catch-all handles all *@krl.kr
         created_at: new Date(now).toISOString(),
-        message: cfConfigured
-          ? `${fullEmail} 주소로 오는 이메일이 받은 편지함에 저장됩니다.`
-          : `별칭이 등록되었습니다. Cloudflare Email Worker 설정 후 수신이 활성화됩니다.`,
+        message: `${fullEmail} 주소로 오는 이메일이 받은 편지함에 저장됩니다.`,
       },
       { status: 201 }
     );

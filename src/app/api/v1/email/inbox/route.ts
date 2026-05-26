@@ -68,10 +68,10 @@ export async function GET(request: NextRequest) {
         subject: m.subject,
         preview: (m.body_text ?? "").substring(0, 200),
         is_read: m.is_read === 1,
-        received_at: new Date(m.received_at).toISOString(),
-        size: m.size,
+        received_at: new Date(Number(m.received_at)).toISOString(),
+        size: Number(m.size ?? 0),
       })),
-      unread_count: unreadResult?.count ?? 0,
+      unread_count: Number(unreadResult?.count ?? 0),
       page,
       limit,
     });

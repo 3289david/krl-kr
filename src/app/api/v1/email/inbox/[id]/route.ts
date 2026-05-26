@@ -62,7 +62,7 @@ export async function GET(
       headers: (() => { try { return JSON.parse(message.headers ?? "{}"); } catch { return {}; } })(),
       size: message.size,
       is_read: true,
-      received_at: new Date(message.received_at).toISOString(),
+      received_at: new Date(Number(message.received_at)).toISOString(),
     });
   } catch (err) {
     console.error("[/api/v1/email/inbox/[id] GET]", err);

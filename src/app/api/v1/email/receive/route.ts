@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
         data.body_html ?? "",
         JSON.stringify(data.headers ?? {}),
         data.size ?? 0,
-        data.received_at,
+        Number(data.received_at),
         now
       )
       .run();

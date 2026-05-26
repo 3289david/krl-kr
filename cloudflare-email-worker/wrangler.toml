@@ -1,0 +1,7 @@
+name = "rukkit"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+# Email routing trigger — catches all *@krl.kr emails
+[[email]]
+routing_to = "worker"
