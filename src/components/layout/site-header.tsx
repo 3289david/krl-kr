@@ -42,8 +42,8 @@ const NAV_MENUS = [
     items: [
       { href: "/dashboard/subdomains", icon: "M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z M2 12h20 M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z", label: "서브도메인", desc: "내이름.krl.kr 주소 만들기" },
       { href: "/tools/bio", icon: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z", label: "Link-in-bio", desc: "krl.kr/@닉네임 프로필 페이지" },
-      { href: "/dashboard/subdomains?tab=deploy", icon: "M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z M13 2v7h7", label: "즉시 배포", desc: "HTML 올리면 HTTPS 자동 적용" },
-      { href: "/dashboard/subdomains?tab=tmp", icon: "M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8 M3 3v5h5 M12 7v5l3 3", label: "임시 서브도메인", desc: "tmp123.krl.kr — 테스트용" },
+      { href: "/dashboard/subdomains?tab=html", icon: "M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z M13 2v7h7", label: "HTML 배포", desc: "HTML 입력하면 HTTPS 자동 적용" },
+      { href: "/dashboard/subdomains?tab=redirect", icon: "M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8 M3 3v5h5 M12 7v5l3 3", label: "리다이렉트", desc: "krl.kr 주소에서 다른 URL로 이동" },
     ],
   },
 ];

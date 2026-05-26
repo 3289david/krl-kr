@@ -297,17 +297,37 @@ function SubdomainsPageInner() {
                 )}
               </div>
 
-              <div>
-                <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 500, marginBottom: "6px" }}>
-                  대상 {type === "github" ? "도메인" : "URL"} *
-                </label>
-                <input
-                  type="text" value={target}
-                  onChange={(e) => setTarget(e.target.value)}
-                  placeholder={TYPE_PLACEHOLDERS[type] ?? "https://..."}
-                  required className="input"
-                />
-              </div>
+              {type === "html" ? (
+                <div>
+                  <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 500, marginBottom: "6px" }}>
+                    HTML 코드 *
+                  </label>
+                  <textarea
+                    value={target}
+                    onChange={(e) => setTarget(e.target.value)}
+                    placeholder={"<!DOCTYPE html>\n<html>\n<head><title>내 페이지</title></head>\n<body>\n  <h1>안녕하세요!</h1>\n</body>\n</html>"}
+                    required
+                    rows={10}
+                    className="input"
+                    style={{ fontFamily: "var(--font-mono)", fontSize: "0.8125rem", resize: "vertical" }}
+                  />
+                  <p style={{ marginTop: "4px", fontSize: "0.75rem", color: "var(--color-muted)" }}>
+                    입력한 HTML이 {subdomain || "subdomain"}.krl.kr 에서 그대로 서빙됩니다.
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 500, marginBottom: "6px" }}>
+                    대상 {type === "github" ? "도메인" : "URL"} *
+                  </label>
+                  <input
+                    type="text" value={target}
+                    onChange={(e) => setTarget(e.target.value)}
+                    placeholder={TYPE_PLACEHOLDERS[type] ?? "https://..."}
+                    required className="input"
+                  />
+                </div>
+              )}
 
               <div style={{ display: "flex", gap: "12px", marginTop: "8px" }}>
                 <button type="button" onClick={() => setShowCreate(false)} className="btn btn-secondary btn-pill" style={{ flex: 1, justifyContent: "center" }}>취소</button>
