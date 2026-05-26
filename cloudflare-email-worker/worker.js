@@ -1,16 +1,16 @@
 /**
- * rukkit.workers.dev — KRL.KR Email Worker
+ * krl-kr-email.rukkit.workers.dev — KRL.KR Email Worker
  *
  * Receives ALL emails sent to *@krl.kr via Cloudflare Email Routing,
  * parses them, and stores them in the KRL.KR database by calling
  * https://krl.kr/api/v1/email/receive
  *
  * Setup:
- *   1. Cloudflare Dashboard → Email Routing → Routing Rules
- *      Add catch-all rule: *@krl.kr → Send to Worker → this worker
- *   2. Add secret WORKER_SECRET in Workers → Settings → Variables
- *      Value: 992dead654b94aba5a0ef595fea7498d76c46ad1bbee62307b3eb35b77fcd5b4
- *   3. Deploy: wrangler deploy
+ *   1. Cloudflare Dashboard → Workers → krl-kr-email → Settings → Variables
+ *      Add secret:  WORKER_SECRET = 992dead654b94aba5a0ef595fea7498d76c46ad1bbee62307b3eb35b77fcd5b4
+ *   2. Cloudflare Dashboard → Email Routing → Routing Rules
+ *      Catch-all: *@krl.kr → Send to Worker → krl-kr-email
+ *   3. Deploy: cd cloudflare-email-worker && wrangler deploy
  */
 
 const KRL_API = "https://krl.kr/api/v1/email/receive";
