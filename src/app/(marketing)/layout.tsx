@@ -1,15 +1,11 @@
-import { Navbar } from "@/components/marketing/navbar";
+import { SiteHeader } from "@/components/layout/site-header";
 import { Footer } from "@/components/marketing/footer";
 
-export default function MarketingLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <Navbar />
-      <main style={{ paddingTop: "80px" }}>{children}</main>
+      <SiteHeader />
+      <main>{children}</main>
       <Footer />
     </>
   );

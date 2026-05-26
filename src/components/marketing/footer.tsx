@@ -42,9 +42,9 @@ export function Footer() {
               lineHeight: 1.2,
             }}
           >
-            링크 관리의 모든 것,
+            무료 링크 단축 서비스,
             <br />
-            한 곳에서 시작하세요.
+            KRL.KR
           </h2>
         </div>
 

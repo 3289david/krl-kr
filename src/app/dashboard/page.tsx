@@ -100,10 +100,10 @@ export default function DashboardPage() {
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "32px", flexWrap: "wrap", gap: "16px" }}>
         <div>
           <h1 style={{ fontSize: "1.5rem", fontWeight: 600, letterSpacing: "-0.02em", marginBottom: "4px" }}>
-            {user?.name ? `${user.name}님, 안녕하세요` : "대시보드"}
+            {user?.name ? `${user.name}님의 링크` : "내 링크 현황"}
           </h1>
           <p style={{ fontSize: "0.9375rem", color: "var(--color-muted)" }}>
-            링크 현황과 분석을 한눈에 확인하세요.
+            단축한 링크와 클릭 수를 확인하세요.
           </p>
         </div>
         <Link href="/dashboard/links" className="btn btn-primary btn-pill" style={{ textDecoration: "none", gap: "6px" }}>
@@ -130,7 +130,7 @@ export default function DashboardPage() {
             지금 바로 링크를 단축하세요
           </p>
           <p style={{ fontSize: "0.875rem", color: "rgba(243,240,238,0.5)" }}>
-            커스텀 슬러그, QR 코드, 분석까지 — 모두 포함
+            짧은 주소, 클릭 통계, QR 코드를 바로 사용할 수 있어요
           </p>
         </div>
         <Link href="/dashboard/links" className="btn btn-pill" style={{
