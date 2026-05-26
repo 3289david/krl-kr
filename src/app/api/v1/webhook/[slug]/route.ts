@@ -35,8 +35,8 @@ async function handleWebhookRequest(
     return NextResponse.json({ error: "웹훅 엔드포인트를 찾을 수 없습니다." }, { status: 404 });
   }
 
-  // Check expiry
-  if (endpoint.expires_at && Date.now() > endpoint.expires_at) {
+  // Check expiry (BIGINT from PostgreSQL may be returned as string)
+  if (endpoint.expires_at && Date.now() > Number(endpoint.expires_at)) {
     return NextResponse.json({ error: "만료된 웹훅 엔드포인트입니다." }, { status: 410 });
   }
 
@@ -56,15 +56,15 @@ async function handleWebhookRequest(
         id: endpoint.id,
         slug: endpoint.slug,
         label: endpoint.label,
-        url: `${process.env.APP_URL ?? "https://krl.kr"}/w/${slug}`,
-        expires_at: endpoint.expires_at ? new Date(endpoint.expires_at).toISOString() : null,
-        request_count: endpoint.request_count,
-        created_at: new Date(endpoint.created_at).toISOString(),
+        url: `${process.env.APP_URL ?? "https://krl.kr"}/api/v1/webhook/${slug}`,
+        expires_at: endpoint.expires_at ? new Date(Number(endpoint.expires_at)).toISOString() : null,
+        request_count: Number(endpoint.request_count),
+        created_at: new Date(Number(endpoint.created_at)).toISOString(),
       },
       requests: requests.results.map((r) => ({
         ...r,
         headers: (() => { try { return JSON.parse(r.headers as string); } catch { return {}; } })(),
-        received_at: new Date(r.received_at as number).toISOString(),
+        received_at: new Date(Number(r.received_at)).toISOString(),
       })),
     });
   }

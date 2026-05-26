@@ -149,7 +149,14 @@ export async function GET(request: NextRequest) {
     const total = countResult?.count ?? 0;
 
     return NextResponse.json({
-      files: result.results,
+      files: result.results.map((f) => ({
+        ...f,
+        created_at: Number(f.created_at),
+        expires_at: f.expires_at != null ? Number(f.expires_at) : null,
+        size: Number(f.size),
+        max_downloads: f.max_downloads != null ? Number(f.max_downloads) : null,
+        download_count: Number(f.download_count),
+      })),
       total,
       page,
       pages: Math.ceil(total / limit),

@@ -1,7 +1,7 @@
 /**
  * KRL.KR — Edge Middleware
- * Handles fast URL redirects at the Cloudflare edge
- * Runs before any route handler
+ * 1. *.krl.kr wildcard subdomains → internal sub-redirect API
+ * 2. Short link slugs → [slug] page
  */
 import { NextRequest, NextResponse } from "next/server";
 
@@ -42,6 +42,29 @@ const RESERVED_PATHS = new Set([
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const hostname = request.headers.get("host") ?? "";
+
+  // ── 1. Wildcard subdomain routing (*.krl.kr) ────────────────────────────────
+  // e.g. david.krl.kr → rewrite to internal sub-redirect route
+  const isWildcardSub =
+    hostname.endsWith(".krl.kr") &&
+    hostname !== "krl.kr" &&
+    hostname !== "www.krl.kr";
+
+  if (isWildcardSub) {
+    // Already going to the internal sub route → skip to prevent infinite loop
+    if (pathname.startsWith("/api/v1/internal/sub")) {
+      return NextResponse.next();
+    }
+
+    const subName = hostname.split(".")[0];
+    const rewriteUrl = request.nextUrl.clone();
+    rewriteUrl.pathname = "/api/v1/internal/sub";
+    rewriteUrl.searchParams.set("name", subName);
+    return NextResponse.rewrite(rewriteUrl);
+  }
+
+  // ── 2. Short link slugs ──────────────────────────────────────────────────────
 
   // Skip API routes, static files, and Next.js internals
   if (
@@ -63,21 +86,19 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Skip link-in-bio paths (@username)
+  // Rewrite @username -> /bio/username (link-in-bio public pages)
   if (firstSegment.startsWith("@")) {
-    return NextResponse.next();
+    const rewriteUrl = request.nextUrl.clone();
+    rewriteUrl.pathname = `/bio/${firstSegment.slice(1)}${segments.length > 1 ? "/" + segments.slice(1).join("/") : ""}`;
+    return NextResponse.rewrite(rewriteUrl);
   }
 
   // This looks like a short link — let the [slug] page handle it
-  // The page will do the DB lookup and redirect
-  // We add headers to pass Cloudflare metadata
-  const response = NextResponse.next();
-
   // Forward Cloudflare geo headers if available
+  const response = NextResponse.next();
   const cfCountry = request.headers.get("cf-ipcountry");
   const cfCity = request.headers.get("cf-ipcity");
   const cfRegion = request.headers.get("cf-region");
-
   if (cfCountry) response.headers.set("x-cf-country", cfCountry);
   if (cfCity) response.headers.set("x-cf-city", cfCity);
   if (cfRegion) response.headers.set("x-cf-region", cfRegion);
@@ -87,13 +108,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths EXCEPT:
-     * - _next/static (static files)
-     * - _next/image (image optimization)
-     * - favicon.ico
-     * - Public folder files
-     */
     "/((?!_next/static|_next/image|favicon.ico).*)",
   ],
 };

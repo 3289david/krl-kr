@@ -144,6 +144,79 @@ function CreateLinkModal({ onClose, onCreated }: { onClose: () => void; onCreate
   );
 }
 
+function EditLinkModal({ link, onClose, onUpdated }: { link: LinkData; onClose: () => void; onUpdated: (link: LinkData) => void }) {
+  const [url, setUrl] = useState(link.original_url);
+  const [title, setTitle] = useState(link.title ?? "");
+  const [active, setActive] = useState(!!link.is_active);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleUpdate(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    const normalized = normalizeUrl(url);
+    if (!isValidUrl(normalized)) {
+      setError("유효한 URL을 입력해주세요.");
+      setLoading(false);
+      return;
+    }
+    try {
+      const res = await fetch(`/api/v1/links/${link.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: normalized, title: title || null, is_active: active }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error ?? "수정에 실패했습니다."); return; }
+      onUpdated({ ...link, original_url: normalized, title: title || null, is_active: active ? 1 : 0 });
+      onClose();
+    } catch { setError("네트워크 오류가 발생했습니다."); }
+    finally { setLoading(false); }
+  }
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(20,20,19,0.5)", backdropFilter: "blur(4px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}
+      onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div style={{ background: "var(--color-lifted)", borderRadius: "var(--radius-xl)", padding: "32px", width: "100%", maxWidth: "480px", border: "1px solid var(--color-hairline-strong)" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "24px" }}>
+          <h2 style={{ fontSize: "1.25rem", fontWeight: 600 }}>링크 수정</h2>
+          <button onClick={onClose} className="btn btn-ghost btn-icon"><XIcon size={18} /></button>
+        </div>
+        {error && (
+          <div style={{ padding: "12px 14px", background: "#FFF1F2", border: "1px solid #FECDD3", borderRadius: "var(--radius-sm)", marginBottom: "16px", color: "#9B1C1C", fontSize: "0.875rem" }}>{error}</div>
+        )}
+        <form onSubmit={handleUpdate} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          <div>
+            <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 500, marginBottom: "6px" }}>슬러그</label>
+            <div style={{ padding: "10px 12px", background: "var(--color-surface-card)", border: "1px solid var(--color-hairline)", borderRadius: "var(--radius-sm)", fontSize: "0.875rem", color: "var(--color-muted)", fontFamily: "var(--font-mono)" }}>
+              krl.kr/{link.slug}
+            </div>
+          </div>
+          <div>
+            <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 500, marginBottom: "6px" }}>URL *</label>
+            <input type="text" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://example.com/..." required className="input" />
+          </div>
+          <div>
+            <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 500, marginBottom: "6px" }}>제목 (선택)</label>
+            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="링크 제목" className="input" />
+          </div>
+          <label style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}>
+            <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} style={{ width: "16px", height: "16px" }} />
+            <span style={{ fontSize: "0.875rem", fontWeight: 500 }}>활성화</span>
+          </label>
+          <div style={{ display: "flex", gap: "12px", marginTop: "8px" }}>
+            <button type="button" onClick={onClose} className="btn btn-secondary btn-pill" style={{ flex: 1, justifyContent: "center" }}>취소</button>
+            <button type="submit" disabled={loading || !url} className="btn btn-primary btn-pill" style={{ flex: 1, justifyContent: "center" }}>
+              {loading ? "저장 중..." : "저장"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export default function LinksPage() {
   const [links, setLinks] = useState<LinkData[]>([]);
   const [total, setTotal] = useState(0);
@@ -153,6 +226,7 @@ export default function LinksPage() {
   const [search, setSearch] = useState("");
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [editingLink, setEditingLink] = useState<LinkData | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   const fetchLinks = useCallback(async (p = 1, q = "") => {
@@ -281,6 +355,9 @@ export default function LinksPage() {
                         <button onClick={() => handleCopy(link.slug)} className="btn btn-ghost btn-sm btn-icon" title="복사">
                           {copiedSlug === link.slug ? <CheckIcon size={14} /> : <CopyIcon size={14} />}
                         </button>
+                        <button onClick={() => setEditingLink(link)} className="btn btn-ghost btn-sm btn-icon" title="수정">
+                          <EditIcon size={14} />
+                        </button>
                         <Link href={`/dashboard/analytics/${link.id}`} className="btn btn-ghost btn-sm btn-icon" title="분석">
                           <BarChartIcon size={14} />
                         </Link>
@@ -329,6 +406,17 @@ export default function LinksPage() {
         <CreateLinkModal
           onClose={() => setShowCreate(false)}
           onCreated={(link) => { setLinks((prev) => [link, ...prev]); setTotal((t) => t + 1); }}
+        />
+      )}
+
+      {editingLink && (
+        <EditLinkModal
+          link={editingLink}
+          onClose={() => setEditingLink(null)}
+          onUpdated={(updated) => {
+            setLinks((prev) => prev.map((l) => l.id === updated.id ? updated : l));
+            setEditingLink(null);
+          }}
         />
       )}
 

@@ -90,7 +90,14 @@ export async function GET(request: NextRequest) {
       .bind(user.id)
       .all<Record<string, unknown>>();
 
-    return NextResponse.json({ endpoints: result.results });
+    return NextResponse.json({
+      endpoints: result.results.map((e) => ({
+        ...e,
+        expires_at: e.expires_at ? Number(e.expires_at) : null,
+        request_count: Number(e.request_count),
+        created_at: Number(e.created_at),
+      })),
+    });
   } catch (err) {
     console.error("[/api/v1/webhook GET] Error:", err);
     return NextResponse.json({ error: "서버 오류가 발생했습니다." }, { status: 500 });

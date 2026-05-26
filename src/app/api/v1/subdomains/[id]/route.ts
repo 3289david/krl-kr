@@ -19,15 +19,34 @@ export async function DELETE(
   const { user, error } = await requireAuth(db, request);
   if (error) return error;
 
-  const result = await db
+  // Fetch the record first to get the CF DNS record ID
+  const sub = await db
+    .prepare("SELECT id, cf_dns_record_id FROM subdomains WHERE id = ? AND user_id = ? LIMIT 1")
+    .bind(id, user.id)
+    .first<{ id: string; cf_dns_record_id: string | null }>();
+
+  if (!sub) {
+    return NextResponse.json({ error: "서브도메인을 찾을 수 없습니다." }, { status: 404 });
+  }
+
+  // Delete from Cloudflare DNS (best-effort)
+  if (sub.cf_dns_record_id) {
+    const cfToken = process.env.CLOUDFLARE_API_TOKEN;
+    const zoneId = process.env.CLOUDFLARE_ZONE_ID;
+    if (cfToken && zoneId) {
+      try {
+        await fetch(
+          `https://api.cloudflare.com/client/v4/zones/${zoneId}/dns_records/${sub.cf_dns_record_id}`,
+          { method: "DELETE", headers: { Authorization: `Bearer ${cfToken}` } }
+        );
+      } catch { /* ignore CF errors */ }
+    }
+  }
+
+  await db
     .prepare("DELETE FROM subdomains WHERE id = ? AND user_id = ?")
     .bind(id, user.id)
     .run();
-
-  const changes = (result.meta as { changes?: number })?.changes ?? 0;
-  if (changes === 0) {
-    return NextResponse.json({ error: "서브도메인을 찾을 수 없습니다." }, { status: 404 });
-  }
 
   return NextResponse.json({ success: true });
 }

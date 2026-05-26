@@ -170,12 +170,14 @@ export default function FilesPage() {
                 {files.map((file) => (
                   <tr key={file.id}>
                     <td>
-                      <a href={`https://krl.kr/f/${file.slug}`} target="_blank" rel="noopener" style={{ fontWeight: 600, color: "var(--color-ink)", textDecoration: "none" }}>
+                      <a href={`https://krl.kr/f/${file.slug}`} target="_blank" rel="noopener" style={{ fontWeight: 600, color: "var(--color-ink)", textDecoration: "none", display: "block" }}>
                         {file.original_name}
                       </a>
-                      <p style={{ fontSize: "0.75rem", color: "var(--color-muted)", fontFamily: "var(--font-mono)" }}>
-                        {file.slug}
-                      </p>
+                      <span style={{ fontSize: "0.75rem", color: "var(--color-arc)", fontFamily: "var(--font-mono)", cursor: "pointer" }}
+                        onClick={() => handleCopy(file.slug)}
+                        title="클릭하여 복사">
+                        krl.kr/f/{file.slug}
+                      </span>
                     </td>
                     <td style={{ fontSize: "0.875rem" }}>{formatBytes(file.size)}</td>
                     <td style={{ fontSize: "0.875rem" }}>

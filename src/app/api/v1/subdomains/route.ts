@@ -29,6 +29,7 @@ const CreateSubdomainSchema = z.object({
 
 async function createCloudflareCnameRecord(
   subdomain: string,
+  type: string,
   target: string
 ): Promise<{ recordId: string | null; error: string | null }> {
   const cfToken = process.env.CLOUDFLARE_API_TOKEN;
@@ -38,16 +39,19 @@ async function createCloudflareCnameRecord(
     return { recordId: null, error: "Cloudflare API 미설정" };
   }
 
-  try {
-    // Extract hostname for CNAME target
-    let cnameTarget = target;
+  // For redirect-type subdomains: CNAME → krl.kr so the VPS handles the redirect.
+  // For github/vercel/etc: CNAME → the actual service hostname.
+  let cnameTarget = "krl.kr";
+  if (type === "github" || type === "vercel") {
     try {
-      const parsed = new URL(target);
+      const parsed = new URL(target.startsWith("http") ? target : `https://${target}`);
       cnameTarget = parsed.hostname;
     } catch {
-      // target might already be a hostname
+      cnameTarget = target;
     }
+  }
 
+  try {
     const response = await fetch(
       `https://api.cloudflare.com/client/v4/zones/${zoneId}/dns_records`,
       {
@@ -61,7 +65,7 @@ async function createCloudflareCnameRecord(
           name: `${subdomain}.krl.kr`,
           content: cnameTarget,
           proxied: true,
-          ttl: 1, // Auto TTL when proxied
+          ttl: 1,
         }),
       }
     );
@@ -79,6 +83,18 @@ async function createCloudflareCnameRecord(
     console.error("[Subdomains] CF DNS API exception:", err);
     return { recordId: null, error: String(err) };
   }
+}
+
+async function deleteCloudflareDnsRecord(recordId: string): Promise<void> {
+  const cfToken = process.env.CLOUDFLARE_API_TOKEN;
+  const zoneId = process.env.CLOUDFLARE_ZONE_ID;
+  if (!cfToken || !zoneId) return;
+  try {
+    await fetch(
+      `https://api.cloudflare.com/client/v4/zones/${zoneId}/dns_records/${recordId}`,
+      { method: "DELETE", headers: { Authorization: `Bearer ${cfToken}` } }
+    );
+  } catch {}
 }
 
 export async function POST(request: NextRequest) {
@@ -131,6 +147,7 @@ export async function POST(request: NextRequest) {
     // Create Cloudflare DNS CNAME record
     const { recordId: cfDnsRecordId, error: cfError } = await createCloudflareCnameRecord(
       subdomain,
+      type,
       target
     );
 
@@ -185,6 +202,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       subdomains: result.results.map((s) => ({
         ...s,
+        // PostgreSQL returns BIGINT as string — must cast to number for the client
+        created_at: Number(s.created_at),
+        is_active: Number(s.is_active),
         full_domain: `${s.subdomain}.krl.kr`,
         cf_configured: !!s.cf_dns_record_id,
       })),

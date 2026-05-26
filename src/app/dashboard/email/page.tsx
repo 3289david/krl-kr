@@ -139,7 +139,7 @@ export default function EmailInboxPage() {
   void formatSize;
 
   return (
-    <div style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
+    <div style={{ height: "calc(100vh - 52px)", display: "flex", flexDirection: "column" }}>
       {/* Header */}
       <div className="page-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div>

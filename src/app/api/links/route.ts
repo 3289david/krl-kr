@@ -63,8 +63,15 @@ export async function GET(request: NextRequest) {
   ]);
 
   return NextResponse.json({
-    links: links.results,
-    total: countResult?.count ?? 0,
+    links: links.results.map((l: Record<string, unknown>) => ({
+      ...l,
+      created_at: Number(l.created_at),
+      updated_at: l.updated_at != null ? Number(l.updated_at) : null,
+      expires_at: l.expires_at != null ? Number(l.expires_at) : null,
+      click_count: Number(l.click_count ?? 0),
+      unique_count: Number(l.unique_count ?? 0),
+    })),
+    total: Number(countResult?.count ?? 0),
     page,
     limit,
   });
