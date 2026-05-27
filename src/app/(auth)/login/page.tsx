@@ -1,11 +1,13 @@
 "use client";
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { EyeIcon, EyeOffIcon, AlertCircleIcon } from "@/components/icons";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect") || "/dashboard";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -31,7 +33,7 @@ export default function LoginPage() {
       }
 
       router.refresh();
-      router.push("/dashboard");
+      router.push(redirectTo);
     } catch {
       setError("네트워크 오류가 발생했습니다.");
     } finally {
@@ -96,7 +98,7 @@ export default function LoginPage() {
             }}
           >
             계정이 없으신가요?{" "}
-            <Link href="/register" style={{ color: "var(--color-ink)", fontWeight: 500 }}>
+            <Link href={`/register${redirectTo !== "/dashboard" ? `?redirect=${encodeURIComponent(redirectTo)}` : ""}`} style={{ color: "var(--color-ink)", fontWeight: 500 }}>
               무료 가입
             </Link>
           </p>
@@ -243,5 +245,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   );
 }

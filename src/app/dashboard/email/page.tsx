@@ -125,14 +125,29 @@ export default function EmailInboxPage() {
     return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
   }
 
-  function formatDate(iso: string): string {
-    const d = new Date(iso);
-    const now = new Date();
-    const diff = now.getTime() - d.getTime();
+  function safeMs(val: string | number | null | undefined): number | null {
+    if (val == null) return null;
+    if (typeof val === "number") return val;
+    if (/^\d+$/.test(String(val).trim())) return Number(val);
+    const t = new Date(val).getTime();
+    return isNaN(t) ? null : t;
+  }
+
+  function formatDate(val: string | number | null | undefined): string {
+    const ms = safeMs(val);
+    if (ms == null) return "—";
+    const d = new Date(ms);
+    const diff = Date.now() - ms;
     if (diff < 60000) return "방금 전";
     if (diff < 3600000) return `${Math.floor(diff / 60000)}분 전`;
     if (diff < 86400000) return `${Math.floor(diff / 3600000)}시간 전`;
     return d.toLocaleDateString("ko-KR", { month: "short", day: "numeric" });
+  }
+
+  function formatDateFull(val: string | number | null | undefined): string {
+    const ms = safeMs(val);
+    if (ms == null) return "—";
+    return new Date(ms).toLocaleString("ko-KR");
   }
 
   // Suppress unused variable warning
@@ -333,7 +348,7 @@ export default function EmailInboxPage() {
                   <div style={{ display: "flex", gap: "12px" }}>
                     <span style={{ color: "var(--color-muted)", width: "40px", flexShrink: 0 }}>날짜</span>
                     <span style={{ color: "var(--color-ink)" }}>
-                      {new Date(selected.received_at).toLocaleString("ko-KR")}
+                      {formatDateFull(selected.received_at)}
                     </span>
                   </div>
                 </div>

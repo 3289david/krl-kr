@@ -221,7 +221,7 @@ export default function WebhookPage() {
                               color: METHOD_COLORS[req.method] ?? "#666",
                             }}>{req.method}</span>
                             <span style={{ fontSize: "0.8125rem", color: "var(--color-muted)" }}>
-                              {new Date(req.received_at).toLocaleTimeString("ko-KR")}
+                              {(() => { const ms = /^\d+$/.test(String(req.received_at)) ? Number(req.received_at) : new Date(req.received_at).getTime(); return isNaN(ms) ? "—" : new Date(ms).toLocaleTimeString("ko-KR"); })()}
                             </span>
                           </div>
                           {req.ip && <p style={{ fontSize: "0.75rem", color: "var(--color-ash)" }}>IP: {req.ip}</p>}

@@ -52,6 +52,9 @@ export async function GET(request: NextRequest) {
       keys: result.results.map((k) => ({
         ...k,
         scopes: (() => { try { return JSON.parse(k.scopes as string); } catch { return []; } })(),
+        created_at: k.created_at != null ? Number(k.created_at) : null,
+        last_used_at: k.last_used_at != null ? Number(k.last_used_at) : null,
+        expires_at: k.expires_at != null ? Number(k.expires_at) : null,
       })),
       available_scopes: AVAILABLE_SCOPES,
     });

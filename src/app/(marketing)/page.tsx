@@ -11,15 +11,24 @@ function ShortenForm() {
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
 
+  function normalizeUrl(raw: string): string {
+    const trimmed = raw.trim();
+    if (!trimmed) return trimmed;
+    if (!/^https?:\/\//i.test(trimmed)) return "https://" + trimmed;
+    return trimmed;
+  }
+
   async function handleShorten(e: React.FormEvent) {
     e.preventDefault();
     if (!url.trim()) return;
+    const normalized = normalizeUrl(url);
+    setUrl(normalized);
     setLoading(true); setError(""); setResult(null); setCopied(false);
     try {
       const res = await fetch("/api/v1/shorten", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: url.trim() }),
+        body: JSON.stringify({ url: normalized }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "오류가 발생했습니다.");
@@ -60,10 +69,11 @@ function ShortenForm() {
           }}
         >
           <input
-            type="url"
+            type="text"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            placeholder="https://긴주소를.여기에.붙여넣으세요"
+            onBlur={(e) => { if (e.target.value.trim()) setUrl(normalizeUrl(e.target.value)); }}
+            placeholder="긴주소를 여기에 붙여넣으세요"
             required
             style={{
               flex: 1,

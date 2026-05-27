@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getSession } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: "커뮤니티 | KRL.KR",
@@ -19,7 +20,9 @@ function EmptyState({ message }: { message: string }) {
   );
 }
 
-export default function CommunityPage() {
+export default async function CommunityPage() {
+  const session = await getSession();
+
   return (
     <main style={{ minHeight: "100vh", background: "var(--color-canvas)" }}>
       <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "40px 24px 64px" }}>
@@ -30,16 +33,26 @@ export default function CommunityPage() {
             <h1 style={{ fontSize: "1.75rem", fontWeight: 600, letterSpacing: "-0.025em", marginBottom: "6px" }}>커뮤니티</h1>
             <p style={{ color: "var(--color-muted)", fontSize: "0.9375rem" }}>KRL.KR 사용자 게시판 — 공지, 자유 게시판, 기능 제안</p>
           </div>
-          <Link href="/login" style={{
-            display: "inline-flex", alignItems: "center", gap: "6px",
-            padding: "8px 16px", borderRadius: "6px", background: "var(--color-ink)",
-            color: "var(--color-canvas)", textDecoration: "none", fontSize: "0.875rem", fontWeight: 600,
-          }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-            글쓰기
-          </Link>
+          {session ? (
+            <Link href="/community/new" style={{
+              display: "inline-flex", alignItems: "center", gap: "6px",
+              padding: "8px 16px", borderRadius: "6px", background: "var(--color-ink)",
+              color: "var(--color-canvas)", textDecoration: "none", fontSize: "0.875rem", fontWeight: 600,
+            }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+              글쓰기
+            </Link>
+          ) : (
+            <Link href="/login?redirect=/community" style={{
+              display: "inline-flex", alignItems: "center", gap: "6px",
+              padding: "8px 16px", borderRadius: "6px", background: "var(--color-ink)",
+              color: "var(--color-canvas)", textDecoration: "none", fontSize: "0.875rem", fontWeight: 600,
+            }}>
+              로그인하여 글쓰기
+            </Link>
+          )}
         </div>
 
         {/* 공지사항 */}

@@ -88,11 +88,15 @@ export default function PublicQRPage() {
               <div>
                 <label style={{ display: "block", fontWeight: 600, marginBottom: "8px", fontSize: "0.9375rem" }}>URL 주소</label>
                 <input
-                  type="url"
+                  type="text"
                   className="input"
-                  placeholder="https://example.com"
+                  placeholder="example.com"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
+                  onBlur={(e) => {
+                    const v = e.target.value.trim();
+                    if (v && !/^https?:\/\//i.test(v)) setUrl("https://" + v);
+                  }}
                   style={{ width: "100%" }}
                 />
               </div>

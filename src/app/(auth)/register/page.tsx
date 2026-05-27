@@ -1,7 +1,7 @@
 "use client";
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { CheckIcon, EyeIcon, EyeOffIcon, AlertCircleIcon } from "@/components/icons";
 
 const PASSWORD_RULES = [
@@ -10,8 +10,10 @@ const PASSWORD_RULES = [
   { test: (p: string) => /[0-9]/.test(p), label: "숫자 포함" },
 ];
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect") || "/dashboard";
   const [form, setForm] = useState({ email: "", password: "", name: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -40,7 +42,7 @@ export default function RegisterPage() {
       }
 
       router.refresh();
-      router.push("/dashboard");
+      router.push(redirectTo);
     } catch {
       setError("네트워크 오류가 발생했습니다.");
     } finally {
@@ -92,7 +94,7 @@ export default function RegisterPage() {
           </h1>
           <p style={{ fontSize: "0.9375rem", color: "var(--color-muted)", marginBottom: "28px" }}>
             이미 계정이 있으신가요?{" "}
-            <Link href="/login" style={{ color: "var(--color-ink)", fontWeight: 500 }}>
+            <Link href={`/login${redirectTo !== "/dashboard" ? `?redirect=${encodeURIComponent(redirectTo)}` : ""}`} style={{ color: "var(--color-ink)", fontWeight: 500 }}>
               로그인
             </Link>
           </p>
@@ -304,5 +306,13 @@ export default function RegisterPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={null}>
+      <RegisterForm />
+    </Suspense>
   );
 }

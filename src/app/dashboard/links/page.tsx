@@ -6,7 +6,7 @@ import {
   PlusIcon, SearchIcon, CopyIcon, CheckIcon, TrashIcon,
   EditIcon, BarChartIcon, ExternalLinkIcon, QrCodeIcon, XIcon
 } from "@/components/icons";
-import { formatNumber, formatRelativeTime, truncate, buildShortUrl, isValidUrl, normalizeUrl } from "@/lib/utils";
+import { formatNumber, formatRelativeTime, formatDate, truncate, buildShortUrl, isValidUrl, normalizeUrl } from "@/lib/utils";
 
 interface LinkData {
   id: string;
@@ -118,7 +118,7 @@ function CreateLinkModal({ tab, onClose, onCreated }: { tab: string; onClose: ()
         <form onSubmit={handleCreate} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           <div>
             <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 500, marginBottom: "6px" }}>URL *</label>
-            <input type="text" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://example.com/..." required className="input" />
+            <input type="text" value={url} onChange={(e) => setUrl(e.target.value)} onBlur={(e) => { if (e.target.value.trim()) setUrl(normalizeUrl(e.target.value)); }} placeholder="example.com/..." required className="input" />
           </div>
           <div>
             <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 500, marginBottom: "6px" }}>커스텀 슬러그 (선택)</label>
@@ -244,7 +244,7 @@ function EditLinkModal({ link, onClose, onUpdated }: { link: LinkData; onClose: 
           </div>
           <div>
             <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 500, marginBottom: "6px" }}>URL *</label>
-            <input type="text" value={url} onChange={(e) => setUrl(e.target.value)} required className="input" />
+            <input type="text" value={url} onChange={(e) => setUrl(e.target.value)} onBlur={(e) => { if (e.target.value.trim()) setUrl(normalizeUrl(e.target.value)); }} placeholder="example.com/..." required className="input" />
           </div>
           <div>
             <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 500, marginBottom: "6px" }}>제목 (선택)</label>
@@ -425,7 +425,7 @@ function LinksPageInner() {
                     </td>
                     {tab === "temp" && (
                       <td style={{ fontSize: "0.875rem", color: "var(--color-muted)" }}>
-                        {link.expires_at ? new Date(link.expires_at).toLocaleDateString("ko-KR") : ""}
+                        {link.expires_at ? formatDate(link.expires_at) : ""}
                         {link.max_clicks ? <span style={{ display: "block" }}>{link.max_clicks}회 클릭</span> : ""}
                       </td>
                     )}

@@ -89,18 +89,42 @@ export function formatNumber(n: number): string {
 }
 
 // ─── Date formatting ─────────────────────────────────────────────────────────
-export function formatDate(date: Date | number | string): string {
-  const d = new Date(date);
-  return d.toLocaleDateString("ko-KR", {
+/**
+ * Converts any date value to milliseconds since epoch.
+ * Handles: Date objects, JS numbers, numeric strings (PostgreSQL BIGINT),
+ * and ISO/RFC 2822 strings.
+ * Returns null for null/undefined/invalid inputs.
+ */
+function toMs(date: Date | number | string | null | undefined): number | null {
+  if (date == null) return null;
+  if (date instanceof Date) {
+    const t = date.getTime();
+    return isNaN(t) ? null : t;
+  }
+  if (typeof date === "number") return isNaN(date) ? null : date;
+  if (typeof date === "string") {
+    // Pure numeric string = milliseconds from PostgreSQL BIGINT
+    if (/^\d+$/.test(date.trim())) return Number(date);
+    const t = new Date(date).getTime();
+    return isNaN(t) ? null : t;
+  }
+  return null;
+}
+
+export function formatDate(date: Date | number | string | null | undefined): string {
+  const ms = toMs(date);
+  if (ms == null) return "—";
+  return new Date(ms).toLocaleDateString("ko-KR", {
     year: "numeric",
     month: "long",
     day: "numeric",
   });
 }
 
-export function formatDateTime(date: Date | number | string): string {
-  const d = new Date(date);
-  return d.toLocaleString("ko-KR", {
+export function formatDateTime(date: Date | number | string | null | undefined): string {
+  const ms = toMs(date);
+  if (ms == null) return "—";
+  return new Date(ms).toLocaleString("ko-KR", {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -109,10 +133,12 @@ export function formatDateTime(date: Date | number | string): string {
   });
 }
 
-export function formatRelativeTime(date: Date | number | string): string {
-  const d = new Date(date);
-  const now = new Date();
-  const diff = now.getTime() - d.getTime();
+export function formatRelativeTime(date: Date | number | string | null | undefined): string {
+  const ms = toMs(date);
+  if (ms == null) return "—";
+  const d = new Date(ms);
+  const now = Date.now();
+  const diff = now - ms;
   const seconds = Math.floor(diff / 1000);
   const minutes = Math.floor(seconds / 60);
   const hours = Math.floor(minutes / 60);
