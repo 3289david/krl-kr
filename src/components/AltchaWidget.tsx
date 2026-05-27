@@ -1,15 +1,46 @@
 "use client";
 import Script from "next/script";
-import React from "react";
+import React, { useEffect, useId } from "react";
 
+/**
+ * AltchaWidget
+ *
+ * The challenge URL is patched in useEffect with a fresh browser timestamp so that
+ * every page load hits a unique URL that no CDN can serve from cache.
+ * Route: /api/challenge  (brand-new path — no stale Cloudflare cache history).
+ */
 export function AltchaWidget({ name = "altcha" }: { name?: string }) {
+  const id = useId().replace(/:/g, "-");
+
+  useEffect(() => {
+    const widget = document.getElementById(id) as (HTMLElement & {
+      verify?: () => void;
+    }) | null;
+    if (!widget) return;
+
+    // Fresh URL with browser timestamp → bypasses any CDN-cached response
+    widget.setAttribute("challengeurl", `/api/challenge?t=${Date.now()}`);
+
+    // Start the PoW challenge programmatically
+    if (typeof widget.verify === "function") {
+      widget.verify();
+    } else {
+      // fallback for older altcha builds: set auto attribute and let widget re-init
+      widget.setAttribute("auto", "onload");
+    }
+  }, [id]);
+
   return (
     <>
-      <Script src="/altcha/altcha.min.js" strategy="afterInteractive" />
+      {/* Load synchronously so the custom element is registered
+          before connectedCallback fires on the widget element. */}
+      <Script src="/altcha/altcha.min.js" strategy="beforeInteractive" />
       {React.createElement("altcha-widget", {
-        challengeurl: "/api/v1/altcha?_=1",
+        id,
         name,
-        auto: "onload",
+        // Placeholder URL (no auto) — useEffect immediately overwrites with
+        // a timestamped URL and calls verify().
+        challengeurl: "/api/challenge?t=0",
         hidefooter: "",
         style: {
           "--altcha-border-radius": "10px",
@@ -23,5 +54,5 @@ export function AltchaWidget({ name = "altcha" }: { name?: string }) {
   );
 }
 
-// verifyAltcha has been moved to src/lib/altcha.ts (server-only)
+// verifyAltcha lives in src/lib/altcha.ts (server-only).
 // Do NOT add server logic here — this file is "use client".
