@@ -160,26 +160,10 @@ export function SiteHeader() {
         }}>
           {/* Logo — circular gradient badge */}
           <Link href="/" style={{
-            display: "flex", alignItems: "center", gap: "9px",
-            marginRight: "14px", flexShrink: 0, textDecoration: "none",
-          }}>
-            <div style={{
-              width: "32px", height: "32px", borderRadius: "50%",
-              background: "linear-gradient(135deg, #3a3aef 0%, #8b5cf6 100%)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: "0 2px 8px rgba(58,58,239,0.25)",
-              flexShrink: 0,
-            }}>
-              <span style={{
-                fontFamily: "var(--font-mono)", fontWeight: 800,
-                fontSize: "0.625rem", color: "#fff", letterSpacing: "0.02em",
-              }}>KR</span>
-            </div>
-            <span style={{
-              fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: "0.9375rem",
-              letterSpacing: "0.04em", color: "var(--color-ink)",
-            }}>KRL.KR</span>
-          </Link>
+            fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: "1rem",
+            letterSpacing: "0.04em", color: "var(--color-ink)", textDecoration: "none",
+            marginRight: "16px", flexShrink: 0,
+          }}>KRL.KR</Link>
 
           {/* Desktop nav */}
           <nav className="krl-desktop-nav" style={{ display: "flex", alignItems: "center", gap: "2px", flex: 1 }}>
