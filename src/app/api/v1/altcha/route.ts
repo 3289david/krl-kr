@@ -35,7 +35,10 @@ export async function GET() {
       signature,
     }, {
       headers: {
-        "Cache-Control": "no-store",
+        "Cache-Control": "no-store, no-cache, must-revalidate, private",
+        "Pragma": "no-cache",
+        "CDN-Cache-Control": "no-store",
+        "Cloudflare-CDN-Cache-Control": "no-store",
       },
     });
   } catch (err) {

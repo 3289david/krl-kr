@@ -7,7 +7,7 @@ export function AltchaWidget({ name = "altcha" }: { name?: string }) {
     <>
       <Script src="/altcha/altcha.min.js" strategy="afterInteractive" />
       {React.createElement("altcha-widget", {
-        challengeurl: "/api/v1/altcha",
+        challengeurl: "/api/v1/altcha?_=1",
         name,
         auto: "onload",
         hidefooter: "",
