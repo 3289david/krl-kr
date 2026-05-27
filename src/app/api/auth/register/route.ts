@@ -3,7 +3,7 @@ import { getDB } from "@/lib/env";
 import { z } from "zod";
 import { generateId, generateApiKey } from "@/lib/utils";
 import { hashPassword, createToken, getSessionCookieOptions, checkRateLimit } from "@/lib/auth";
-import { verifyAltcha } from "@/components/AltchaWidget";
+import { verifyAltcha } from "@/lib/altcha";
 
 const RegisterSchema = z.object({
   email: z.string().email("유효한 이메일 주소를 입력해주세요."),

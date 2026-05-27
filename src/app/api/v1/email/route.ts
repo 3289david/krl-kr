@@ -11,7 +11,7 @@ import { getDB } from "@/lib/env";
 import { requireAuth } from "@/lib/auth";
 import { generateId } from "@/lib/utils";
 import { deleteEmailForwardingRule } from "@/lib/email";
-import { verifyAltcha } from "@/components/AltchaWidget";
+import { verifyAltcha } from "@/lib/altcha";
 import { z } from "zod";
 
 const CreateAliasSchema = z.object({

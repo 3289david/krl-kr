@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDB } from "@/lib/env";
 import { requireAuth } from "@/lib/auth";
 import { generateId } from "@/lib/utils";
-import { verifyAltcha } from "@/components/AltchaWidget";
+import { verifyAltcha } from "@/lib/altcha";
 import { z } from "zod";
 
 const RESERVED_SUBDOMAINS = new Set([
