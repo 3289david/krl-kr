@@ -5,18 +5,6 @@ import { useState, useEffect, useRef } from "react";
 
 interface User { name: string | null; email: string }
 
-// SVG icon components (inline, small)
-function Icon({ d, d2, type = "path" }: { d: string; d2?: string; type?: string }) {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"
-      style={{ flexShrink: 0, color: "var(--color-muted)" }}>
-      <path d={d} />
-      {d2 && <path d={d2} />}
-    </svg>
-  );
-}
-
 const NAV_MENUS = [
   {
     label: "링크 · QR",
@@ -44,6 +32,17 @@ const NAV_MENUS = [
       { href: "/tools/bio", icon: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z", label: "Link-in-bio", desc: "krl.kr/@닉네임 프로필 페이지" },
       { href: "/dashboard/subdomains?tab=html", icon: "M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z M13 2v7h7", label: "HTML 배포", desc: "HTML 입력하면 HTTPS 자동 적용" },
       { href: "/dashboard/subdomains?tab=redirect", icon: "M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8 M3 3v5h5 M12 7v5l3 3", label: "리다이렉트", desc: "krl.kr 주소에서 다른 URL로 이동" },
+    ],
+  },
+  {
+    label: "개발 도구",
+    items: [
+      { href: "/tools/dev#ip",     icon: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z", label: "IP 조회", desc: "IP 주소와 지역 정보 확인" },
+      { href: "/tools/dev#uuid",   icon: "M7 7h10v10H7z M12 3v4 M12 17v4 M3 12h4 M17 12h4", label: "UUID 생성기", desc: "랜덤 UUID v4 생성" },
+      { href: "/tools/dev#hash",   icon: "M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18", label: "Hash 계산기", desc: "SHA-256/512 해시값 계산" },
+      { href: "/tools/dev#base64", icon: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6", label: "Base64", desc: "Base64 인코딩/디코딩" },
+      { href: "/tools/dev#dns",    icon: "M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8 M3 3v5h5 M12 7v5l3 3", label: "DNS 조회", desc: "A/CNAME/MX/TXT 레코드 확인" },
+      { href: "/tools/dev#jwt",    icon: "M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z", label: "JWT 디코드", desc: "JWT 토큰 파싱 및 확인" },
     ],
   },
 ];
@@ -152,19 +151,35 @@ export function SiteHeader() {
     <>
       <header style={{
         position: "sticky", top: 0, zIndex: 100,
-        background: "rgba(243,240,238,0.92)", backdropFilter: "blur(12px)",
+        background: "rgba(243,240,238,0.93)", backdropFilter: "blur(16px)",
         borderBottom: "1px solid var(--color-hairline)",
       }}>
         <div style={{
-          maxWidth: "1100px", margin: "0 auto", padding: "0 24px",
-          display: "flex", alignItems: "center", height: "52px", gap: "2px",
+          maxWidth: "1100px", margin: "0 auto", padding: "0 20px",
+          display: "flex", alignItems: "center", height: "54px", gap: "2px",
         }}>
-          {/* Logo */}
+          {/* Logo — circular gradient badge */}
           <Link href="/" style={{
-            fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: "1rem",
-            letterSpacing: "0.04em", color: "var(--color-ink)", textDecoration: "none",
-            marginRight: "16px", flexShrink: 0,
-          }}>KRL.KR</Link>
+            display: "flex", alignItems: "center", gap: "9px",
+            marginRight: "14px", flexShrink: 0, textDecoration: "none",
+          }}>
+            <div style={{
+              width: "32px", height: "32px", borderRadius: "50%",
+              background: "linear-gradient(135deg, #3a3aef 0%, #8b5cf6 100%)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              boxShadow: "0 2px 8px rgba(58,58,239,0.25)",
+              flexShrink: 0,
+            }}>
+              <span style={{
+                fontFamily: "var(--font-mono)", fontWeight: 800,
+                fontSize: "0.625rem", color: "#fff", letterSpacing: "0.02em",
+              }}>KR</span>
+            </div>
+            <span style={{
+              fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: "0.9375rem",
+              letterSpacing: "0.04em", color: "var(--color-ink)",
+            }}>KRL.KR</span>
+          </Link>
 
           {/* Desktop nav */}
           <nav className="krl-desktop-nav" style={{ display: "flex", alignItems: "center", gap: "2px", flex: 1 }}>
@@ -199,26 +214,55 @@ export function SiteHeader() {
             )}
           </nav>
 
-          {/* Right */}
+          {/* Right side */}
           <div className="krl-desktop-nav" style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+            {/* Donate button */}
+            <Link href="/support" style={{
+              display: "inline-flex", alignItems: "center", gap: "5px",
+              padding: "5px 12px", borderRadius: "99px",
+              background: "linear-gradient(135deg, #ff6b6b20 0%, #feca5720 100%)",
+              border: "1px solid rgba(255,107,107,0.3)",
+              color: "#c0392b", textDecoration: "none",
+              fontSize: "0.8125rem", fontWeight: 600,
+              transition: "all 0.15s",
+            }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.background = "linear-gradient(135deg, #ff6b6b30 0%, #feca5730 100%)";
+                (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,107,107,0.5)";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.background = "linear-gradient(135deg, #ff6b6b20 0%, #feca5720 100%)";
+                (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,107,107,0.3)";
+              }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                <path d="M12 21.593c-.425-.439-6.593-6.408-6.593-10.093 0-3.535 2.878-6.5 6.593-6.5s6.593 2.965 6.593 6.5c0 3.685-6.168 9.654-6.593 10.093z" opacity=".3"/>
+                <path d="M12 2C7.589 2 4 5.589 4 10c0 4.766 7.078 11.485 7.38 11.77a.83.83 0 001.24 0C12.922 21.485 20 14.766 20 10c0-4.411-3.589-8-8-8zm0 12a4 4 0 110-8 4 4 0 010 8z"/>
+              </svg>
+              후원
+            </Link>
+
             {user === "loading" ? null : isLoggedIn ? (
               <div ref={accountRef} style={{ position: "relative" }}>
                 <button onClick={() => setAccountOpen(!accountOpen)} style={{
-                  display: "flex", alignItems: "center", gap: "6px", padding: "5px 10px",
-                  borderRadius: "6px", background: "var(--color-surface-card)",
+                  display: "flex", alignItems: "center", gap: "6px", padding: "4px 10px",
+                  borderRadius: "99px", background: "var(--color-surface-card)",
                   border: "1px solid var(--color-hairline)", cursor: "pointer",
                   fontSize: "0.8125rem", fontWeight: 600, color: "var(--color-ink)",
                   fontFamily: "var(--font-sans)",
                 }}>
                   <div style={{
-                    width: "20px", height: "20px", borderRadius: "50%",
-                    background: "var(--color-ink)", display: "flex",
+                    width: "22px", height: "22px", borderRadius: "50%",
+                    background: "linear-gradient(135deg, #3a3aef 0%, #8b5cf6 100%)",
+                    display: "flex",
                     alignItems: "center", justifyContent: "center",
-                    fontSize: "0.625rem", color: "var(--color-canvas)", fontWeight: 700,
+                    fontSize: "0.625rem", color: "#fff", fontWeight: 800,
                   }}>
                     {(user as User).email[0].toUpperCase()}
                   </div>
-                  {(user as User).name ?? (user as User).email.split("@")[0]}
+                  <span className="krl-account-name">
+                    {(user as User).name ?? (user as User).email.split("@")[0]}
+                  </span>
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
                     style={{ transform: accountOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s" }}>
                     <polyline points="6 9 12 15 18 9" />
@@ -230,22 +274,27 @@ export function SiteHeader() {
                     position: "absolute", top: "calc(100% + 8px)", right: 0,
                     background: "var(--color-white)", border: "1px solid var(--color-hairline)",
                     borderRadius: "12px", boxShadow: "0 8px 32px rgba(20,20,19,0.12)",
-                    padding: "8px", minWidth: "180px", zIndex: 200,
+                    padding: "8px", minWidth: "190px", zIndex: 200,
                   }}>
                     <p style={{ padding: "6px 10px 4px", fontSize: "0.75rem", color: "var(--color-muted)" }}>
                       {(user as User).email}
                     </p>
                     <div style={{ height: "1px", background: "var(--color-hairline)", margin: "4px 0" }} />
                     {[
-                      { href: "/dashboard/links", label: "내 링크" },
-                      { href: "/dashboard/api-keys", label: "API 키" },
-                      { href: "/dashboard/settings", label: "설정" },
+                      { href: "/dashboard/links", label: "내 링크", icon: "M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" },
+                      { href: "/dashboard/api-keys", label: "API 키", icon: "M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" },
+                      { href: "/dashboard/settings", label: "설정", icon: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z" },
                     ].map((item) => (
                       <Link key={item.href} href={item.href} style={{ textDecoration: "none" }}>
-                        <div style={{ padding: "8px 10px", borderRadius: "6px", fontSize: "0.875rem", fontWeight: 500, color: "var(--color-ink)", cursor: "pointer", transition: "background 0.1s" }}
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 10px", borderRadius: "6px", fontSize: "0.875rem", fontWeight: 500, color: "var(--color-ink)", cursor: "pointer", transition: "background 0.1s" }}
                           onMouseEnter={(e) => (e.currentTarget.style.background = "var(--color-surface-card)")}
                           onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-                        >{item.label}</div>
+                        >
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--color-muted)", flexShrink: 0 }}>
+                            <path d={item.icon} />
+                          </svg>
+                          {item.label}
+                        </div>
                       </Link>
                     ))}
                     <div style={{ height: "1px", background: "var(--color-hairline)", margin: "4px 0" }} />
@@ -268,9 +317,11 @@ export function SiteHeader() {
                   fontWeight: 500, color: "var(--color-body)", textDecoration: "none",
                 }}>로그인</Link>
                 <Link href="/register" style={{
-                  padding: "7px 14px", borderRadius: "6px", fontSize: "0.875rem",
-                  fontWeight: 600, color: "var(--color-canvas)", textDecoration: "none",
-                  background: "var(--color-ink)", transition: "opacity 0.1s",
+                  padding: "7px 14px", borderRadius: "99px", fontSize: "0.875rem",
+                  fontWeight: 600, color: "#fff", textDecoration: "none",
+                  background: "linear-gradient(135deg, #3a3aef 0%, #8b5cf6 100%)",
+                  transition: "opacity 0.1s",
+                  boxShadow: "0 2px 8px rgba(58,58,239,0.2)",
                 }}
                   onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
                   onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
@@ -294,15 +345,33 @@ export function SiteHeader() {
 
         {/* Mobile menu */}
         {mobileOpen && (
-          <div style={{ borderTop: "1px solid var(--color-hairline)", background: "var(--color-white)", padding: "8px 16px 16px", maxHeight: "80vh", overflowY: "auto" }}>
+          <div style={{ borderTop: "1px solid var(--color-hairline)", background: "var(--color-white)", padding: "8px 16px 20px", maxHeight: "85vh", overflowY: "auto" }}>
+            {/* Donate banner on mobile */}
+            <Link href="/support" onClick={() => setMobileOpen(false)} style={{
+              display: "flex", alignItems: "center", gap: "8px",
+              margin: "8px 0 12px",
+              padding: "12px 14px",
+              background: "linear-gradient(135deg, #fff0f0 0%, #fffbf0 100%)",
+              border: "1px solid rgba(255,107,107,0.25)",
+              borderRadius: "10px", textDecoration: "none",
+            }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="#c0392b" stroke="none">
+                <path d="M12 21.593c-.425-.439-6.593-6.408-6.593-10.093 0-3.535 2.878-6.5 6.593-6.5s6.593 2.965 6.593 6.5c0 3.685-6.168 9.654-6.593 10.093z"/>
+              </svg>
+              <div>
+                <p style={{ fontSize: "0.875rem", fontWeight: 700, color: "#c0392b", marginBottom: "1px" }}>후원하기</p>
+                <p style={{ fontSize: "0.75rem", color: "#e57373" }}>KRL.KR 개발을 응원해주세요</p>
+              </div>
+            </Link>
+
             {NAV_MENUS.map((menu) => (
               <div key={menu.label}>
-                <p style={{ fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--color-muted)", padding: "12px 4px 4px" }}>
+                <p style={{ fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--color-muted)", padding: "10px 4px 4px" }}>
                   {menu.label}
                 </p>
                 {menu.items.map((item) => (
                   <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)} style={{
-                    display: "flex", alignItems: "center", gap: "10px", padding: "10px 4px",
+                    display: "flex", alignItems: "center", gap: "10px", padding: "11px 4px",
                     fontSize: "0.9375rem", fontWeight: 500, color: "var(--color-ink)", textDecoration: "none",
                     borderBottom: "1px solid var(--color-hairline)",
                   }}>
@@ -317,20 +386,22 @@ export function SiteHeader() {
             <div style={{ height: "1px", background: "var(--color-hairline)", margin: "8px 0" }} />
             {[{ href: "/community", label: "커뮤니티" }, { href: "/docs", label: "API" }].map((item) => (
               <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)} style={{
-                display: "block", padding: "10px 4px", fontSize: "0.9375rem",
+                display: "block", padding: "11px 4px", fontSize: "0.9375rem",
                 fontWeight: 500, color: "var(--color-ink)", textDecoration: "none",
                 borderBottom: "1px solid var(--color-hairline)",
               }}>{item.label}</Link>
             ))}
             {isLoggedIn ? (
               <>
-                <Link href="/dashboard/links" onClick={() => setMobileOpen(false)} style={{ display: "block", padding: "10px 4px", fontSize: "0.9375rem", fontWeight: 500, color: "var(--color-ink)", textDecoration: "none", borderBottom: "1px solid var(--color-hairline)" }}>내 링크</Link>
-                <button onClick={handleLogout} style={{ display: "block", width: "100%", padding: "10px 4px", background: "none", border: "none", textAlign: "left", fontSize: "0.9375rem", fontWeight: 500, color: "#DC2626", cursor: "pointer", fontFamily: "var(--font-sans)" }}>로그아웃</button>
+                <Link href="/dashboard/links" onClick={() => setMobileOpen(false)} style={{ display: "block", padding: "11px 4px", fontSize: "0.9375rem", fontWeight: 500, color: "var(--color-ink)", textDecoration: "none", borderBottom: "1px solid var(--color-hairline)" }}>내 링크</Link>
+                <Link href="/dashboard/api-keys" onClick={() => setMobileOpen(false)} style={{ display: "block", padding: "11px 4px", fontSize: "0.9375rem", fontWeight: 500, color: "var(--color-ink)", textDecoration: "none", borderBottom: "1px solid var(--color-hairline)" }}>API 키</Link>
+                <Link href="/dashboard/settings" onClick={() => setMobileOpen(false)} style={{ display: "block", padding: "11px 4px", fontSize: "0.9375rem", fontWeight: 500, color: "var(--color-ink)", textDecoration: "none", borderBottom: "1px solid var(--color-hairline)" }}>설정</Link>
+                <button onClick={handleLogout} style={{ display: "block", width: "100%", padding: "11px 4px", background: "none", border: "none", textAlign: "left", fontSize: "0.9375rem", fontWeight: 500, color: "#DC2626", cursor: "pointer", fontFamily: "var(--font-sans)", borderBottom: "1px solid var(--color-hairline)" }}>로그아웃</button>
               </>
             ) : (
-              <div style={{ display: "flex", gap: "8px", marginTop: "12px" }}>
-                <Link href="/login" style={{ display: "block", flex: 1, padding: "10px", textAlign: "center", border: "1px solid var(--color-hairline)", borderRadius: "6px", fontSize: "0.9375rem", fontWeight: 500, color: "var(--color-ink)", textDecoration: "none" }}>로그인</Link>
-                <Link href="/register" style={{ display: "block", flex: 1, padding: "10px", textAlign: "center", background: "var(--color-ink)", borderRadius: "6px", fontSize: "0.9375rem", fontWeight: 600, color: "var(--color-canvas)", textDecoration: "none" }}>회원가입</Link>
+              <div style={{ display: "flex", gap: "8px", marginTop: "14px" }}>
+                <Link href="/login" style={{ display: "block", flex: 1, padding: "11px", textAlign: "center", border: "1px solid var(--color-hairline)", borderRadius: "8px", fontSize: "0.9375rem", fontWeight: 500, color: "var(--color-ink)", textDecoration: "none" }}>로그인</Link>
+                <Link href="/register" style={{ display: "block", flex: 1, padding: "11px", textAlign: "center", background: "linear-gradient(135deg, #3a3aef 0%, #8b5cf6 100%)", borderRadius: "8px", fontSize: "0.9375rem", fontWeight: 600, color: "#fff", textDecoration: "none" }}>회원가입</Link>
               </div>
             )}
           </div>
@@ -344,6 +415,9 @@ export function SiteHeader() {
         }
         @media (min-width: 769px) {
           .krl-mobile-only { display: none !important; }
+        }
+        @media (max-width: 900px) {
+          .krl-account-name { display: none; }
         }
       `}</style>
     </>

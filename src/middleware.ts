@@ -47,6 +47,7 @@ const RESERVED_PATHS = new Set([
   "og-image.png",
   "apple-icon.png",
   "apple-touch-icon.png",
+  "llms.txt",
 ]);
 
 const CORS_HEADERS = {

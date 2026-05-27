@@ -49,16 +49,15 @@ function ShortenForm() {
   return (
     <div style={{ width: "100%", maxWidth: "680px" }}>
       <form onSubmit={handleShorten}>
-        <div
-          style={{
-            display: "flex",
-            background: "#fff",
-            border: "2px solid var(--color-hairline-strong)",
-            borderRadius: "14px",
-            overflow: "hidden",
-            boxShadow: "0 4px 24px rgba(20,20,19,0.08)",
-            transition: "border-color 0.15s, box-shadow 0.15s",
-          }}
+        <div className="shorten-form-inner" style={{
+          display: "flex",
+          background: "#fff",
+          border: "2px solid var(--color-hairline-strong)",
+          borderRadius: "14px",
+          overflow: "hidden",
+          boxShadow: "0 4px 24px rgba(20,20,19,0.08)",
+          transition: "border-color 0.15s, box-shadow 0.15s",
+        }}
           onFocusCapture={(e) => {
             e.currentTarget.style.borderColor = "var(--color-ink)";
             e.currentTarget.style.boxShadow = "0 4px 32px rgba(20,20,19,0.14)";
@@ -73,24 +72,25 @@ function ShortenForm() {
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             onBlur={(e) => { if (e.target.value.trim()) setUrl(normalizeUrl(e.target.value)); }}
-            placeholder="긴주소를 여기에 붙여넣으세요"
+            placeholder="긴 주소를 여기에 붙여넣으세요"
             required
             style={{
               flex: 1,
               border: "none",
               outline: "none",
               background: "transparent",
-              padding: "18px 22px",
-              fontSize: "1.0625rem",
+              padding: "18px 20px",
+              fontSize: "1rem",
               color: "var(--color-ink)",
               fontFamily: "var(--font-sans)",
+              minWidth: 0,
             }}
           />
           <button
             type="submit"
             disabled={loading || !url.trim()}
             style={{
-              padding: "18px 28px",
+              padding: "18px 24px",
               background: "var(--color-ink)",
               color: "var(--color-canvas)",
               border: "none",
@@ -128,12 +128,13 @@ function ShortenForm() {
 
       {result && (
         <div style={{
-          marginTop: "10px", padding: "16px 20px",
+          marginTop: "10px", padding: "14px 18px",
           background: "#fff",
           border: "1.5px solid var(--color-ink)",
           borderRadius: "12px",
-          display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px",
+          display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px",
           boxShadow: "0 2px 12px rgba(20,20,19,0.08)",
+          flexWrap: "wrap",
         }}>
           <a
             href={result.short}
@@ -141,7 +142,7 @@ function ShortenForm() {
             rel="noopener noreferrer"
             style={{
               fontFamily: "var(--font-mono)",
-              fontSize: "1.0625rem",
+              fontSize: "1rem",
               fontWeight: 700,
               color: "var(--color-ink)",
               textDecoration: "none",
@@ -206,21 +207,29 @@ const FEATURES = [
     icon: "M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1",
     title: "짧고 깔끔한 URL",
     desc: "krl.kr/abc — 복잡한 주소를 5자 이내 단축 링크로 변환",
+    gradient: "linear-gradient(135deg, #667eea20 0%, #764ba220 100%)",
+    accent: "#667eea",
   },
   {
     icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z",
     title: "클릭 분석",
     desc: "국가·기기·시간대별 방문 통계, QR 스캔 수까지 한눈에",
+    gradient: "linear-gradient(135deg, #f093fb20 0%, #f5576c20 100%)",
+    accent: "#f5576c",
   },
   {
     icon: "M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z",
     title: "비밀번호·만료",
     desc: "링크에 비밀번호 잠금, 날짜·클릭 수 만료 설정 지원",
+    gradient: "linear-gradient(135deg, #4facfe20 0%, #00f2fe20 100%)",
+    accent: "#4facfe",
   },
   {
     icon: "M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4",
     title: "개발자 API",
     desc: "REST API로 링크 생성·통계 조회·Webhook 연동 가능",
+    gradient: "linear-gradient(135deg, #43e97b20 0%, #38f9d720 100%)",
+    accent: "#43e97b",
   },
 ];
 
@@ -317,47 +326,75 @@ function BoardSection({ board }: { board: string }) {
 export default function HomePage() {
   return (
     <>
+      <style>{`
+        @media (max-width: 520px) {
+          .shorten-form-inner {
+            flex-direction: column !important;
+            border-radius: 14px !important;
+          }
+          .shorten-form-inner button {
+            border-radius: 0 0 10px 10px !important;
+            width: 100% !important;
+            justify-content: center !important;
+          }
+          .home-hero { padding: 44px 20px 36px !important; }
+          .home-features { padding: 40px 20px 0 !important; }
+          .home-tools { padding: 36px 20px 0 !important; }
+          .home-community { padding: 40px 20px 0 !important; }
+          .home-cta { padding: 40px 20px 60px !important; }
+          .home-cta-inner { padding: 28px 24px !important; flex-direction: column !important; align-items: stretch !important; }
+          .home-cta-buttons { flex-direction: column !important; }
+          .home-cta-buttons a { justify-content: center !important; }
+        }
+        @media (max-width: 768px) {
+          .home-hero { padding: 52px 20px 40px !important; }
+          .home-hero h1 { font-size: clamp(1.875rem, 7vw, 2.5rem) !important; }
+          .home-hero-desc { font-size: 0.9375rem !important; }
+        }
+      `}</style>
+
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <section style={{
+      <section className="home-hero" style={{
         padding: "72px 24px 56px",
         textAlign: "center",
-        background: "linear-gradient(180deg, var(--color-white) 0%, var(--color-canvas) 100%)",
+        background: "radial-gradient(ellipse 80% 60% at 50% -10%, rgba(58,58,239,0.07) 0%, transparent 60%), linear-gradient(180deg, var(--color-white) 0%, var(--color-canvas) 100%)",
         borderBottom: "1px solid var(--color-hairline)",
+        position: "relative",
+        overflow: "hidden",
       }}>
-        <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
-          {/* Eyebrow badge */}
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: "20px" }}>
-            <span style={{
-              display: "inline-flex", alignItems: "center", gap: "7px",
-              padding: "5px 14px",
-              background: "var(--color-surface-card)",
-              border: "1px solid var(--color-hairline-strong)",
-              borderRadius: "9999px",
-              fontSize: "0.75rem", fontWeight: 700,
-              letterSpacing: "0.02em", color: "var(--color-muted)",
-            }}>
-              <span style={{
-                width: "6px", height: "6px", borderRadius: "50%",
-                background: "#22c55e", display: "inline-block",
-                boxShadow: "0 0 0 2px rgba(34,197,94,0.25)",
-              }} />
-              링크를 넘어서 — krl.kr
-            </span>
-          </div>
+        {/* Decorative blobs */}
+        <div style={{
+          position: "absolute", top: "-60px", left: "calc(50% - 300px)",
+          width: "200px", height: "200px",
+          background: "radial-gradient(circle, rgba(58,58,239,0.06), transparent 70%)",
+          pointerEvents: "none",
+        }} />
+        <div style={{
+          position: "absolute", top: "20px", right: "calc(50% - 320px)",
+          width: "160px", height: "160px",
+          background: "radial-gradient(circle, rgba(139,92,246,0.05), transparent 70%)",
+          pointerEvents: "none",
+        }} />
 
+        <div style={{ maxWidth: "1100px", margin: "0 auto", position: "relative" }}>
           {/* Heading */}
           <h1 style={{
             fontSize: "clamp(2rem, 5vw, 3.25rem)",
-            fontWeight: 600,
+            fontWeight: 700,
             letterSpacing: "-0.03em",
             lineHeight: 1.1,
             marginBottom: "16px",
             color: "var(--color-ink)",
           }}>
             내가 보낸 링크,<br />
-            <span style={{ color: "var(--color-muted)" }}>이제 직접 통제하세요</span>
+            <span style={{
+              background: "linear-gradient(135deg, var(--color-ink) 0%, rgba(58,58,239,0.7) 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}>이제 직접 통제하세요</span>
           </h1>
-          <p style={{
+          <p className="home-hero-desc" style={{
             fontSize: "1.0625rem",
             color: "var(--color-muted)",
             marginBottom: "36px",
@@ -371,40 +408,59 @@ export default function HomePage() {
           </p>
 
           {/* Shorten form */}
-          <div style={{ display: "flex", justifyContent: "center" }}>
+          <div style={{ display: "flex", justifyContent: "center", padding: "0 4px" }}>
             <ShortenForm />
           </div>
 
+          {/* Trust badges */}
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "center",
+            gap: "20px", marginTop: "28px", flexWrap: "wrap",
+          }}>
+            {[
+              { icon: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z", label: "안전한 HTTPS" },
+              { icon: "M13 10V3L4 14h7v7l9-11h-7z", label: "빠른 리다이렉트" },
+              { icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z", label: "무료 시작" },
+            ].map((b) => (
+              <div key={b.label} style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--color-muted)" }}>
+                  <path d={b.icon} />
+                </svg>
+                <span style={{ fontSize: "0.75rem", color: "var(--color-muted)", fontWeight: 500 }}>{b.label}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* ── Features ─────────────────────────────────────────────────────── */}
-      <section style={{ padding: "52px 24px 0" }}>
+      <section className="home-features" style={{ padding: "52px 24px 0" }}>
         <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
           <p className="section-label" style={{ marginBottom: "16px" }}>주요 기능</p>
           <div style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
             gap: "12px",
           }}>
             {FEATURES.map((f) => (
               <div key={f.title} style={{
-                padding: "22px 22px",
+                padding: "22px",
                 background: "var(--color-lifted)",
                 border: "1px solid var(--color-hairline)",
                 borderRadius: "12px",
+                transition: "border-color 0.15s, box-shadow 0.15s",
               }}>
                 <div style={{
-                  width: "36px", height: "36px",
-                  borderRadius: "8px",
-                  background: "var(--color-surface-card)",
+                  width: "38px", height: "38px",
+                  borderRadius: "10px",
+                  background: f.gradient,
+                  border: `1px solid ${f.accent}20`,
                   display: "flex", alignItems: "center", justifyContent: "center",
                   marginBottom: "12px",
                 }}>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" strokeWidth="1.75"
-                    strokeLinecap="round" strokeLinejoin="round"
-                    style={{ color: "var(--color-ink)" }}>
+                    stroke={f.accent} strokeWidth="1.75"
+                    strokeLinecap="round" strokeLinejoin="round">
                     <path d={f.icon} />
                   </svg>
                 </div>
@@ -426,12 +482,12 @@ export default function HomePage() {
       </section>
 
       {/* ── Tools / Services ─────────────────────────────────────────────── */}
-      <section style={{ padding: "44px 24px 0" }}>
+      <section className="home-tools" style={{ padding: "44px 24px 0" }}>
         <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
           <p className="section-label" style={{ marginBottom: "16px" }}>웹 서비스</p>
           <div style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(190px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fill, minmax(175px, 1fr))",
             gap: "10px",
           }}>
             {TOOLS.map((tool) => (
@@ -477,7 +533,7 @@ export default function HomePage() {
       </section>
 
       {/* ── Community ────────────────────────────────────────────────────── */}
-      <section style={{ padding: "52px 24px 0" }}>
+      <section className="home-community" style={{ padding: "52px 24px 0" }}>
         <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
           <div style={{
             display: "flex", alignItems: "center",
@@ -494,7 +550,7 @@ export default function HomePage() {
 
           <div style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
             gap: "12px",
           }}>
             <BoardSection board="notice" />
@@ -505,10 +561,10 @@ export default function HomePage() {
       </section>
 
       {/* ── CTA Banner ────────────────────────────────────────────────────── */}
-      <section style={{ padding: "52px 24px 72px" }}>
+      <section className="home-cta" style={{ padding: "52px 24px 72px" }}>
         <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
-          <div style={{
-            background: "var(--color-ink)",
+          <div className="home-cta-inner" style={{
+            background: "linear-gradient(135deg, #1a1714 0%, #2d2b6b 50%, #1a1714 100%)",
             borderRadius: "20px",
             padding: "48px 48px",
             display: "flex",
@@ -516,20 +572,35 @@ export default function HomePage() {
             justifyContent: "space-between",
             gap: "24px",
             flexWrap: "wrap",
+            position: "relative",
+            overflow: "hidden",
           }}>
-            <div>
+            {/* Decorative gradient */}
+            <div style={{
+              position: "absolute", top: "-40px", right: "80px",
+              width: "200px", height: "200px",
+              background: "radial-gradient(circle, rgba(139,92,246,0.15), transparent 70%)",
+              pointerEvents: "none",
+            }} />
+            <div style={{
+              position: "absolute", bottom: "-20px", left: "60px",
+              width: "160px", height: "160px",
+              background: "radial-gradient(circle, rgba(58,58,239,0.12), transparent 70%)",
+              pointerEvents: "none",
+            }} />
+            <div style={{ position: "relative" }}>
               <h2 style={{
-                fontSize: "1.5rem", fontWeight: 600,
+                fontSize: "1.5rem", fontWeight: 700,
                 letterSpacing: "-0.025em", color: "#fff",
                 marginBottom: "8px",
               }}>
                 지금 시작하세요
               </h2>
-              <p style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.9375rem" }}>
+              <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "0.9375rem" }}>
                 무료로 가입하고 통계·커스텀 도메인·API를 모두 이용하세요.
               </p>
             </div>
-            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+            <div className="home-cta-buttons" style={{ display: "flex", gap: "10px", flexWrap: "wrap", position: "relative" }}>
               <Link
                 href="/register"
                 style={{
@@ -540,7 +611,7 @@ export default function HomePage() {
                   borderRadius: "9999px",
                   textDecoration: "none",
                   fontSize: "0.9375rem",
-                  fontWeight: 600,
+                  fontWeight: 700,
                   transition: "opacity 0.15s",
                 }}
                 onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.opacity = "0.85")}

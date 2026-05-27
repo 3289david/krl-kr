@@ -3,6 +3,7 @@ import { getDB } from "@/lib/env";
 import { z } from "zod";
 import { generateId, generateApiKey } from "@/lib/utils";
 import { hashPassword, createToken, getSessionCookieOptions } from "@/lib/auth";
+import { verifyAltcha } from "@/components/AltchaWidget";
 
 const RegisterSchema = z.object({
   email: z.string().email("유효한 이메일 주소를 입력해주세요."),
@@ -11,6 +12,7 @@ const RegisterSchema = z.object({
     .min(8, "비밀번호는 최소 8자 이상이어야 합니다.")
     .max(72, "비밀번호가 너무 깁니다."),
   name: z.string().min(1).max(50).optional(),
+  altcha: z.string().nullable().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -25,7 +27,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { email, password, name } = parsed.data;
+    const { email, password, name, altcha } = parsed.data;
+
+    // Verify altcha proof-of-work (skip only in dev)
+    const skipAltcha = process.env.SKIP_ALTCHA === "1";
+    if (!skipAltcha) {
+      const valid = await verifyAltcha(altcha);
+      if (!valid) {
+        return NextResponse.json(
+          { error: "보안 인증을 완료해주세요. 잠시 후 다시 시도해주세요.", code: "ALTCHA_FAILED" },
+          { status: 400 }
+        );
+      }
+    }
+
     const db = getDB(request);
 
     // Check if email already exists

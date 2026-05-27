@@ -4,7 +4,7 @@ import Link from "next/link";
 import {
   PlusIcon, LinkIcon, BarChartIcon, QrCodeIcon, EyeIcon,
   ExternalLinkIcon, CopyIcon, CheckIcon, FileIcon, CodeIcon,
-  WebhookIcon
+  WebhookIcon, KeyIcon
 } from "@/components/icons";
 import { formatNumber, formatRelativeTime, truncate, buildShortUrl } from "@/lib/utils";
 
@@ -217,12 +217,13 @@ export default function DashboardPage() {
       </div>
 
       {/* Quick actions */}
-      <div className="dashboard-grid-2" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
+      <div className="dashboard-grid-2" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: "12px" }}>
         {[
           { href: "/dashboard/qr", icon: <QrCodeIcon size={20} />, title: "QR 코드", desc: "SVG/PNG 생성" },
           { href: "/dashboard/files", icon: <FileIcon size={20} />, title: "파일 공유", desc: "드래그앤드롭 업로드" },
           { href: "/dashboard/paste", icon: <CodeIcon size={20} />, title: "Pastebin", desc: "코드 공유" },
           { href: "/dashboard/webhook", icon: <WebhookIcon size={20} />, title: "웹훅 검사", desc: "요청 모니터링" },
+          { href: "/dashboard/api-keys", icon: <KeyIcon size={20} />, title: "API 키", desc: "REST API 키 관리" },
         ].map((item) => (
           <Link key={item.href} href={item.href} style={{
             display: "flex", alignItems: "center", gap: "12px", padding: "16px",
