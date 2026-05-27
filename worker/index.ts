@@ -95,6 +95,25 @@ export default {
 
     // ── 1. Bypass ─────────────────────────────────────────────────────────────
     if (shouldBypass(pathname)) {
+      // For API paths: force cache bypass so Cloudflare CDN never serves
+      // a stale cached response (e.g. old 404 HTML for /api/challenge).
+      if (pathname.startsWith("/api/")) {
+        const newHeaders = new Headers(request.headers);
+        newHeaders.set("Cache-Control", "no-cache");
+        newHeaders.set("Pragma", "no-cache");
+        const apiReq = new Request(request, { headers: newHeaders });
+        const resp = await fetch(apiReq);
+        // Strip any cached response and ensure no-store on the way back
+        const newResp = new Response(resp.body, {
+          status: resp.status,
+          statusText: resp.statusText,
+          headers: resp.headers,
+        });
+        newResp.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, private");
+        newResp.headers.set("CDN-Cache-Control", "no-store");
+        newResp.headers.set("Cloudflare-CDN-Cache-Control", "no-store");
+        return newResp;
+      }
       return fetch(request);
     }
 
