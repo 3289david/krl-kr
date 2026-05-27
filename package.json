@@ -5,11 +5,14 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "postbuild": "cp -r .next/static .next/standalone/.next/static && cp -r public .next/standalone/public",
     "start": "next start",
     "lint": "next lint",
     "db:migrate": "psql $DATABASE_URL -f migrations/0001_init_postgres.sql",
     "worker:dev": "wrangler dev worker/index.ts --env development",
-    "worker:deploy": "wrangler deploy worker/index.ts"
+    "worker:deploy": "wrangler deploy worker/index.ts",
+    "email:deploy": "wrangler deploy --config wrangler.email.toml",
+    "email:secret": "wrangler secret put WORKER_SECRET --config wrangler.email.toml"
   },
   "dependencies": {
     "@cloudflare/workers-types": "^4.20250525.0",

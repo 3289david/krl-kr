@@ -19,13 +19,19 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit;
     const unreadOnly = searchParams.get("unread") === "1";
 
+    // Match messages where:
+    //   1. user_id is set correctly, OR
+    //   2. alias belongs to this user (handles messages that arrived before alias was linked)
     let query = `
-      SELECT m.id, m.alias, m.from_address, m.to_address, m.subject,
+      SELECT DISTINCT m.id, m.alias, m.from_address, m.to_address, m.subject,
              m.body_text, m.is_read, m.received_at, m.size
       FROM email_messages m
-      WHERE m.user_id = ?
+      WHERE (
+        m.user_id = ?
+        OR m.alias IN (SELECT alias FROM email_aliases WHERE user_id = ?)
+      )
     `;
-    const params: unknown[] = [user.id];
+    const params: unknown[] = [user.id, user.id];
 
     if (alias) {
       query += " AND m.alias = ?";
@@ -52,11 +58,28 @@ export async function GET(request: NextRequest) {
         size: number;
       }>();
 
-    // Count unread
+    // Count unread (same expanded logic)
     const unreadResult = await db
-      .prepare("SELECT COUNT(*) as count FROM email_messages WHERE user_id = ? AND is_read = 0")
-      .bind(user.id)
+      .prepare(`
+        SELECT COUNT(*) as count FROM email_messages
+        WHERE is_read = 0 AND (
+          user_id = ?
+          OR alias IN (SELECT alias FROM email_aliases WHERE user_id = ?)
+        )
+      `)
+      .bind(user.id, user.id)
       .first<{ count: number }>();
+
+    // Back-fill user_id for any orphaned messages now that alias is claimed
+    await db
+      .prepare(`
+        UPDATE email_messages
+        SET user_id = ?
+        WHERE user_id IS NULL
+          AND alias IN (SELECT alias FROM email_aliases WHERE user_id = ?)
+      `)
+      .bind(user.id, user.id)
+      .run();
 
     return NextResponse.json({
       messages: messages.results.map((m) => ({

@@ -20,9 +20,10 @@ export async function GET(
 
     const message = await db
       .prepare(
-        `SELECT * FROM email_messages WHERE id = ? AND user_id = ?`
+        `SELECT * FROM email_messages WHERE id = ?
+         AND (user_id = ? OR alias IN (SELECT alias FROM email_aliases WHERE user_id = ?))`
       )
-      .bind(id, user.id)
+      .bind(id, user.id, user.id)
       .first<{
         id: string;
         alias: string;
@@ -82,8 +83,9 @@ export async function DELETE(
     const { id } = await params;
 
     const result = await db
-      .prepare("DELETE FROM email_messages WHERE id = ? AND user_id = ?")
-      .bind(id, user.id)
+      .prepare(`DELETE FROM email_messages WHERE id = ?
+        AND (user_id = ? OR alias IN (SELECT alias FROM email_aliases WHERE user_id = ?))`)
+      .bind(id, user.id, user.id)
       .run();
 
     if ((result.meta.changes ?? 0) === 0) {
@@ -112,8 +114,9 @@ export async function PATCH(
     const isRead = body.is_read === true ? 1 : 0;
 
     await db
-      .prepare("UPDATE email_messages SET is_read = ? WHERE id = ? AND user_id = ?")
-      .bind(isRead, id, user.id)
+      .prepare(`UPDATE email_messages SET is_read = ? WHERE id = ?
+        AND (user_id = ? OR alias IN (SELECT alias FROM email_aliases WHERE user_id = ?))`)
+      .bind(isRead, id, user.id, user.id)
       .run();
 
     return NextResponse.json({ success: true });
