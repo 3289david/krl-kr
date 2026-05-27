@@ -57,14 +57,17 @@ export default {
     }
 
     // Read raw email bytes (Cloudflare limit: 10 MB)
-    let rawEmail: string;
+    let rawBytes: Uint8Array;
     try {
-      rawEmail = await streamToText(message.raw);
+      rawBytes = await streamToBytes(message.raw);
     } catch (err) {
       console.error("[email-worker] Failed to read raw email:", err);
       message.setReject("Failed to read message body");
       return;
     }
+
+    // Decode raw bytes as latin-1 (byte-safe for MIME parsing)
+    const rawEmail = bytesToLatin1(rawBytes);
 
     // Flatten headers into a plain object
     const headersObj: Record<string, string> = {};
@@ -72,11 +75,14 @@ export default {
       headersObj[key.toLowerCase()] = value;
     });
 
-    // Subject (fallback if missing)
-    const subject =
+    // Subject — try message.headers first (Cloudflare may decode it), then raw headers
+    const rawSubject =
       message.headers.get("subject") ??
       headersObj["subject"] ??
       "(제목 없음)";
+
+    // Decode RFC 2047 encoded-words (=?UTF-8?B?...?= or =?UTF-8?Q?...?=)
+    const subject = decodeEncodedWords(rawSubject);
 
     // Parse MIME body
     const { bodyText, bodyHtml } = parseEmailBody(rawEmail);
@@ -87,7 +93,7 @@ export default {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Worker-Secret": env.WORKER_SECRET,
+          "X-Worker-Secret": env.WORKER_SECRET ?? "",
         },
         body: JSON.stringify({
           alias,
@@ -124,11 +130,11 @@ export default {
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 /**
- * Read a ReadableStream<Uint8Array> to a UTF-8 string.
+ * Read a ReadableStream<Uint8Array> to a Uint8Array (raw bytes).
  */
-async function streamToText(
+async function streamToBytes(
   stream: ReadableStream<Uint8Array>
-): Promise<string> {
+): Promise<Uint8Array> {
   const reader = stream.getReader();
   const chunks: Uint8Array[] = [];
 
@@ -138,7 +144,6 @@ async function streamToText(
     if (value) chunks.push(value);
   }
 
-  // Concatenate all chunks
   const totalLength = chunks.reduce((acc, c) => acc + c.length, 0);
   const merged = new Uint8Array(totalLength);
   let offset = 0;
@@ -147,7 +152,152 @@ async function streamToText(
     offset += chunk.length;
   }
 
-  return new TextDecoder("utf-8", { fatal: false }).decode(merged);
+  return merged;
+}
+
+/**
+ * Convert raw bytes to a latin-1 string (byte-safe).
+ * MIME boundary detection and base64/QP content are handled in the byte domain
+ * so we need to preserve byte values 0-255 as characters.
+ */
+function bytesToLatin1(bytes: Uint8Array): string {
+  let s = "";
+  // Process in chunks to avoid stack overflow for large emails
+  const CHUNK = 32768;
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    s += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+  }
+  return s;
+}
+
+/**
+ * Decode RFC 2047 encoded-words in email header values.
+ * Handles both Base64 (B) and Quoted-Printable (Q) encodings.
+ * Example: =?UTF-8?B?7ZWcIDi7mOyKpA==?= → "한글 제목"
+ */
+function decodeEncodedWords(text: string): string {
+  // Remove folding whitespace between encoded words
+  const unfolded = text.replace(/\?=\s+=\?/g, "?==?");
+
+  return unfolded.replace(
+    /=\?([^?]+)\?([BQbq])\?([^?]*)\?=/g,
+    (_match, charset: string, encoding: string, encoded: string) => {
+      try {
+        const charsetNorm = charset.trim().toLowerCase();
+        const enc = encoding.toUpperCase();
+
+        if (enc === "B") {
+          // Base64 encoded
+          const binary = atob(encoded);
+          const bytes = new Uint8Array(binary.length);
+          for (let i = 0; i < binary.length; i++) {
+            bytes[i] = binary.charCodeAt(i);
+          }
+          return new TextDecoder(charsetNorm, { fatal: false }).decode(bytes);
+        } else if (enc === "Q") {
+          // Quoted-Printable encoded (RFC 2047 variant — underscore = space)
+          const qp = encoded.replace(/_/g, " ");
+          const bytes: number[] = [];
+          let i = 0;
+          while (i < qp.length) {
+            if (qp[i] === "=" && i + 2 < qp.length) {
+              bytes.push(parseInt(qp.slice(i + 1, i + 3), 16));
+              i += 3;
+            } else {
+              bytes.push(qp.charCodeAt(i));
+              i++;
+            }
+          }
+          return new TextDecoder(charsetNorm, { fatal: false }).decode(
+            new Uint8Array(bytes)
+          );
+        }
+      } catch {
+        // Decoding failed — return original encoded word
+      }
+      return _match;
+    }
+  );
+}
+
+/**
+ * Decode a base64 body part, producing a UTF-8 string.
+ */
+function decodeBase64Body(b64: string, charset: string): string {
+  try {
+    const clean = b64.replace(/\s+/g, "");
+    const binary = atob(clean);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    return new TextDecoder(charset || "utf-8", { fatal: false }).decode(bytes);
+  } catch {
+    return b64;
+  }
+}
+
+/**
+ * Decode a quoted-printable body part with proper multibyte (UTF-8) support.
+ */
+function decodeQuotedPrintableBody(text: string, charset: string): string {
+  // Remove soft line breaks (=\n or =\r\n)
+  const clean = text.replace(/=\r?\n/g, "");
+
+  const bytes: number[] = [];
+  let i = 0;
+  while (i < clean.length) {
+    if (clean[i] === "=" && i + 2 < clean.length && /[0-9A-Fa-f]{2}/.test(clean.slice(i + 1, i + 3))) {
+      bytes.push(parseInt(clean.slice(i + 1, i + 3), 16));
+      i += 3;
+    } else {
+      bytes.push(clean.charCodeAt(i) & 0xff);
+      i++;
+    }
+  }
+
+  return new TextDecoder(charset || "utf-8", { fatal: false }).decode(
+    new Uint8Array(bytes)
+  );
+}
+
+/**
+ * Decode a MIME body part according to Content-Transfer-Encoding.
+ * Also extracts the charset from the Content-Type header for correct decoding.
+ */
+function decodeBody(body: string, headers: string): string {
+  const lh = headers.toLowerCase();
+
+  // Extract charset from Content-Type (e.g., charset="euc-kr" or charset=utf-8)
+  const charsetMatch = lh.match(/charset=["']?([^"';\s\n]+)["']?/);
+  const charset = charsetMatch?.[1]?.trim() ?? "utf-8";
+
+  // Extract Content-Transfer-Encoding (be robust to extra whitespace)
+  const cteMatch = lh.match(/content-transfer-encoding:\s*(\S+)/);
+  const cte = cteMatch?.[1]?.toLowerCase() ?? "7bit";
+
+  if (cte === "base64") {
+    return decodeBase64Body(body, charset);
+  }
+
+  if (cte === "quoted-printable") {
+    return decodeQuotedPrintableBody(body, charset);
+  }
+
+  // 7bit / 8bit / binary — interpret as the declared charset
+  if (charset && charset !== "utf-8" && charset !== "us-ascii") {
+    try {
+      const bytes = new Uint8Array(body.length);
+      for (let i = 0; i < body.length; i++) {
+        bytes[i] = body.charCodeAt(i) & 0xff;
+      }
+      return new TextDecoder(charset, { fatal: false }).decode(bytes);
+    } catch {
+      // Fall through to return as-is
+    }
+  }
+
+  return body;
 }
 
 /**
@@ -157,6 +307,7 @@ async function streamToText(
  *   - multipart/alternative with text/plain and text/html parts
  *   - base64 and quoted-printable content-transfer-encoding
  *   - Nested multipart (takes the first matching part at any depth)
+ *   - UTF-8, EUC-KR, and other charsets
  */
 function parseEmailBody(raw: string): {
   bodyText: string;
@@ -174,12 +325,13 @@ function parseEmailBody(raw: string): {
     return { bodyText: normalized.trim(), bodyHtml: "" };
   }
 
-  const topHeaders = normalized.substring(0, headerBodySplit).toLowerCase();
+  const topHeaders = normalized.substring(0, headerBodySplit);
 
   // Check for a boundary (multipart)
-  const boundaryMatch = topHeaders.match(
-    /content-type:[^\n]*boundary=["']?([^"'\n;]+)["']?/i
-  ) ?? normalized.match(/boundary=["']?([^"'\n;]+)["']?/i);
+  const topHeadersLower = topHeaders.toLowerCase();
+  const boundaryMatch =
+    topHeadersLower.match(/content-type:[^\n]*boundary=["']?([^"'\n;]+)["']?/i) ??
+    normalized.match(/boundary=["']?([^"'\n;]+)["']?/i);
 
   if (!boundaryMatch) {
     // Plain (non-multipart) message
@@ -247,30 +399,4 @@ function parseParts(
 
     callback(partHeaders, partBody);
   }
-}
-
-/**
- * Decode a MIME body part according to Content-Transfer-Encoding.
- */
-function decodeBody(body: string, headers: string): string {
-  const lh = headers.toLowerCase();
-
-  if (lh.includes("content-transfer-encoding: base64")) {
-    try {
-      // Remove all whitespace before decoding
-      return atob(body.replace(/\s+/g, ""));
-    } catch {
-      return body;
-    }
-  }
-
-  if (lh.includes("content-transfer-encoding: quoted-printable")) {
-    return body
-      .replace(/=\n/g, "")          // soft line breaks
-      .replace(/=([0-9A-Fa-f]{2})/g, (_, hex) =>
-        String.fromCharCode(parseInt(hex, 16))
-      );
-  }
-
-  return body;
 }
