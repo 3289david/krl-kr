@@ -50,14 +50,11 @@ interface Post {
 
 function PostRow({ post }: { post: Post }) {
   return (
-    <Link href={`/community/${post.id}`} style={{
+    <Link href={`/community/${post.id}`} className="community-post-row" style={{
       display: "flex", alignItems: "center", justifyContent: "space-between",
       padding: "11px 18px", textDecoration: "none", gap: "12px",
       borderBottom: "1px solid var(--color-hairline)",
-      transition: "background 0.1s",
     }}
-    onMouseEnter={(e) => (e.currentTarget.style.background = "var(--color-surface-card)")}
-    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
     >
       <div style={{ display: "flex", alignItems: "center", gap: "8px", flex: 1, minWidth: 0 }}>
         {Boolean(post.is_pinned) && (

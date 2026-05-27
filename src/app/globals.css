@@ -717,3 +717,7 @@ code, pre {
 /* ─── Scroll helpers ─────────────────────────────────────────────────────── */
 .scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .scroll-x::-webkit-scrollbar { height: 4px; }
+
+/* ─── Community post row hover ───────────────────────────────────────────── */
+.community-post-row { transition: background 0.1s; }
+.community-post-row:hover { background: var(--color-surface-card) !important; }
