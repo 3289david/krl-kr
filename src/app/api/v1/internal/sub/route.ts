@@ -18,6 +18,11 @@ function normalizeUrl(url: string): string {
   return `https://${trimmed}`;
 }
 
+/** Escape HTML special characters to prevent XSS in server-generated pages */
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
 /** Returns true if the string looks like a URL rather than actual HTML */
 function looksLikeUrl(str: string): boolean {
   const t = str.trim();
@@ -28,10 +33,12 @@ function looksLikeUrl(str: string): boolean {
   );
 }
 
-const NOT_FOUND_HTML = (name: string) => `<!DOCTYPE html>
+const NOT_FOUND_HTML = (name: string) => {
+  const safeName = escapeHtml(name);
+  return `<!DOCTYPE html>
 <html lang="ko"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${name}.krl.kr — 없는 주소</title>
+<title>${safeName}.krl.kr — 없는 주소</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;
@@ -47,10 +54,11 @@ a:hover{opacity:.8}
 </head>
 <body><div class="box">
 <div class="logo">KRL.KR</div>
-<h1>${name}.krl.kr</h1>
+<h1>${safeName}.krl.kr</h1>
 <p>등록되지 않은 서브도메인입니다.<br>KRL.KR에서 직접 등록해보세요.</p>
 <a href="https://krl.kr">krl.kr 바로가기</a>
 </div></body></html>`;
+};
 
 export async function GET(request: NextRequest) {
   const name = request.nextUrl.searchParams.get("name");

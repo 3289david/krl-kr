@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDB } from "@/lib/env";
 import { z } from "zod";
 import { generateId, generateApiKey } from "@/lib/utils";
-import { hashPassword, createToken, getSessionCookieOptions } from "@/lib/auth";
+import { hashPassword, createToken, getSessionCookieOptions, checkRateLimit } from "@/lib/auth";
 import { verifyAltcha } from "@/components/AltchaWidget";
 
 const RegisterSchema = z.object({
@@ -17,6 +17,25 @@ const RegisterSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    const ip =
+      request.headers.get("cf-connecting-ip") ??
+      request.headers.get("x-forwarded-for") ??
+      "unknown";
+
+    // Rate limit: 5 registrations per hour per IP
+    const rateLimit = await checkRateLimit({
+      key: `register:${ip}`,
+      limit: 5,
+      windowMs: 60 * 60 * 1000,
+    });
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: "잠시 후 다시 시도해주세요.", code: "RATE_LIMITED" },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
     const parsed = RegisterSchema.safeParse(body);
 
@@ -68,13 +87,13 @@ export async function POST(request: NextRequest) {
       .map((b) => b.toString(16).padStart(2, "0"))
       .join("");
 
-    // Create user
+    // Create user — store only key prefix in users.api_key (not plain text)
     await db
       .prepare(
         `INSERT INTO users (id, email, name, password_hash, plan, api_key, avatar_url, verified, created_at, updated_at)
          VALUES (?, ?, ?, ?, 'free', ?, NULL, 0, ?, ?)`
       )
-      .bind(userId, email.toLowerCase(), name ?? null, passwordHash, apiKey, now, now)
+      .bind(userId, email.toLowerCase(), name ?? null, passwordHash, apiKey.substring(0, 12), now, now)
       .run();
 
     // Create default API key entry

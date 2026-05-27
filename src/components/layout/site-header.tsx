@@ -204,19 +204,19 @@ export function SiteHeader() {
             <Link href="/support" style={{
               display: "inline-flex", alignItems: "center", gap: "5px",
               padding: "5px 12px", borderRadius: "99px",
-              background: "linear-gradient(135deg, #ff6b6b20 0%, #feca5720 100%)",
-              border: "1px solid rgba(255,107,107,0.3)",
+              background: "var(--color-surface-card)",
+              border: "1px solid var(--color-hairline-strong)",
               color: "#c0392b", textDecoration: "none",
               fontSize: "0.8125rem", fontWeight: 600,
               transition: "all 0.15s",
             }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.background = "linear-gradient(135deg, #ff6b6b30 0%, #feca5730 100%)";
-                (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,107,107,0.5)";
+                (e.currentTarget as HTMLElement).style.background = "#FFF1F2";
+                (e.currentTarget as HTMLElement).style.borderColor = "#FECDD3";
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.background = "linear-gradient(135deg, #ff6b6b20 0%, #feca5720 100%)";
-                (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,107,107,0.3)";
+                (e.currentTarget as HTMLElement).style.background = "var(--color-surface-card)";
+                (e.currentTarget as HTMLElement).style.borderColor = "var(--color-hairline-strong)";
               }}
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none">
@@ -237,10 +237,10 @@ export function SiteHeader() {
                 }}>
                   <div style={{
                     width: "22px", height: "22px", borderRadius: "50%",
-                    background: "linear-gradient(135deg, #3a3aef 0%, #8b5cf6 100%)",
+                    background: "var(--color-ink)",
                     display: "flex",
                     alignItems: "center", justifyContent: "center",
-                    fontSize: "0.625rem", color: "#fff", fontWeight: 800,
+                    fontSize: "0.625rem", color: "var(--color-canvas)", fontWeight: 800,
                   }}>
                     {(user as User).email[0].toUpperCase()}
                   </div>
@@ -301,11 +301,10 @@ export function SiteHeader() {
                   fontWeight: 500, color: "var(--color-body)", textDecoration: "none",
                 }}>로그인</Link>
                 <Link href="/register" style={{
-                  padding: "7px 14px", borderRadius: "99px", fontSize: "0.875rem",
-                  fontWeight: 600, color: "#fff", textDecoration: "none",
-                  background: "linear-gradient(135deg, #3a3aef 0%, #8b5cf6 100%)",
+                  padding: "7px 14px", borderRadius: "6px", fontSize: "0.875rem",
+                  fontWeight: 600, color: "var(--color-canvas)", textDecoration: "none",
+                  background: "var(--color-ink)",
                   transition: "opacity 0.1s",
-                  boxShadow: "0 2px 8px rgba(58,58,239,0.2)",
                 }}
                   onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
                   onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
@@ -385,7 +384,7 @@ export function SiteHeader() {
             ) : (
               <div style={{ display: "flex", gap: "8px", marginTop: "14px" }}>
                 <Link href="/login" style={{ display: "block", flex: 1, padding: "11px", textAlign: "center", border: "1px solid var(--color-hairline)", borderRadius: "8px", fontSize: "0.9375rem", fontWeight: 500, color: "var(--color-ink)", textDecoration: "none" }}>로그인</Link>
-                <Link href="/register" style={{ display: "block", flex: 1, padding: "11px", textAlign: "center", background: "linear-gradient(135deg, #3a3aef 0%, #8b5cf6 100%)", borderRadius: "8px", fontSize: "0.9375rem", fontWeight: 600, color: "#fff", textDecoration: "none" }}>회원가입</Link>
+                <Link href="/register" style={{ display: "block", flex: 1, padding: "11px", textAlign: "center", background: "var(--color-ink)", borderRadius: "8px", fontSize: "0.9375rem", fontWeight: 600, color: "var(--color-canvas)", textDecoration: "none" }}>회원가입</Link>
               </div>
             )}
           </div>

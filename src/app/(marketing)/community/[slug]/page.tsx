@@ -59,6 +59,7 @@ export default function PostPage() {
   const [savingEdit, setSavingEdit] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [error, setError] = useState("");
 
   const loadPost = useCallback(async () => {
@@ -80,7 +81,15 @@ export default function PostPage() {
   useEffect(() => {
     loadPost();
     // Check if logged in
-    fetch("/api/auth/me").then((r) => r.ok && setIsLoggedIn(true)).catch(() => {});
+    fetch("/api/auth/me")
+      .then(async (r) => {
+        if (r.ok) {
+          setIsLoggedIn(true);
+          const data = await r.json();
+          setCurrentUserId(data.user?.id ?? null);
+        }
+      })
+      .catch(() => {});
   }, [loadPost]);
 
   async function handleLike() {
@@ -346,7 +355,7 @@ export default function PostPage() {
                           <span style={{ fontWeight: 600, color: "var(--color-ink)" }}>{c.author.name}</span>
                           <span style={{ color: "var(--color-muted)" }}>{formatRelativeTime(c.created_at)}</span>
                         </div>
-                        {c.author.id === post.author.id && (
+                        {(c.author.id === currentUserId || post.is_own) && (
                           <button
                             onClick={() => handleDeleteComment(c.id)}
                             style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-muted)", fontSize: "0.75rem", padding: "2px 6px" }}

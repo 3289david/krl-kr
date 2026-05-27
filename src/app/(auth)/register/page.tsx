@@ -73,32 +73,17 @@ function RegisterForm() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "radial-gradient(ellipse 80% 60% at 50% -10%, rgba(58,58,239,0.05) 0%, transparent 60%), var(--color-canvas)",
+        background: "var(--color-canvas)",
         padding: "24px",
         fontFamily: "var(--font-sans)",
       }}
     >
       <div style={{ width: "100%", maxWidth: "440px" }}>
         <div style={{ textAlign: "center", marginBottom: "36px" }}>
-          <Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: "8px", textDecoration: "none" }}>
-            <div style={{
-              width: "36px", height: "36px", borderRadius: "50%",
-              background: "linear-gradient(135deg, #3a3aef 0%, #8b5cf6 100%)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: "0 2px 10px rgba(58,58,239,0.25)",
-            }}>
-              <span style={{ fontFamily: "var(--font-mono)", fontWeight: 800, fontSize: "0.6875rem", color: "#fff" }}>KR</span>
-            </div>
-            <span style={{
-              fontFamily: "var(--font-mono)",
-              fontWeight: 700,
-              fontSize: "1.125rem",
-              letterSpacing: "0.04em",
-              color: "var(--color-ink)",
-            }}>
-              KRL.KR
-            </span>
-          </Link>
+          <Link href="/" style={{
+            fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: "1.25rem",
+            letterSpacing: "0.04em", color: "var(--color-ink)", textDecoration: "none",
+          }}>KRL.KR</Link>
         </div>
 
         <div
@@ -281,32 +266,11 @@ function RegisterForm() {
               type="submit"
               disabled={loading || !form.email || !form.password}
               className="btn btn-primary btn-pill"
-              style={{
-                justifyContent: "center", marginTop: "4px",
-                background: "linear-gradient(135deg, #3a3aef 0%, #8b5cf6 100%)",
-                border: "none",
-              }}
+              style={{ justifyContent: "center", marginTop: "4px" }}
             >
               {loading ? "계정 생성 중..." : "무료 계정 만들기"}
             </button>
           </form>
-
-          {/* Security notice */}
-          <div style={{
-            marginTop: "16px",
-            padding: "12px 14px",
-            background: "var(--color-surface-card)",
-            borderRadius: "8px",
-            display: "flex", alignItems: "flex-start", gap: "8px",
-          }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--color-muted)", flexShrink: 0, marginTop: "1px" }}>
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-            </svg>
-            <p style={{ fontSize: "0.75rem", color: "var(--color-muted)", lineHeight: 1.5 }}>
-              개인정보는 <strong style={{ color: "var(--color-ink)" }}>암호화</strong>되어 저장됩니다.
-              제3자에게 판매하지 않습니다.
-            </p>
-          </div>
 
           <div
             style={{

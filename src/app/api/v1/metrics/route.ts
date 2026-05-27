@@ -1,10 +1,39 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import os from "os";
 import { getPool } from "@/lib/db/postgres";
+import { getSessionFromRequest } from "@/lib/auth";
+import { getDB } from "@/lib/env";
 
 export const runtime = "nodejs";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  // Require authenticated session or admin secret header
+  const adminSecret = process.env.METRICS_SECRET;
+  const headerSecret = request.headers.get("x-metrics-secret");
+
+  const hasHeaderAuth = adminSecret && headerSecret === adminSecret;
+
+  if (!hasHeaderAuth) {
+    // Fall back to session-based auth (must be logged in)
+    const db = getDB(request);
+    const session = await getSessionFromRequest(request);
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Admin-only check if ADMIN_EMAIL is set
+    const adminEmail = process.env.ADMIN_EMAIL;
+    if (adminEmail) {
+      // Look up user's email
+      const user = await db
+        .prepare("SELECT email FROM users WHERE id = ? LIMIT 1")
+        .bind(session.userId)
+        .first<{ email: string }>();
+      if (!user || user.email !== adminEmail) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+    }
+  }
   const loadAvg = os.loadavg(); // [1min, 5min, 15min]
   const cpus = os.cpus().length;
   const totalMem = os.totalmem();
