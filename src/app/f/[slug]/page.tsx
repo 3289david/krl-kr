@@ -1,5 +1,19 @@
 import { notFound } from "next/navigation";
 import { getDB } from "@/lib/env";
+import { formatDate } from "@/lib/utils";
+
+/** Safely convert any date value (number, numeric string, ISO string) to ms */
+function toMs(v: unknown): number | null {
+  if (v == null) return null;
+  if (typeof v === "number") return isNaN(v) ? null : v;
+  if (typeof v === "string") {
+    const s = v.trim();
+    if (/^\d+$/.test(s)) return Number(s);
+    const t = new Date(s).getTime();
+    return isNaN(t) ? null : t;
+  }
+  return null;
+}
 
 interface FileRecord {
   id: string;
@@ -64,8 +78,9 @@ export default async function FileDownloadPage({ params }: PageProps) {
   const file = await db.prepare("SELECT * FROM files WHERE slug = ?").bind(slug).first<FileRecord>();
   if (!file) notFound();
 
-  // Check expiry
-  if (file.expires_at && new Date(file.expires_at) < new Date()) {
+  // Check expiry — handle both numeric ms and ISO string values from D1
+  const expiresMs = toMs(file.expires_at);
+  if (expiresMs && expiresMs < Date.now()) {
     return (
       <main>
         <section className="section">
@@ -116,9 +131,9 @@ export default async function FileDownloadPage({ params }: PageProps) {
               <span style={{ fontSize: "0.875rem", color: "var(--color-muted)" }}>다운로드 {file.download_count}회</span>
             </div>
 
-            {file.expires_at && (
+            {expiresMs && (
               <p style={{ fontSize: "0.875rem", color: "var(--color-muted)", marginBottom: "20px" }}>
-                만료일: {new Date(file.expires_at).toLocaleDateString("ko-KR")}
+                만료일: {formatDate(expiresMs)}
               </p>
             )}
 
@@ -137,7 +152,7 @@ export default async function FileDownloadPage({ params }: PageProps) {
             </a>
 
             <p style={{ fontSize: "0.8125rem", color: "var(--color-muted)", marginTop: "20px" }}>
-              생성일: {new Date(file.created_at).toLocaleDateString("ko-KR")}
+              생성일: {formatDate(file.created_at)}
             </p>
           </div>
         </div>

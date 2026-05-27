@@ -82,7 +82,7 @@ export default function PublicQRPage() {
 
       <section style={{ paddingBottom: "96px" }}>
         <div className="container">
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "32px", maxWidth: "900px", margin: "0 auto" }}>
+          <div className="qr-tool-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "32px", maxWidth: "900px", margin: "0 auto" }}>
             {/* Controls */}
             <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
               <div>

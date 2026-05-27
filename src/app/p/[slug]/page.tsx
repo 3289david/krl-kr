@@ -1,5 +1,18 @@
 import { notFound } from "next/navigation";
 import { getDB } from "@/lib/env";
+import { formatDate } from "@/lib/utils";
+
+function toMs(v: unknown): number | null {
+  if (v == null) return null;
+  if (typeof v === "number") return isNaN(v) ? null : v;
+  if (typeof v === "string") {
+    const s = v.trim();
+    if (/^\d+$/.test(s)) return Number(s);
+    const t = new Date(s).getTime();
+    return isNaN(t) ? null : t;
+  }
+  return null;
+}
 
 interface Paste {
   id: string;
@@ -38,8 +51,9 @@ export default async function PasteViewPage({ params, searchParams }: PageProps)
   const paste = await db.prepare("SELECT * FROM pastes WHERE slug = ?").bind(slug).first<Paste>();
   if (!paste) notFound();
 
-  // Check expiry
-  if (paste.expires_at && new Date(paste.expires_at) < new Date()) {
+  // Check expiry — handle numeric ms strings from D1
+  const expiresMs = toMs(paste.expires_at);
+  if (expiresMs && expiresMs < Date.now()) {
     return (
       <main>
         <section className="section">
@@ -90,7 +104,7 @@ export default async function PasteViewPage({ params, searchParams }: PageProps)
                 <span style={{ fontSize: "0.875rem", color: "var(--color-muted)" }}>{lineCount}줄</span>
                 <span style={{ fontSize: "0.875rem", color: "var(--color-muted)" }}>조회 {paste.view_count.toLocaleString("ko-KR")}회</span>
                 <span style={{ fontSize: "0.875rem", color: "var(--color-muted)" }}>
-                  {new Date(paste.created_at).toLocaleDateString("ko-KR")}
+                  {formatDate(paste.created_at)}
                 </span>
               </div>
             </div>

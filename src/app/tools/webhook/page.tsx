@@ -84,8 +84,14 @@ export default function PublicWebhookPage() {
     });
   }
 
-  function formatTime(iso: string) {
-    return new Date(iso).toLocaleTimeString("ko-KR");
+  function formatTime(val: string) {
+    const ms = /^\d+$/.test(val.trim()) ? Number(val) : new Date(val).getTime();
+    return isNaN(ms) ? "—" : new Date(ms).toLocaleTimeString("ko-KR");
+  }
+
+  function formatFullTime(val: string) {
+    const ms = /^\d+$/.test(val.trim()) ? Number(val) : new Date(val).getTime();
+    return isNaN(ms) ? "—" : new Date(ms).toLocaleString("ko-KR");
   }
 
   function tryParseJson(str: string | null) {
@@ -144,7 +150,7 @@ export default function PublicWebhookPage() {
               </div>
             </div>
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "340px 1fr", gap: "24px", alignItems: "start" }}>
+            <div className="tools-webhook-grid" style={{ display: "grid", gridTemplateColumns: "340px 1fr", gap: "24px", alignItems: "start" }}>
               {/* Left: endpoint + request list */}
               <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                 <div style={{ background: "var(--color-lifted)", border: "1px solid var(--color-hairline)", borderRadius: "var(--radius-xl)", padding: "20px" }}>
@@ -246,7 +252,7 @@ export default function PublicWebhookPage() {
                       )}
 
                       <p style={{ fontSize: "0.8125rem", color: "var(--color-muted)" }}>
-                        수신 시각: {new Date(selected.received_at).toLocaleString("ko-KR")}
+                        수신 시각: {formatFullTime(selected.received_at)}
                       </p>
                     </div>
                   </div>

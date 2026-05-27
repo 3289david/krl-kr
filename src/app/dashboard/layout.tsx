@@ -10,7 +10,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <div style={{ minHeight: "100vh", background: "var(--color-canvas)", fontFamily: "var(--font-sans)" }}>
       <SiteHeader />
-      <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "24px 16px" }}>
+      <div className="dashboard-outer" style={{ maxWidth: "1100px", margin: "0 auto", padding: "24px 0" }}>
         {children}
       </div>
     </div>

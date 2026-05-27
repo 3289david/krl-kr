@@ -810,3 +810,276 @@ code, pre {
 .bio-link-btn:hover {
   opacity: 0.75;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COMPREHENSIVE MOBILE RESPONSIVE STYLES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── Dashboard page inner padding override ─────────────────────────────────── */
+/* All dashboard pages wrap content in a div with padding: 32px.
+   On mobile, reduce horizontal padding to 16px so content has more width. */
+@media (max-width: 768px) {
+  .dashboard-outer > div,
+  .dashboard-outer > section,
+  .dashboard-outer > main {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+}
+@media (max-width: 480px) {
+  .dashboard-outer > div,
+  .dashboard-outer > section,
+  .dashboard-outer > main {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+}
+
+/* ─── QR Tool Page ─────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .qr-tool-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ─── Webhook Tool (public) ─────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .tools-webhook-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ─── Dashboard: Improved mobile layout ─────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Links table: hide less important columns */
+  .links-table-row-meta { display: none !important; }
+
+  /* Stat grid: 2 cols on tablet, 1 on phone */
+  .stat-grid { grid-template-columns: 1fr 1fr !important; }
+
+  /* Homepage hero input row */
+  .hero-input-row {
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+  .hero-input-row .btn {
+    width: 100% !important;
+  }
+
+  /* Community board tabs - horizontal scroll */
+  .board-tabs {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    flex-wrap: nowrap !important;
+    padding-bottom: 4px !important;
+  }
+
+  /* Dashboard page header row */
+  .dash-header-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+
+  /* Dashboard tab row */
+  .dash-tab-row {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    flex-wrap: nowrap !important;
+    gap: 4px !important;
+    padding-bottom: 4px !important;
+  }
+  .dash-tab-row::-webkit-scrollbar { height: 0; }
+
+  /* File drop zone on mobile */
+  .drop-zone {
+    padding: 32px 20px !important;
+  }
+
+  /* Analytics stat cards */
+  .analytics-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  /* Community [slug] post page */
+  .post-action-row {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+  .post-action-row .btn {
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .stat-grid { grid-template-columns: 1fr !important; }
+  .analytics-grid { grid-template-columns: 1fr !important; }
+
+  /* Prevent horizontal overflow on narrow screens */
+  body { overflow-x: hidden; }
+
+  /* Section padding tighter */
+  .section { padding-top: 40px !important; padding-bottom: 40px !important; }
+
+  /* Eyebrow text smaller */
+  .eyebrow { font-size: 0.6875rem !important; }
+
+  /* Badge / tag text */
+  .badge { font-size: 0.6875rem !important; padding: 2px 8px !important; }
+
+  /* Textarea and code input */
+  textarea.input { font-size: 15px !important; }
+
+  /* Prevent iOS zoom on focus */
+  input.input, select.input, textarea.input { font-size: 16px !important; }
+
+  /* Modal full-screen on very small */
+  .modal-box { border-radius: 12px 12px 0 0 !important; }
+}
+
+/* ─── Dashboard Sidebar: show compact on mobile ─────────────────────────────── */
+@media (max-width: 768px) {
+  /* Dashboard nav bar (horizontal scroll tabs instead of sidebar) */
+  .dashboard-mobile-nav {
+    display: flex !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    gap: 4px !important;
+    padding: 8px 0 12px !important;
+    border-bottom: 1px solid var(--color-hairline) !important;
+    margin-bottom: 20px !important;
+  }
+  .dashboard-mobile-nav::-webkit-scrollbar { height: 0; }
+  .dashboard-mobile-nav a {
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+  }
+}
+
+/* ─── File download / paste view ────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  /* File download card */
+  .file-download-card {
+    padding: 28px 16px !important;
+  }
+
+  /* File info meta badges */
+  .file-meta-row {
+    flex-direction: column !important;
+    gap: 6px !important;
+    align-items: flex-start !important;
+  }
+
+  /* Paste viewer header */
+  .paste-header-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+  .paste-header-row .btn {
+    width: 100% !important;
+  }
+}
+
+/* ─── Auth pages ─────────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .auth-page-wrapper {
+    padding: 24px 16px 48px !important;
+  }
+}
+
+/* ─── Homepage / marketing pages ───────────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Feature grid */
+  .feature-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Pricing cards */
+  .pricing-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Docs/API page sidebar hide */
+  .docs-sidebar {
+    display: none !important;
+  }
+
+  /* Stats row on homepage */
+  .stats-row {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  /* Community main page board grid */
+  .community-board-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Homepage terminal card */
+  .terminal-card {
+    padding: 20px 16px !important;
+    font-size: 0.8125rem !important;
+  }
+
+  /* Stats row single col */
+  .stats-row {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ─── Touch improvements ─────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Larger touch targets */
+  .btn {
+    min-height: 44px;
+  }
+  .btn-sm {
+    min-height: 36px;
+  }
+
+  /* Sidebar link touch targets */
+  .sidebar-link {
+    min-height: 44px;
+    padding: 10px 12px !important;
+  }
+
+  /* Table rows more tappable */
+  .data-table td {
+    padding: 12px 12px !important;
+  }
+
+  /* Checkbox / radio larger tap area */
+  input[type="checkbox"], input[type="radio"] {
+    width: 18px !important;
+    height: 18px !important;
+  }
+}
+
+/* ─── Overflow & scroll helpers ─────────────────────────────────────────────── */
+/* Horizontal scroll wrappers */
+.scroll-x {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.scroll-x::-webkit-scrollbar { height: 4px; }
+
+/* Pre / code blocks - allow horizontal scroll but don't overflow page */
+@media (max-width: 768px) {
+  pre {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+}
+
+/* ─── Dashboard webhook page specific ───────────────────────────────────────── */
+@media (max-width: 768px) {
+  .webhook-layout {
+    grid-template-columns: 1fr !important;
+  }
+  /* Webhook request list height limit */
+  .webhook-req-list {
+    max-height: 260px !important;
+  }
+}
