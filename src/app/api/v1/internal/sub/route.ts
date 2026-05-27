@@ -1,28 +1,56 @@
 /**
- * KRL.KR — Subdomain Redirect Handler
+ * KRL.KR — Subdomain Router
  * GET /api/v1/internal/sub?name=david
  *
- * Called internally by middleware for *.krl.kr subdomain requests.
- * - redirect/github/vercel/api → 302 redirect to target
- * - html → serve stored HTML content directly
+ * Called internally by middleware for *.krl.kr requests.
+ * - redirect / github / vercel / api → 302 to target
+ * - html → serve stored HTML (if target looks like a URL, redirects instead)
  */
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db/postgres";
 
 function normalizeUrl(url: string): string {
   const trimmed = url.trim();
-  // Already has valid protocol
-  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
-    return trimmed;
-  }
-  // Has protocol but malformed (e.g. "https:/foo" with single slash)
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) return trimmed;
   if (trimmed.startsWith("https:/") || trimmed.startsWith("http:/")) {
-    // Strip whatever partial protocol and re-add https://
-    const withoutProto = trimmed.replace(/^https?:\/*/i, "");
-    return `https://${withoutProto}`;
+    return `https://${trimmed.replace(/^https?:\/*/i, "")}`;
   }
   return `https://${trimmed}`;
 }
+
+/** Returns true if the string looks like a URL rather than actual HTML */
+function looksLikeUrl(str: string): boolean {
+  const t = str.trim();
+  return (
+    t.startsWith("http://") ||
+    t.startsWith("https://") ||
+    /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z]{2,})+/.test(t)
+  );
+}
+
+const NOT_FOUND_HTML = (name: string) => `<!DOCTYPE html>
+<html lang="ko"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${name}.krl.kr — 없는 주소</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;
+justify-content:center;min-height:100vh;background:#f4f0e6;color:#1a1714}
+.box{text-align:center;padding:48px 32px;max-width:480px}
+.logo{font-family:monospace;font-weight:800;font-size:1.125rem;letter-spacing:-.02em;margin-bottom:32px;opacity:.6}
+h1{font-size:1.375rem;font-weight:600;margin-bottom:10px}
+p{color:rgba(26,23,20,.6);font-size:.9375rem;margin-bottom:28px;line-height:1.6}
+a{display:inline-block;padding:10px 22px;background:#1a1714;color:#f4f0e6;
+border-radius:9999px;text-decoration:none;font-size:.875rem;font-weight:500}
+a:hover{opacity:.8}
+</style>
+</head>
+<body><div class="box">
+<div class="logo">KRL.KR</div>
+<h1>${name}.krl.kr</h1>
+<p>등록되지 않은 서브도메인입니다.<br>KRL.KR에서 직접 등록해보세요.</p>
+<a href="https://krl.kr">krl.kr 바로가기</a>
+</div></body></html>`;
 
 export async function GET(request: NextRequest) {
   const name = request.nextUrl.searchParams.get("name");
@@ -33,36 +61,31 @@ export async function GET(request: NextRequest) {
 
   try {
     const row = await db
-      .prepare(
-        "SELECT target, type FROM subdomains WHERE subdomain = ? AND is_active = 1"
-      )
+      .prepare("SELECT target, type FROM subdomains WHERE subdomain = ? AND is_active = 1 LIMIT 1")
       .bind(name)
       .first<{ target: string; type: string }>();
 
     if (!row) {
-      // Subdomain not registered — show 404 page
-      return new NextResponse(
-        `<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>${name}.krl.kr — 없는 주소</title>
-        <style>body{font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#F3F0EE}
-        .box{text-align:center}.logo{font-family:monospace;font-weight:700;font-size:1.25rem;margin-bottom:24px}
-        h1{font-size:1.5rem;font-weight:600;margin-bottom:8px}p{color:#696969;margin-bottom:24px}
-        a{display:inline-block;padding:10px 20px;background:#141413;color:#F3F0EE;border-radius:9999px;text-decoration:none;font-size:.875rem}</style>
-        </head><body><div class="box"><div class="logo">KRL.KR</div>
-        <h1>${name}.krl.kr</h1><p>등록되지 않은 서브도메인입니다.</p>
-        <a href="https://krl.kr">krl.kr로 돌아가기</a></div></body></html>`,
-        { status: 404, headers: { "Content-Type": "text/html; charset=utf-8" } }
-      );
+      return new NextResponse(NOT_FOUND_HTML(name), {
+        status: 404,
+        headers: { "Content-Type": "text/html; charset=utf-8" },
+      });
     }
 
-    // HTML type — serve the HTML content directly
+    // HTML type: serve the stored HTML directly.
+    // But if the target looks like a URL (user accidentally entered a URL),
+    // fall back to a redirect instead of serving the URL string as HTML.
     if (row.type === "html") {
+      if (looksLikeUrl(row.target)) {
+        return NextResponse.redirect(normalizeUrl(row.target), { status: 302 });
+      }
       return new NextResponse(row.target, {
         status: 200,
         headers: { "Content-Type": "text/html; charset=utf-8" },
       });
     }
 
-    // All other types (redirect, github, vercel, api) — 302 redirect
+    // redirect / github / vercel / api → 302
     const target = normalizeUrl(row.target);
     return NextResponse.redirect(target, { status: 302 });
 

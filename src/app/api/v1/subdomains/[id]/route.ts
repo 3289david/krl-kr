@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDB } from "@/lib/env";
 import { requireAuth } from "@/lib/auth";
 import { z } from "zod";
+import {
+  createCloudflareDnsRecord,
+  deleteCloudflareDnsRecord,
+} from "../route";
 
 const UpdateSchema = z.object({
   target: z.string().min(1).optional(),
@@ -19,7 +23,6 @@ export async function DELETE(
   const { user, error } = await requireAuth(db, request);
   if (error) return error;
 
-  // Fetch the record first to get the CF DNS record ID
   const sub = await db
     .prepare("SELECT id, cf_dns_record_id FROM subdomains WHERE id = ? AND user_id = ? LIMIT 1")
     .bind(id, user.id)
@@ -29,18 +32,8 @@ export async function DELETE(
     return NextResponse.json({ error: "서브도메인을 찾을 수 없습니다." }, { status: 404 });
   }
 
-  // Delete from Cloudflare DNS (best-effort)
   if (sub.cf_dns_record_id) {
-    const cfToken = process.env.CLOUDFLARE_API_TOKEN;
-    const zoneId = process.env.CLOUDFLARE_ZONE_ID;
-    if (cfToken && zoneId) {
-      try {
-        await fetch(
-          `https://api.cloudflare.com/client/v4/zones/${zoneId}/dns_records/${sub.cf_dns_record_id}`,
-          { method: "DELETE", headers: { Authorization: `Bearer ${cfToken}` } }
-        );
-      } catch { /* ignore CF errors */ }
-    }
+    await deleteCloudflareDnsRecord(sub.cf_dns_record_id);
   }
 
   await db
@@ -62,9 +55,9 @@ export async function PATCH(
   if (error) return error;
 
   const existing = await db
-    .prepare("SELECT id FROM subdomains WHERE id = ? AND user_id = ? LIMIT 1")
+    .prepare("SELECT id, subdomain, type, target, cf_dns_record_id FROM subdomains WHERE id = ? AND user_id = ? LIMIT 1")
     .bind(id, user.id)
-    .first();
+    .first<{ id: string; subdomain: string; type: string; target: string; cf_dns_record_id: string | null }>();
 
   if (!existing) {
     return NextResponse.json({ error: "서브도메인을 찾을 수 없습니다." }, { status: 404 });
@@ -86,6 +79,31 @@ export async function PATCH(
     return NextResponse.json({ error: "업데이트할 항목이 없습니다." }, { status: 400 });
   }
 
+  // If type or target changed, update CF DNS record
+  const newType = (data.type ?? existing.type) as string;
+  const newTarget = (data.target ?? existing.target) as string;
+  const typeOrTargetChanged = data.type !== undefined || data.target !== undefined;
+
+  let newCfId: string | null = existing.cf_dns_record_id;
+
+  if (typeOrTargetChanged) {
+    // Delete old CF record
+    if (existing.cf_dns_record_id) {
+      await deleteCloudflareDnsRecord(existing.cf_dns_record_id);
+    }
+    // Create new CF record
+    const { recordId, error: cfError } = await createCloudflareDnsRecord(
+      existing.subdomain,
+      newType,
+      newTarget
+    );
+    if (cfError) {
+      console.warn(`[Subdomains PATCH] CF DNS update warning: ${cfError}`);
+    }
+    newCfId = recordId;
+    updates.cf_dns_record_id = newCfId;
+  }
+
   const fields = Object.keys(updates).map((k) => `${k} = ?`).join(", ");
   const values = Object.values(updates);
 
@@ -99,5 +117,14 @@ export async function PATCH(
     .bind(id)
     .first<Record<string, unknown>>();
 
-  return NextResponse.json({ subdomain: updated });
+  return NextResponse.json({
+    subdomain: {
+      ...updated,
+      created_at: Number(updated?.created_at),
+      is_active: Number(updated?.is_active),
+      full_domain: `${existing.subdomain}.krl.kr`,
+      cf_configured: !!newCfId,
+    },
+  });
 }
+

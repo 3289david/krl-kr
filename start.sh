@@ -1,6 +1,6 @@
 #!/bin/bash
 # KRL.KR startup script
-# Ensures port 3000 is free before starting Next.js
+# Uses Next.js standalone server (output: standalone)
 
 # Kill any process holding port 3000
 PORT=3000
@@ -15,4 +15,5 @@ if [ -n "$INODE" ]; then
 fi
 
 cd /var/www/krl-kr
-exec npm start
+# Use standalone server.js for proper output: standalone mode
+exec node .next/standalone/server.js

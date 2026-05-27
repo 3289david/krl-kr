@@ -1,4 +1,3 @@
-import { handleAPIError } from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 import { getDB } from "@/lib/env";
 import { requireAuth } from "@/lib/auth";
@@ -27,7 +26,40 @@ const CreateSubdomainSchema = z.object({
   target: z.string().min(1, "대상 URL을 입력해주세요."),
 });
 
-async function createCloudflareCnameRecord(
+/**
+ * Returns the correct CNAME target for each subdomain type.
+ *
+ * redirect / html / api → traffic must reach KRL.KR server → CNAME krl.kr
+ * github               → CNAME to the user's github.io hostname
+ * vercel               → CNAME to cname.vercel-dns.com (Vercel requirement)
+ */
+function getCnameTarget(type: string, target: string): { content: string; proxied: boolean } {
+  switch (type) {
+    case "github": {
+      // target can be "username.github.io" or "https://username.github.io"
+      try {
+        const url = new URL(target.startsWith("http") ? target : `https://${target}`);
+        return { content: url.hostname, proxied: true };
+      } catch {
+        // If it looks like a plain hostname, use as-is
+        const host = target.split("/")[0];
+        return { content: host || "krl.kr", proxied: true };
+      }
+    }
+    case "vercel":
+      // Vercel requires CNAME → cname.vercel-dns.com for custom subdomains
+      return { content: "cname.vercel-dns.com", proxied: false };
+    case "redirect":
+    case "html":
+    case "api":
+    default:
+      // These are all served / proxied by the KRL.KR VPS.
+      // Traffic must hit our nginx → Next.js middleware → internal/sub handler.
+      return { content: "krl.kr", proxied: true };
+  }
+}
+
+export async function createCloudflareDnsRecord(
   subdomain: string,
   type: string,
   target: string
@@ -39,17 +71,7 @@ async function createCloudflareCnameRecord(
     return { recordId: null, error: "Cloudflare API 미설정" };
   }
 
-  // For redirect-type subdomains: CNAME → krl.kr so the VPS handles the redirect.
-  // For github/vercel/etc: CNAME → the actual service hostname.
-  let cnameTarget = "krl.kr";
-  if (type === "github" || type === "vercel") {
-    try {
-      const parsed = new URL(target.startsWith("http") ? target : `https://${target}`);
-      cnameTarget = parsed.hostname;
-    } catch {
-      cnameTarget = target;
-    }
-  }
+  const { content: cnameTarget, proxied } = getCnameTarget(type, target);
 
   try {
     const response = await fetch(
@@ -64,13 +86,17 @@ async function createCloudflareCnameRecord(
           type: "CNAME",
           name: `${subdomain}.krl.kr`,
           content: cnameTarget,
-          proxied: true,
+          proxied,
           ttl: 1,
         }),
       }
     );
 
-    const data = await response.json() as { success: boolean; result?: { id: string }; errors?: Array<{ message: string }> };
+    const data = await response.json() as {
+      success: boolean;
+      result?: { id: string };
+      errors?: Array<{ message: string }>;
+    };
 
     if (!data.success) {
       const errMsg = data.errors?.[0]?.message ?? "Unknown Cloudflare error";
@@ -85,7 +111,7 @@ async function createCloudflareCnameRecord(
   }
 }
 
-async function deleteCloudflareDnsRecord(recordId: string): Promise<void> {
+export async function deleteCloudflareDnsRecord(recordId: string): Promise<void> {
   const cfToken = process.env.CLOUDFLARE_API_TOKEN;
   const zoneId = process.env.CLOUDFLARE_ZONE_ID;
   if (!cfToken || !zoneId) return;
@@ -94,7 +120,7 @@ async function deleteCloudflareDnsRecord(recordId: string): Promise<void> {
       `https://api.cloudflare.com/client/v4/zones/${zoneId}/dns_records/${recordId}`,
       { method: "DELETE", headers: { Authorization: `Bearer ${cfToken}` } }
     );
-  } catch {}
+  } catch { /* ignore */ }
 }
 
 export async function POST(request: NextRequest) {
@@ -112,7 +138,6 @@ export async function POST(request: NextRequest) {
 
     const { subdomain, type, target } = parsed.data;
 
-    // Block reserved names
     if (RESERVED_SUBDOMAINS.has(subdomain.toLowerCase())) {
       return NextResponse.json(
         { error: "예약된 서브도메인 이름입니다. 다른 이름을 사용해주세요." },
@@ -120,15 +145,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Block subdomains shorter than 4 chars (already enforced by schema, but double check)
-    if (subdomain.length < 4) {
-      return NextResponse.json(
-        { error: "서브도메인은 최소 4자 이상이어야 합니다." },
-        { status: 400 }
-      );
-    }
-
-    // Check uniqueness
     const existing = await db
       .prepare("SELECT id FROM subdomains WHERE subdomain = ? LIMIT 1")
       .bind(subdomain)
@@ -144,8 +160,7 @@ export async function POST(request: NextRequest) {
     const subdomainId = generateId("sub");
     const now = Date.now();
 
-    // Create Cloudflare DNS CNAME record
-    const { recordId: cfDnsRecordId, error: cfError } = await createCloudflareCnameRecord(
+    const { recordId: cfDnsRecordId, error: cfError } = await createCloudflareDnsRecord(
       subdomain,
       type,
       target
@@ -163,6 +178,8 @@ export async function POST(request: NextRequest) {
       .bind(subdomainId, user.id, subdomain, type, target, cfDnsRecordId ?? null, now)
       .run();
 
+    const { content: cnameTarget } = getCnameTarget(type, target);
+
     return NextResponse.json(
       {
         id: subdomainId,
@@ -172,9 +189,10 @@ export async function POST(request: NextRequest) {
         target,
         is_active: true,
         cf_configured: !!cfDnsRecordId,
-        created_at: new Date(now).toISOString(),
+        cname_target: cnameTarget,
+        created_at: now,
         note: cfDnsRecordId
-          ? "DNS 레코드가 생성되었습니다. 전파까지 최대 24시간이 소요될 수 있습니다."
+          ? "DNS 레코드가 생성되었습니다. 전파까지 최대 5분이 소요될 수 있습니다."
           : "서브도메인이 등록되었습니다. Cloudflare 설정 후 DNS 레코드가 생성됩니다.",
       },
       { status: 201 }
@@ -200,14 +218,20 @@ export async function GET(request: NextRequest) {
       .all<Record<string, unknown>>();
 
     return NextResponse.json({
-      subdomains: result.results.map((s) => ({
-        ...s,
-        // PostgreSQL returns BIGINT as string — must cast to number for the client
-        created_at: Number(s.created_at),
-        is_active: Number(s.is_active),
-        full_domain: `${s.subdomain}.krl.kr`,
-        cf_configured: !!s.cf_dns_record_id,
-      })),
+      subdomains: result.results.map((s) => {
+        const { content: cnameTarget } = getCnameTarget(
+          s.type as string,
+          s.target as string
+        );
+        return {
+          ...s,
+          created_at: Number(s.created_at),
+          is_active: Number(s.is_active),
+          full_domain: `${s.subdomain}.krl.kr`,
+          cf_configured: !!s.cf_dns_record_id,
+          cname_target: cnameTarget,
+        };
+      }),
     });
   } catch (err) {
     console.error("[/api/v1/subdomains GET] Error:", err);
