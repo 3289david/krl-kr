@@ -252,3 +252,40 @@ CREATE TABLE IF NOT EXISTS email_messages (
 CREATE INDEX IF NOT EXISTS idx_email_messages_alias ON email_messages(alias);
 CREATE INDEX IF NOT EXISTS idx_email_messages_user_id ON email_messages(user_id);
 CREATE INDEX IF NOT EXISTS idx_email_messages_received_at ON email_messages(received_at DESC);
+
+-- Community (added 2026-05-27)
+CREATE TABLE IF NOT EXISTS community_posts (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  board TEXT NOT NULL DEFAULT 'free',
+  title TEXT NOT NULL,
+  content TEXT NOT NULL,
+  view_count INTEGER NOT NULL DEFAULT 0,
+  like_count INTEGER NOT NULL DEFAULT 0,
+  comment_count INTEGER NOT NULL DEFAULT 0,
+  is_pinned INTEGER NOT NULL DEFAULT 0,
+  is_deleted INTEGER NOT NULL DEFAULT 0,
+  created_at BIGINT NOT NULL,
+  updated_at BIGINT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_community_posts_board ON community_posts(board, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_community_posts_user_id ON community_posts(user_id);
+CREATE INDEX IF NOT EXISTS idx_community_posts_created_at ON community_posts(created_at DESC);
+
+CREATE TABLE IF NOT EXISTS community_comments (
+  id TEXT PRIMARY KEY,
+  post_id TEXT NOT NULL REFERENCES community_posts(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  content TEXT NOT NULL,
+  is_deleted INTEGER NOT NULL DEFAULT 0,
+  created_at BIGINT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_community_comments_post_id ON community_comments(post_id, created_at ASC);
+
+CREATE TABLE IF NOT EXISTS community_likes (
+  post_id TEXT NOT NULL REFERENCES community_posts(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at BIGINT NOT NULL,
+  PRIMARY KEY(post_id, user_id)
+);
+CREATE INDEX IF NOT EXISTS idx_community_likes_user ON community_likes(user_id);

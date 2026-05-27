@@ -28,6 +28,7 @@ const RESERVED_PATHS = new Set([
   "p",
   "bio",
   "community",
+  "new",
   "support",
   "_next",
   "favicon.ico",

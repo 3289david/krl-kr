@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 // ─── Shorten Form ─────────────────────────────────────────────────────────────
 
@@ -190,9 +190,9 @@ function ShortenForm() {
         marginTop: "12px", fontSize: "0.8125rem",
         color: "var(--color-muted)", textAlign: "center",
       }}>
-        로그인 없이 바로 사용 가능 &nbsp;·&nbsp;{" "}
+        바로 시작 가능 &nbsp;·&nbsp;{" "}
         <Link href="/register" style={{ color: "var(--color-body)", textDecoration: "underline" }}>
-          가입하면 통계·커스텀 주소 사용 가능
+          가입 후 커스텀 주소·무제한 통계 사용
         </Link>
       </p>
     </div>
@@ -235,17 +235,27 @@ const TOOLS = [
 
 // ─── Board sub-component ──────────────────────────────────────────────────────
 
-function BoardSection({
-  title,
-  icon,
-  href,
-  children,
-}: {
-  title: string;
-  icon: React.ReactNode;
-  href: string;
-  children: React.ReactNode;
-}) {
+const BOARD_META_HOME: Record<string, { label: string; color: string; path: string; iconD: string }> = {
+  notice:  { label: "공지사항", color: "#ef4444", path: "notice",  iconD: "M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" },
+  free:    { label: "자유게시판", color: "#3b82f6", path: "free",    iconD: "M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" },
+  feature: { label: "기능 제안", color: "#8b5cf6", path: "feature", iconD: "M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14zM7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3" },
+};
+
+interface BoardPost { id: string; title: string; comment_count: number; created_at: number; author: { name: string } }
+
+function BoardSection({ board }: { board: string }) {
+  const meta = BOARD_META_HOME[board];
+  const [posts, setPosts] = useState<BoardPost[]>([]);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    fetch(`/api/v1/community?board=${board}&limit=5`)
+      .then((r) => r.json())
+      .then((d) => setPosts(d.posts?.slice(0, 5) ?? []))
+      .catch(() => {})
+      .finally(() => setLoaded(true));
+  }, [board]);
+
   return (
     <div style={{
       background: "var(--color-lifted)",
@@ -253,28 +263,51 @@ function BoardSection({
       borderRadius: "12px",
       overflow: "hidden",
     }}>
-      {/* Board header */}
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "14px 18px",
+        padding: "13px 18px",
         borderBottom: "1px solid var(--color-hairline)",
         background: "var(--color-white)",
       }}>
-        <span style={{
-          display: "flex", alignItems: "center", gap: "6px",
-          fontSize: "0.875rem", fontWeight: 700, color: "var(--color-ink)",
-        }}>
-          {icon}
-          {title}
+        <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.875rem", fontWeight: 700, color: "var(--color-ink)" }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={meta.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d={meta.iconD} />
+          </svg>
+          {meta.label}
         </span>
-        <Link href={href} style={{
-          fontSize: "0.75rem", color: "var(--color-muted)",
-          textDecoration: "none", fontWeight: 500,
-        }}>
+        <Link href={`/community?board=${meta.path}`} style={{ fontSize: "0.75rem", color: "var(--color-muted)", textDecoration: "none", fontWeight: 500 }}>
           전체보기 →
         </Link>
       </div>
-      {children}
+      {!loaded ? (
+        <div style={{ padding: "24px 18px", textAlign: "center", color: "var(--color-muted)", fontSize: "0.8125rem" }}>불러오는 중...</div>
+      ) : posts.length === 0 ? (
+        <div style={{ padding: "24px 18px", textAlign: "center", color: "var(--color-muted)", fontSize: "0.8125rem" }}>아직 게시물이 없습니다.</div>
+      ) : (
+        <div>
+          {posts.map((p) => (
+            <Link key={p.id} href={`/community/${p.id}`} style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              padding: "9px 18px", textDecoration: "none",
+              borderBottom: "1px solid var(--color-hairline)",
+              gap: "8px", transition: "background 0.1s",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--color-surface-card)")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+            >
+              <span style={{ fontSize: "0.84375rem", color: "var(--color-ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
+                {p.title}
+              </span>
+              {p.comment_count > 0 && (
+                <span style={{ fontSize: "0.75rem", color: "var(--color-arc)", fontWeight: 600, flexShrink: 0 }}>[{p.comment_count}]</span>
+              )}
+              <span style={{ fontSize: "0.75rem", color: "var(--color-muted)", flexShrink: 0 }}>
+                {p.author.name}
+              </span>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -295,20 +328,20 @@ export default function HomePage() {
           {/* Eyebrow badge */}
           <div style={{ display: "flex", justifyContent: "center", marginBottom: "20px" }}>
             <span style={{
-              display: "inline-flex", alignItems: "center", gap: "6px",
+              display: "inline-flex", alignItems: "center", gap: "7px",
               padding: "5px 14px",
               background: "var(--color-surface-card)",
               border: "1px solid var(--color-hairline-strong)",
               borderRadius: "9999px",
               fontSize: "0.75rem", fontWeight: 700,
-              letterSpacing: "0.04em", color: "var(--color-muted)",
-              textTransform: "uppercase",
+              letterSpacing: "0.02em", color: "var(--color-muted)",
             }}>
               <span style={{
                 width: "6px", height: "6px", borderRadius: "50%",
-                background: "var(--color-arc)", display: "inline-block",
+                background: "#22c55e", display: "inline-block",
+                boxShadow: "0 0 0 2px rgba(34,197,94,0.25)",
               }} />
-              무료 · 로그인 없이 사용 가능
+              링크를 넘어서 — krl.kr
             </span>
           </div>
 
@@ -321,19 +354,20 @@ export default function HomePage() {
             marginBottom: "16px",
             color: "var(--color-ink)",
           }}>
-            정보수집 없는,<br />
-            <span style={{ color: "var(--color-muted)" }}>쉽고 빠른 URL 단축</span>
+            내가 보낸 링크,<br />
+            <span style={{ color: "var(--color-muted)" }}>이제 직접 통제하세요</span>
           </h1>
           <p style={{
             fontSize: "1.0625rem",
             color: "var(--color-muted)",
             marginBottom: "36px",
-            maxWidth: "480px",
+            maxWidth: "520px",
             margin: "0 auto 36px",
+            lineHeight: 1.65,
           }}>
-            긴 주소를 짧은{" "}
+            클릭 분석·QR 코드·파일 공유·서브도메인 —{" "}
             <strong style={{ color: "var(--color-ink)", fontFamily: "var(--font-mono)" }}>krl.kr</strong>{" "}
-            링크로. 통계·QR·API까지 무료로 제공합니다.
+            계정 하나로 전부 다룰 수 있습니다.
           </p>
 
           {/* Shorten form */}
@@ -463,57 +497,9 @@ export default function HomePage() {
             gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
             gap: "12px",
           }}>
-            {/* 공지사항 */}
-            <BoardSection
-              title="공지사항"
-              href="/community"
-              icon={
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                  style={{ color: "var(--color-muted)" }}>
-                  <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" />
-                </svg>
-              }
-            >
-              <div style={{ padding: "32px 18px", textAlign: "center", color: "var(--color-muted)", fontSize: "0.8125rem" }}>
-                아직 공지사항이 없습니다.
-              </div>
-            </BoardSection>
-
-            {/* 자유게시판 */}
-            <BoardSection
-              title="자유게시판"
-              href="/community"
-              icon={
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                  style={{ color: "var(--color-muted)" }}>
-                  <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
-                </svg>
-              }
-            >
-              <div style={{ padding: "32px 18px", textAlign: "center", color: "var(--color-muted)", fontSize: "0.8125rem" }}>
-                아직 게시물이 없습니다.
-              </div>
-            </BoardSection>
-
-            {/* 기능 제안 */}
-            <BoardSection
-              title="기능 제안"
-              href="/community"
-              icon={
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                  style={{ color: "var(--color-muted)" }}>
-                  <path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14z" />
-                  <path d="M7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3" />
-                </svg>
-              }
-            >
-              <div style={{ padding: "32px 18px", textAlign: "center", color: "var(--color-muted)", fontSize: "0.8125rem" }}>
-                아직 기능 제안이 없습니다.
-              </div>
-            </BoardSection>
+            <BoardSection board="notice" />
+            <BoardSection board="free" />
+            <BoardSection board="feature" />
           </div>
         </div>
       </section>
