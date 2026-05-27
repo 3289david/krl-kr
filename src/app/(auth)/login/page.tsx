@@ -1,4 +1,8 @@
 "use client";
+// Force dynamic rendering — prevents Next.js from pre-rendering this page with
+// a stale challenge URL baked in, and prevents Cloudflare from caching the HTML.
+export const dynamic = "force-dynamic";
+
 import { useState, Suspense, useRef } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
