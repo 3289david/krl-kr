@@ -1,61 +1,70 @@
 @import "tailwindcss";
+@import "./rukkit.css";
 
-/* ─── KRL.KR Design System ──────────────────────────────────────────────── */
-/* Inspired by Mastercard editorial design & OpenCode terminal aesthetic    */
+/* ═══════════════════════════════════════════════════════════════════════════
+   KRL.KR Design System — built on top of Rukkit UI (rk-css)
+   https://github.com/3289david/rk-css
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-@theme {
-  /* Fonts */
-  --font-sans: var(--font-geist-sans), "Sofia Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-mono: var(--font-geist-mono), "JetBrains Mono", "IBM Plex Mono", ui-monospace, monospace;
+/* ─── KRL.KR Tokens (extend & alias rk-css variables) ───────────────────── */
+:root {
+  /* Font overrides — use Geist (loaded in root layout) instead of Fraunces/Inter */
+  --rk-font-display: var(--font-geist-sans, system-ui, -apple-system, sans-serif);
+  --rk-font-body:    var(--font-geist-sans, system-ui, -apple-system, sans-serif);
+  --rk-font-mono:    var(--font-geist-mono, "JetBrains Mono", ui-monospace, monospace);
 
-  /* Canvas & Surface */
-  --color-canvas: #F3F0EE;
-  --color-lifted: #FCFBFA;
-  --color-surface-card: #EDE9E5;
-  --color-surface-dark: #141413;
+  /* KRL.KR → rk-css aliases (backward compatibility for all components) */
+  --font-sans: var(--rk-font-body);
+  --font-mono: var(--rk-font-mono);
+
+  /* Surfaces */
+  --color-canvas:              var(--rk-canvas);
+  --color-lifted:              var(--rk-surface);
+  --color-surface-card:        var(--rk-cream);
+  --color-surface-dark:        var(--rk-ink);
   --color-surface-dark-elevated: #1E1D1C;
-  --color-white: #FFFFFF;
+  --color-white:               var(--rk-paper);
 
   /* Ink & Text */
-  --color-ink: #141413;
-  --color-ink-soft: #262627;
-  --color-body: #3A3735;
-  --color-muted: #696969;
-  --color-stone: #8A8A8A;
-  --color-ash: #B5B2AF;
-  --color-dust: #D1CDC7;
+  --color-ink:      var(--rk-ink);
+  --color-ink-soft: var(--rk-ink-soft);
+  --color-body:     var(--rk-mute-strong);
+  --color-muted:    var(--rk-muted);
+  --color-stone:    rgba(26, 23, 20, 0.55);
+  --color-ash:      rgba(26, 23, 20, 0.42);
+  --color-dust:     rgba(26, 23, 20, 0.28);
 
   /* Borders */
-  --color-hairline: rgba(20, 20, 19, 0.08);
-  --color-hairline-strong: rgba(20, 20, 19, 0.18);
+  --color-hairline:        var(--rk-border);
+  --color-hairline-strong: var(--rk-border-strong);
 
-  /* Semantic */
-  --color-accent: #141413;
-  --color-accent-inv: #F3F0EE;
-  --color-signal: #CF4500;
-  --color-arc: #F37338;
-  --color-success: #1A7F4B;
-  --color-warning: #B85C00;
-  --color-danger: #C0001A;
-  --color-info: #1A5ABD;
+  /* Semantic colors */
+  --color-accent:     var(--rk-ink);      /* KRL.KR keeps monochrome accent */
+  --color-accent-inv: var(--rk-canvas);
+  --color-signal:     var(--rk-signal);
+  --color-arc:        var(--rk-signal-warm);
+  --color-success:    #1A7F4B;
+  --color-warning:    #B85C00;
+  --color-danger:     #C0001A;
+  --color-info:       #1A5ABD;
 
-  /* Border Radius */
+  /* Radius — alias rk-css radii */
   --radius-none: 0px;
-  --radius-xs: 4px;
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 20px;
-  --radius-xl: 40px;
-  --radius-pill: 9999px;
+  --radius-xs:   var(--rk-r-xs);
+  --radius-sm:   8px;                /* KRL.KR uses 8px, rk-css uses 6px */
+  --radius-md:   12px;               /* KRL.KR uses 12px */
+  --radius-lg:   20px;               /* KRL.KR uses 20px */
+  --radius-xl:   var(--rk-r-xl);    /* both 40px */
+  --radius-pill: var(--rk-r-pill);
   --radius-full: 50%;
 
   /* Spacing */
   --spacing-section: 96px;
 
   /* Shadows */
-  --shadow-nav: rgba(0, 0, 0, 0.04) 0px 4px 24px 0px;
-  --shadow-card: rgba(0, 0, 0, 0.08) 0px 24px 48px 0px;
-  --shadow-elevated: rgba(0, 0, 0, 0.25) 0px 70px 110px 0px;
+  --shadow-nav:      0 4px 24px rgba(26,23,20,0.04);
+  --shadow-card:     var(--rk-shadow-card);
+  --shadow-elevated: 0 70px 110px rgba(0,0,0,0.25);
 }
 
 /* ─── Base ──────────────────────────────────────────────────────────────── */
@@ -124,23 +133,10 @@ code, pre {
 }
 
 /* ─── Scrollbar ─────────────────────────────────────────────────────────── */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--color-canvas);
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--color-dust);
-  border-radius: var(--radius-pill);
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-ash);
-}
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--color-canvas); }
+::-webkit-scrollbar-thumb { background: var(--color-dust); border-radius: var(--radius-pill); }
+::-webkit-scrollbar-thumb:hover { background: var(--color-ash); }
 
 /* ─── Focus Visible ─────────────────────────────────────────────────────── */
 :focus-visible {
@@ -179,14 +175,12 @@ code, pre {
   color: var(--color-muted);
 }
 
-/* Ghost watermark text */
 .ghost-text {
   color: #E5E0DB;
   user-select: none;
   pointer-events: none;
 }
 
-/* Orbital arc line */
 .orbital-line {
   stroke: var(--color-arc);
   stroke-width: 1.5;
@@ -216,15 +210,8 @@ code, pre {
   -webkit-tap-highlight-color: transparent;
 }
 
-.btn:active {
-  transform: scale(0.98);
-}
-
-.btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  transform: none;
-}
+.btn:active { transform: scale(0.98); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
 .btn-primary {
   background-color: var(--color-ink);
@@ -232,9 +219,7 @@ code, pre {
   border-color: var(--color-ink);
 }
 
-.btn-primary:hover:not(:disabled) {
-  opacity: 0.85;
-}
+.btn-primary:hover:not(:disabled) { opacity: 0.85; }
 
 .btn-secondary {
   background-color: var(--color-white);
@@ -242,9 +227,7 @@ code, pre {
   border-color: var(--color-ink);
 }
 
-.btn-secondary:hover:not(:disabled) {
-  background-color: var(--color-canvas);
-}
+.btn-secondary:hover:not(:disabled) { background-color: var(--color-canvas); }
 
 .btn-ghost {
   background-color: transparent;
@@ -252,32 +235,12 @@ code, pre {
   border-color: transparent;
 }
 
-.btn-ghost:hover:not(:disabled) {
-  background-color: var(--color-surface-card);
-}
+.btn-ghost:hover:not(:disabled) { background-color: var(--color-surface-card); }
 
-.btn-sm {
-  font-size: 0.875rem;
-  padding: 7px 16px;
-  border-radius: 12px;
-}
-
-.btn-lg {
-  font-size: 1.0625rem;
-  padding: 14px 32px;
-  border-radius: var(--radius-xl);
-}
-
-.btn-pill {
-  border-radius: var(--radius-pill);
-}
-
-.btn-icon {
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  border-radius: var(--radius-pill);
-}
+.btn-sm { font-size: 0.875rem; padding: 7px 16px; border-radius: 12px; }
+.btn-lg { font-size: 1.0625rem; padding: 14px 32px; border-radius: var(--radius-xl); }
+.btn-pill { border-radius: var(--radius-pill); }
+.btn-icon { width: 40px; height: 40px; padding: 0; border-radius: var(--radius-pill); }
 
 /* ─── Component: Input ──────────────────────────────────────────────────── */
 .input {
@@ -296,23 +259,10 @@ code, pre {
   -webkit-appearance: none;
 }
 
-.input::placeholder {
-  color: var(--color-ash);
-}
-
-.input:focus {
-  background-color: var(--color-white);
-  border-color: var(--color-ink);
-}
-
-.input-pill {
-  border-radius: var(--radius-pill);
-  padding: 10px 20px;
-}
-
-.input-error {
-  border-color: var(--color-danger);
-}
+.input::placeholder { color: var(--color-ash); }
+.input:focus { background-color: var(--color-white); border-color: var(--color-ink); }
+.input-pill { border-radius: var(--radius-pill); padding: 10px 20px; }
+.input-error { border-color: var(--color-danger); }
 
 /* ─── Component: Badge ──────────────────────────────────────────────────── */
 .badge {
@@ -328,29 +278,10 @@ code, pre {
   background-color: var(--color-lifted);
 }
 
-.badge-dark {
-  background-color: var(--color-surface-dark);
-  color: var(--color-canvas);
-  border-color: transparent;
-}
-
-.badge-success {
-  background-color: #ECFDF5;
-  color: var(--color-success);
-  border-color: #A7F3D0;
-}
-
-.badge-danger {
-  background-color: #FFF1F2;
-  color: var(--color-danger);
-  border-color: #FECDD3;
-}
-
-.badge-warning {
-  background-color: #FFFBEB;
-  color: var(--color-warning);
-  border-color: #FDE68A;
-}
+.badge-dark { background-color: var(--color-surface-dark); color: var(--color-canvas); border-color: transparent; }
+.badge-success { background-color: #ECFDF5; color: var(--color-success); border-color: #A7F3D0; }
+.badge-danger { background-color: #FFF1F2; color: var(--color-danger); border-color: #FECDD3; }
+.badge-warning { background-color: #FFFBEB; color: var(--color-warning); border-color: #FDE68A; }
 
 /* ─── Component: Card ───────────────────────────────────────────────────── */
 .card {
@@ -360,10 +291,7 @@ code, pre {
   padding: 32px;
 }
 
-.card-sm {
-  padding: 24px;
-  border-radius: var(--radius-lg);
-}
+.card-sm { padding: 24px; border-radius: var(--radius-lg); }
 
 /* ─── Component: Nav ────────────────────────────────────────────────────── */
 .nav-pill {
@@ -393,12 +321,7 @@ code, pre {
   border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 
-.terminal-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-}
-
+.terminal-dot { width: 12px; height: 12px; border-radius: 50%; }
 .terminal-prompt {
   background-color: var(--color-surface-dark-elevated);
   border-radius: var(--radius-xs);
@@ -409,18 +332,10 @@ code, pre {
   gap: 8px;
 }
 
-.terminal-prompt::before {
-  content: '$';
-  color: var(--color-arc);
-  font-weight: 600;
-}
+.terminal-prompt::before { content: '$'; color: var(--color-arc); font-weight: 600; }
 
 /* ─── Component: Divider ────────────────────────────────────────────────── */
-.divider {
-  border: none;
-  border-top: 1px solid var(--color-hairline);
-  margin: 0;
-}
+.divider { border: none; border-top: 1px solid var(--color-hairline); margin: 0; }
 
 /* ─── Layout: Section ───────────────────────────────────────────────────── */
 .section {
@@ -437,33 +352,18 @@ code, pre {
 }
 
 @media (max-width: 1024px) {
-  .container {
-    padding-left: 32px;
-    padding-right: 32px;
-  }
+  .container { padding-left: 32px; padding-right: 32px; }
 }
 
 @media (max-width: 768px) {
-  .container {
-    padding-left: 20px;
-    padding-right: 20px;
-  }
-
-  .section {
-    padding-top: 64px;
-    padding-bottom: 64px;
-  }
-
+  .container { padding-left: 20px; padding-right: 20px; }
+  .section { padding-top: 64px; padding-bottom: 64px; }
   h1 { font-size: 2.25rem; }
   h2 { font-size: 1.75rem; }
 }
 
 @media (max-width: 480px) {
-  .section {
-    padding-top: 48px;
-    padding-bottom: 48px;
-  }
-
+  .section { padding-top: 48px; padding-bottom: 48px; }
   h1 { font-size: 1.875rem; }
 }
 
@@ -478,10 +378,7 @@ code, pre {
   overflow: hidden;
 }
 
-.stat-tile {
-  background-color: var(--color-lifted);
-  padding: 28px 32px;
-}
+.stat-tile { background-color: var(--color-lifted); padding: 28px 32px; }
 
 /* ─── Feature Row ────────────────────────────────────────────────────────── */
 .feature-row {
@@ -492,9 +389,7 @@ code, pre {
   border-bottom: 1px solid var(--color-hairline);
 }
 
-.feature-row:last-child {
-  border-bottom: none;
-}
+.feature-row:last-child { border-bottom: none; }
 
 .feature-icon {
   width: 40px;
@@ -515,22 +410,9 @@ code, pre {
   padding: 36px;
 }
 
-.price-card-featured {
-  background-color: var(--color-ink);
-  color: var(--color-canvas);
-  border-color: var(--color-ink);
-}
-
-.price-card-featured p,
-.price-card-featured h3,
-.price-card-featured .eyebrow {
-  color: rgba(243, 240, 238, 0.7);
-}
-
-.price-card-featured h2,
-.price-card-featured h3 {
-  color: var(--color-canvas);
-}
+.price-card-featured { background-color: var(--color-ink); color: var(--color-canvas); border-color: var(--color-ink); }
+.price-card-featured p, .price-card-featured h3, .price-card-featured .eyebrow { color: rgba(243, 240, 238, 0.7); }
+.price-card-featured h2, .price-card-featured h3 { color: var(--color-canvas); }
 
 /* ─── Table ──────────────────────────────────────────────────────────────── */
 .data-table {
@@ -556,13 +438,8 @@ code, pre {
   color: var(--color-body);
 }
 
-.data-table tr:hover td {
-  background-color: var(--color-lifted);
-}
-
-.data-table tr:last-child td {
-  border-bottom: none;
-}
+.data-table tr:hover td { background-color: var(--color-lifted); }
+.data-table tr:last-child td { border-bottom: none; }
 
 /* ─── Sidebar Nav ────────────────────────────────────────────────────────── */
 .sidebar-link {
@@ -578,17 +455,8 @@ code, pre {
   transition: background-color 0.1s ease, color 0.1s ease;
 }
 
-.sidebar-link:hover {
-  background-color: var(--color-surface-card);
-  color: var(--color-ink);
-  opacity: 1;
-}
-
-.sidebar-link.active {
-  background-color: var(--color-surface-card);
-  color: var(--color-ink);
-  font-weight: 500;
-}
+.sidebar-link:hover { background-color: var(--color-surface-card); color: var(--color-ink); opacity: 1; }
+.sidebar-link.active { background-color: var(--color-surface-card); color: var(--color-ink); font-weight: 500; }
 
 /* ─── Animation ──────────────────────────────────────────────────────────── */
 @keyframes fade-up {
@@ -601,13 +469,8 @@ code, pre {
   to   { opacity: 1; }
 }
 
-.animate-fade-up {
-  animation: fade-up 0.5s ease forwards;
-}
-
-.animate-fade-in {
-  animation: fade-in 0.4s ease forwards;
-}
+.animate-fade-up { animation: fade-up 0.5s ease forwards; }
+.animate-fade-in { animation: fade-in 0.4s ease forwards; }
 
 /* ─── Toast / Alert ──────────────────────────────────────────────────────── */
 .alert {
@@ -658,7 +521,10 @@ code, pre {
   z-index: 40;
 }
 
-/* ─── Mobile Responsive Utilities ───────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   MOBILE RESPONSIVE UTILITIES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
 @media (max-width: 768px) {
   /* Dashboard pages */
   .dashboard-grid-2 { grid-template-columns: 1fr 1fr !important; }
@@ -666,8 +532,20 @@ code, pre {
   .dashboard-sidebar { display: none !important; }
   .dashboard-padding { padding: 20px 16px !important; }
 
+  /* Dashboard outer container inner padding */
+  .dashboard-outer > div,
+  .dashboard-outer > section,
+  .dashboard-outer > main {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
   /* Webhook two-column */
   .webhook-layout { grid-template-columns: 1fr !important; }
+
+  /* QR tool grid */
+  .qr-tool-grid { grid-template-columns: 1fr !important; }
+
   /* Tools webhook */
   .tools-webhook-grid { grid-template-columns: 1fr !important; }
 
@@ -681,10 +559,7 @@ code, pre {
     border-radius: 16px 16px 0 0 !important;
     padding: 24px 20px !important;
   }
-  .modal-overlay {
-    align-items: flex-end !important;
-    padding: 0 !important;
-  }
+  .modal-overlay { align-items: flex-end !important; padding: 0 !important; }
 
   /* Auth pages */
   .auth-card { padding: 28px 20px !important; }
@@ -712,6 +587,20 @@ code, pre {
   /* Hero section */
   .hero-cta-row { flex-direction: column !important; align-items: stretch !important; }
   .hero-cta-row .btn { width: 100% !important; justify-content: center !important; }
+
+  /* Touch targets */
+  .btn { min-height: 44px; }
+  .btn-sm { min-height: 36px; }
+  .sidebar-link { min-height: 44px; padding: 10px 12px !important; }
+  .data-table td { padding: 12px 12px !important; }
+
+  /* Community board tabs */
+  .board-tabs {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    flex-wrap: nowrap !important;
+    padding-bottom: 4px !important;
+  }
 }
 
 @media (max-width: 480px) {
@@ -720,10 +609,25 @@ code, pre {
   .data-table th, .data-table td { padding: 10px 10px !important; font-size: 0.8125rem !important; }
   .btn { padding: 9px 18px !important; }
   .btn-lg { padding: 12px 24px !important; font-size: 1rem !important; }
-  .input { font-size: 16px !important; } /* Prevent iOS zoom on focus */
+  /* Prevent iOS zoom on input focus */
+  .input, input, select, textarea { font-size: 16px !important; }
+
+  /* Stat grid 1 col */
+  .stat-grid { grid-template-columns: 1fr !important; }
+
+  /* Dashboard outer reduced padding */
+  .dashboard-outer > div,
+  .dashboard-outer > section,
+  .dashboard-outer > main {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  /* Pre blocks mobile */
+  pre { max-width: 100%; overflow-x: auto; }
 }
 
-/* ─── Pulse animation (used in webhook inspector) ───────────────────────── */
+/* ─── Pulse animation ────────────────────────────────────────────────────── */
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
@@ -740,9 +644,10 @@ code, pre {
   transition: border-color 0.15s, background-color 0.15s;
 }
 
-.drop-zone.active {
-  border-color: var(--color-ink);
-  background-color: var(--color-surface-card);
+.drop-zone.active { border-color: var(--color-ink); background-color: var(--color-surface-card); }
+
+@media (max-width: 768px) {
+  .drop-zone { padding: 32px 20px !important; }
 }
 
 /* ─── Progress bar ───────────────────────────────────────────────────────── */
@@ -807,279 +712,8 @@ code, pre {
   color: var(--color-ink);
 }
 
-.bio-link-btn:hover {
-  opacity: 0.75;
-}
+.bio-link-btn:hover { opacity: 0.75; }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   COMPREHENSIVE MOBILE RESPONSIVE STYLES
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-/* ─── Dashboard page inner padding override ─────────────────────────────────── */
-/* All dashboard pages wrap content in a div with padding: 32px.
-   On mobile, reduce horizontal padding to 16px so content has more width. */
-@media (max-width: 768px) {
-  .dashboard-outer > div,
-  .dashboard-outer > section,
-  .dashboard-outer > main {
-    padding-left: 16px !important;
-    padding-right: 16px !important;
-  }
-}
-@media (max-width: 480px) {
-  .dashboard-outer > div,
-  .dashboard-outer > section,
-  .dashboard-outer > main {
-    padding-left: 12px !important;
-    padding-right: 12px !important;
-  }
-}
-
-/* ─── QR Tool Page ─────────────────────────────────────────────────────────── */
-@media (max-width: 768px) {
-  .qr-tool-grid {
-    grid-template-columns: 1fr !important;
-  }
-}
-
-/* ─── Webhook Tool (public) ─────────────────────────────────────────────────── */
-@media (max-width: 768px) {
-  .tools-webhook-grid {
-    grid-template-columns: 1fr !important;
-  }
-}
-
-/* ─── Dashboard: Improved mobile layout ─────────────────────────────────────── */
-@media (max-width: 768px) {
-  /* Links table: hide less important columns */
-  .links-table-row-meta { display: none !important; }
-
-  /* Stat grid: 2 cols on tablet, 1 on phone */
-  .stat-grid { grid-template-columns: 1fr 1fr !important; }
-
-  /* Homepage hero input row */
-  .hero-input-row {
-    flex-direction: column !important;
-    gap: 10px !important;
-  }
-  .hero-input-row .btn {
-    width: 100% !important;
-  }
-
-  /* Community board tabs - horizontal scroll */
-  .board-tabs {
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    flex-wrap: nowrap !important;
-    padding-bottom: 4px !important;
-  }
-
-  /* Dashboard page header row */
-  .dash-header-row {
-    flex-direction: column !important;
-    align-items: flex-start !important;
-    gap: 12px !important;
-  }
-
-  /* Dashboard tab row */
-  .dash-tab-row {
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    flex-wrap: nowrap !important;
-    gap: 4px !important;
-    padding-bottom: 4px !important;
-  }
-  .dash-tab-row::-webkit-scrollbar { height: 0; }
-
-  /* File drop zone on mobile */
-  .drop-zone {
-    padding: 32px 20px !important;
-  }
-
-  /* Analytics stat cards */
-  .analytics-grid {
-    grid-template-columns: 1fr 1fr !important;
-  }
-
-  /* Community [slug] post page */
-  .post-action-row {
-    flex-direction: column !important;
-    gap: 8px !important;
-  }
-  .post-action-row .btn {
-    width: 100% !important;
-  }
-}
-
-@media (max-width: 480px) {
-  .stat-grid { grid-template-columns: 1fr !important; }
-  .analytics-grid { grid-template-columns: 1fr !important; }
-
-  /* Prevent horizontal overflow on narrow screens */
-  body { overflow-x: hidden; }
-
-  /* Section padding tighter */
-  .section { padding-top: 40px !important; padding-bottom: 40px !important; }
-
-  /* Eyebrow text smaller */
-  .eyebrow { font-size: 0.6875rem !important; }
-
-  /* Badge / tag text */
-  .badge { font-size: 0.6875rem !important; padding: 2px 8px !important; }
-
-  /* Textarea and code input */
-  textarea.input { font-size: 15px !important; }
-
-  /* Prevent iOS zoom on focus */
-  input.input, select.input, textarea.input { font-size: 16px !important; }
-
-  /* Modal full-screen on very small */
-  .modal-box { border-radius: 12px 12px 0 0 !important; }
-}
-
-/* ─── Dashboard Sidebar: show compact on mobile ─────────────────────────────── */
-@media (max-width: 768px) {
-  /* Dashboard nav bar (horizontal scroll tabs instead of sidebar) */
-  .dashboard-mobile-nav {
-    display: flex !important;
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    gap: 4px !important;
-    padding: 8px 0 12px !important;
-    border-bottom: 1px solid var(--color-hairline) !important;
-    margin-bottom: 20px !important;
-  }
-  .dashboard-mobile-nav::-webkit-scrollbar { height: 0; }
-  .dashboard-mobile-nav a {
-    flex-shrink: 0 !important;
-    white-space: nowrap !important;
-  }
-}
-
-/* ─── File download / paste view ────────────────────────────────────────────── */
-@media (max-width: 480px) {
-  /* File download card */
-  .file-download-card {
-    padding: 28px 16px !important;
-  }
-
-  /* File info meta badges */
-  .file-meta-row {
-    flex-direction: column !important;
-    gap: 6px !important;
-    align-items: flex-start !important;
-  }
-
-  /* Paste viewer header */
-  .paste-header-row {
-    flex-direction: column !important;
-    align-items: flex-start !important;
-    gap: 12px !important;
-  }
-  .paste-header-row .btn {
-    width: 100% !important;
-  }
-}
-
-/* ─── Auth pages ─────────────────────────────────────────────────────────────── */
-@media (max-width: 480px) {
-  .auth-page-wrapper {
-    padding: 24px 16px 48px !important;
-  }
-}
-
-/* ─── Homepage / marketing pages ───────────────────────────────────────────── */
-@media (max-width: 768px) {
-  /* Feature grid */
-  .feature-grid {
-    grid-template-columns: 1fr !important;
-  }
-
-  /* Pricing cards */
-  .pricing-grid {
-    grid-template-columns: 1fr !important;
-  }
-
-  /* Docs/API page sidebar hide */
-  .docs-sidebar {
-    display: none !important;
-  }
-
-  /* Stats row on homepage */
-  .stats-row {
-    grid-template-columns: 1fr 1fr !important;
-  }
-
-  /* Community main page board grid */
-  .community-board-grid {
-    grid-template-columns: 1fr !important;
-  }
-}
-
-@media (max-width: 480px) {
-  /* Homepage terminal card */
-  .terminal-card {
-    padding: 20px 16px !important;
-    font-size: 0.8125rem !important;
-  }
-
-  /* Stats row single col */
-  .stats-row {
-    grid-template-columns: 1fr !important;
-  }
-}
-
-/* ─── Touch improvements ─────────────────────────────────────────────────────── */
-@media (max-width: 768px) {
-  /* Larger touch targets */
-  .btn {
-    min-height: 44px;
-  }
-  .btn-sm {
-    min-height: 36px;
-  }
-
-  /* Sidebar link touch targets */
-  .sidebar-link {
-    min-height: 44px;
-    padding: 10px 12px !important;
-  }
-
-  /* Table rows more tappable */
-  .data-table td {
-    padding: 12px 12px !important;
-  }
-
-  /* Checkbox / radio larger tap area */
-  input[type="checkbox"], input[type="radio"] {
-    width: 18px !important;
-    height: 18px !important;
-  }
-}
-
-/* ─── Overflow & scroll helpers ─────────────────────────────────────────────── */
-/* Horizontal scroll wrappers */
-.scroll-x {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
+/* ─── Scroll helpers ─────────────────────────────────────────────────────── */
+.scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .scroll-x::-webkit-scrollbar { height: 4px; }
-
-/* Pre / code blocks - allow horizontal scroll but don't overflow page */
-@media (max-width: 768px) {
-  pre {
-    max-width: 100%;
-    overflow-x: auto;
-  }
-}
-
-/* ─── Dashboard webhook page specific ───────────────────────────────────────── */
-@media (max-width: 768px) {
-  .webhook-layout {
-    grid-template-columns: 1fr !important;
-  }
-  /* Webhook request list height limit */
-  .webhook-req-list {
-    max-height: 260px !important;
-  }
-}
