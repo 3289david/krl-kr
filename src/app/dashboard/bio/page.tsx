@@ -90,7 +90,7 @@ export default function BioPage() {
       )}
 
       <form onSubmit={handleSave}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: "24px" }}>
+        <div className="bio-layout" style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: "24px" }}>
           {/* Main settings */}
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
             {/* Profile */}

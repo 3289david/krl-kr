@@ -658,6 +658,71 @@ code, pre {
   z-index: 40;
 }
 
+/* ─── Mobile Responsive Utilities ───────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Dashboard pages */
+  .dashboard-grid-2 { grid-template-columns: 1fr 1fr !important; }
+  .dashboard-grid-3 { grid-template-columns: 1fr 1fr !important; }
+  .dashboard-sidebar { display: none !important; }
+  .dashboard-padding { padding: 20px 16px !important; }
+
+  /* Webhook two-column */
+  .webhook-layout { grid-template-columns: 1fr !important; }
+  /* Tools webhook */
+  .tools-webhook-grid { grid-template-columns: 1fr !important; }
+
+  /* Tables — make scrollable on mobile */
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* Modal — full width on mobile */
+  .modal-box {
+    max-width: 100% !important;
+    margin: 0 !important;
+    border-radius: 16px 16px 0 0 !important;
+    padding: 24px 20px !important;
+  }
+  .modal-overlay {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+
+  /* Auth pages */
+  .auth-card { padding: 28px 20px !important; }
+
+  /* Header adjustments */
+  .krl-desktop-nav { display: none !important; }
+  .krl-mobile-only { display: flex !important; }
+
+  /* Form grids */
+  .form-grid-2 { grid-template-columns: 1fr !important; }
+
+  /* Bio page */
+  .bio-layout { grid-template-columns: 1fr !important; }
+
+  /* Data table — hide less important columns */
+  .data-table .hide-mobile { display: none !important; }
+
+  /* Buttons full width on small screens */
+  .btn-mobile-full { width: 100% !important; justify-content: center !important; }
+
+  /* Card padding reduce */
+  .card { padding: 20px 16px !important; }
+  .stat-card { padding: 20px 16px !important; }
+
+  /* Hero section */
+  .hero-cta-row { flex-direction: column !important; align-items: stretch !important; }
+  .hero-cta-row .btn { width: 100% !important; justify-content: center !important; }
+}
+
+@media (max-width: 480px) {
+  .dashboard-grid-2 { grid-template-columns: 1fr !important; }
+  .dashboard-grid-3 { grid-template-columns: 1fr !important; }
+  .data-table th, .data-table td { padding: 10px 10px !important; font-size: 0.8125rem !important; }
+  .btn { padding: 9px 18px !important; }
+  .btn-lg { padding: 12px 24px !important; font-size: 1rem !important; }
+  .input { font-size: 16px !important; } /* Prevent iOS zoom on focus */
+}
+
 /* ─── Pulse animation (used in webhook inspector) ───────────────────────── */
 @keyframes pulse {
   0%, 100% { opacity: 1; }

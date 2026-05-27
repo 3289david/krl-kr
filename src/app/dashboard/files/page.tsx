@@ -154,7 +154,7 @@ export default function FilesPage() {
             <p style={{ fontSize: "0.875rem", color: "var(--color-muted)" }}>위에서 파일을 업로드해보세요.</p>
           </div>
         ) : (
-          <div style={{ overflowX: "auto" }}>
+          <div className="table-wrap" style={{ overflowX: "auto" }}>
             <table className="data-table">
               <thead>
                 <tr>

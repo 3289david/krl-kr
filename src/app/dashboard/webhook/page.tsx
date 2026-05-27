@@ -115,7 +115,7 @@ export default function WebhookPage() {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "280px 1fr", gap: "24px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "280px 1fr", gap: "24px" }} className="webhook-layout">
         {/* Sidebar */}
         <div>
           {/* Create */}

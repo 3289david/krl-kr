@@ -30,6 +30,7 @@ export default function LoginPage() {
         return;
       }
 
+      router.refresh();
       router.push("/dashboard");
     } catch {
       setError("네트워크 오류가 발생했습니다.");
@@ -69,6 +70,7 @@ export default function LoginPage() {
         </div>
 
         <div
+          className="auth-card"
           style={{
             background: "var(--color-lifted)",
             border: "1px solid var(--color-hairline-strong)",

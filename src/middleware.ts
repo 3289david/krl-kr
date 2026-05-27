@@ -40,9 +40,21 @@ const RESERVED_PATHS = new Set([
   "apple-touch-icon.png",
 ]);
 
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-API-Key",
+  "Access-Control-Max-Age": "86400",
+};
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const hostname = request.headers.get("host") ?? "";
+
+  // ── Handle CORS preflight for API routes ────────────────────────────────────
+  if (request.method === "OPTIONS" && pathname.startsWith("/api/")) {
+    return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
+  }
 
   // ── 1. Wildcard subdomain routing (*.krl.kr) ────────────────────────────────
   // e.g. david.krl.kr → rewrite to internal sub-redirect route

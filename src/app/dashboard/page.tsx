@@ -113,7 +113,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", marginBottom: "32px" }}>
+      <div className="dashboard-grid-3" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", marginBottom: "32px" }}>
         <StatCard label="총 링크" value={stats.totalLinks} icon={<LinkIcon size={18} />} sub="생성된 단축 링크" />
         <StatCard label="총 클릭" value={stats.totalClicks} icon={<BarChartIcon size={18} />} sub="전체 클릭 수" />
         <StatCard label="오늘 생성" value={stats.linksToday} icon={<PlusIcon size={18} />} sub="최근 24시간" />
@@ -217,7 +217,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Quick actions */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
+      <div className="dashboard-grid-2" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
         {[
           { href: "/dashboard/qr", icon: <QrCodeIcon size={20} />, title: "QR 코드", desc: "SVG/PNG 생성" },
           { href: "/dashboard/files", icon: <FileIcon size={20} />, title: "파일 공유", desc: "드래그앤드롭 업로드" },
