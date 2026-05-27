@@ -1,5 +1,6 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { AltchaWidget } from "@/components/AltchaWidget";
 
 interface EmailAlias {
   id: string;
@@ -34,10 +35,12 @@ export default function EmailInboxPage() {
   const [selected, setSelected] = useState<EmailDetail | null>(null);
   const [activeAlias, setActiveAlias] = useState<string | null>(null);
   const [newAlias, setNewAlias] = useState("");
+  const [showCreateForm, setShowCreateForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
   const [unreadCount, setUnreadCount] = useState(0);
+  const createFormRef = useRef<HTMLFormElement>(null);
 
   // Load aliases
   const loadAliases = useCallback(async () => {
@@ -94,20 +97,24 @@ export default function EmailInboxPage() {
     if (selected?.id === id) setSelected(null);
   }
 
-  async function createAlias() {
+  async function createAlias(e: React.FormEvent) {
+    e.preventDefault();
     if (!newAlias.trim()) return;
     setCreating(true);
     setError("");
+    const altchaEl = createFormRef.current?.querySelector<HTMLInputElement>('input[name="altcha"]');
+    const altchaPayload = altchaEl?.value ?? null;
     const res = await fetch("/api/v1/email", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ alias: newAlias.trim().toLowerCase() }),
+      body: JSON.stringify({ alias: newAlias.trim().toLowerCase(), altcha: altchaPayload }),
     });
     const data = await res.json() as { error?: string; email?: string };
     if (!res.ok) {
       setError(data.error ?? "오류가 발생했습니다.");
     } else {
       setNewAlias("");
+      setShowCreateForm(false);
       await loadAliases();
     }
     setCreating(false);
@@ -168,31 +175,49 @@ export default function EmailInboxPage() {
           )}
         </div>
 
-        {/* Create alias form */}
-        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0", border: "1px solid var(--color-hairline-strong)", borderRadius: "var(--radius-pill)", overflow: "hidden", background: "var(--color-lifted)" }}>
-            <input
-              type="text"
-              value={newAlias}
-              onChange={(e) => setNewAlias(e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, ""))}
-              placeholder="새 주소 (예: myname)"
-              style={{ border: "none", borderRadius: 0, padding: "8px 14px", width: "180px", background: "transparent", fontSize: "0.875rem" }}
-              onKeyDown={(e) => { if (e.key === "Enter") createAlias(); }}
-            />
-            <span style={{ padding: "0 14px 0 0", fontSize: "0.8125rem", color: "var(--color-muted)", whiteSpace: "nowrap" }}>@krl.kr</span>
-          </div>
-          <button
-            onClick={createAlias}
-            disabled={creating || !newAlias.trim()}
-            className="btn btn-primary btn-sm btn-pill"
-          >
-            {creating ? "생성 중..." : "주소 추가"}
-          </button>
-        </div>
+        {/* Create alias button */}
+        <button
+          onClick={() => setShowCreateForm((v) => !v)}
+          className="btn btn-primary btn-sm btn-pill"
+        >
+          {showCreateForm ? "취소" : "+ 주소 추가"}
+        </button>
       </div>
 
+      {/* Create alias form panel */}
+      {showCreateForm && (
+        <div style={{ margin: "0 24px 16px", padding: "20px 24px", background: "var(--color-lifted)", border: "1px solid var(--color-hairline-strong)", borderRadius: "12px" }}>
+          <p style={{ fontSize: "0.875rem", fontWeight: 600, marginBottom: "14px" }}>새 이메일 주소 추가</p>
+          <form ref={createFormRef} onSubmit={createAlias} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+            <div>
+              <label style={{ display: "block", fontSize: "0.8125rem", fontWeight: 500, marginBottom: "6px" }}>주소 이름</label>
+              <div style={{ display: "flex", alignItems: "center", gap: "0", border: "1px solid var(--color-hairline-strong)", borderRadius: "8px", overflow: "hidden", background: "var(--color-canvas)" }}>
+                <input
+                  type="text"
+                  value={newAlias}
+                  onChange={(e) => setNewAlias(e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, ""))}
+                  placeholder="myname"
+                  required
+                  autoFocus
+                  style={{ border: "none", borderRadius: 0, padding: "9px 14px", flex: 1, background: "transparent", fontSize: "0.875rem", outline: "none" }}
+                />
+                <span style={{ padding: "0 14px", fontSize: "0.8125rem", color: "var(--color-muted)", whiteSpace: "nowrap", borderLeft: "1px solid var(--color-hairline)" }}>@krl.kr</span>
+              </div>
+            </div>
+            {/* Altcha PoW CAPTCHA */}
+            <AltchaWidget name="altcha" />
+            <div style={{ display: "flex", gap: "10px" }}>
+              <button type="button" onClick={() => { setShowCreateForm(false); setError(""); }} className="btn btn-secondary btn-pill" style={{ flex: 1, justifyContent: "center" }}>취소</button>
+              <button type="submit" disabled={creating || !newAlias.trim()} className="btn btn-primary btn-pill" style={{ flex: 1, justifyContent: "center" }}>
+                {creating ? "생성 중..." : "주소 만들기"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
       {error && (
-        <div style={{ margin: "0 40px 16px", padding: "10px 16px", background: "#FFF1F2", border: "1px solid #FECDD3", borderRadius: "var(--radius-sm)", fontSize: "0.875rem", color: "#9B1C1C" }}>
+        <div style={{ margin: "0 24px 16px", padding: "10px 16px", background: "#FFF1F2", border: "1px solid #FECDD3", borderRadius: "var(--radius-sm)", fontSize: "0.875rem", color: "#9B1C1C" }}>
           {error}
         </div>
       )}

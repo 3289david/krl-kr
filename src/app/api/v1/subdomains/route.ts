@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDB } from "@/lib/env";
 import { requireAuth } from "@/lib/auth";
 import { generateId } from "@/lib/utils";
+import { verifyAltcha } from "@/components/AltchaWidget";
 import { z } from "zod";
 
 const RESERVED_SUBDOMAINS = new Set([
@@ -24,6 +25,7 @@ const CreateSubdomainSchema = z.object({
     ),
   type: z.enum(["github", "vercel", "html", "redirect", "api"]),
   target: z.string().min(1, "대상 URL을 입력해주세요."),
+  altcha: z.string().nullable().optional(),
 });
 
 /**
@@ -136,7 +138,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: parsed.error.errors[0]?.message }, { status: 400 });
     }
 
-    const { subdomain, type, target } = parsed.data;
+    const { subdomain, type, target, altcha } = parsed.data;
+
+    // Altcha PoW verification
+    const skipAltcha = process.env.SKIP_ALTCHA === "1";
+    if (!skipAltcha) {
+      const valid = await verifyAltcha(altcha);
+      if (!valid) {
+        return NextResponse.json(
+          { error: "보안 인증을 완료해주세요.", code: "ALTCHA_FAILED" },
+          { status: 400 }
+        );
+      }
+    }
 
     if (RESERVED_SUBDOMAINS.has(subdomain.toLowerCase())) {
       return NextResponse.json(

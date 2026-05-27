@@ -1,8 +1,9 @@
 "use client";
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { PlusIcon, TrashIcon, XIcon, EditIcon } from "@/components/icons";
 import { formatDate } from "@/lib/utils";
+import { AltchaWidget } from "@/components/AltchaWidget";
 
 interface Subdomain {
   id: string;
@@ -78,6 +79,7 @@ function SubdomainsPageInner() {
   const [target, setTarget] = useState("");
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState("");
+  const createFormRef = useRef<HTMLFormElement>(null);
 
   // Edit modal
   const [editItem, setEditItem] = useState<Subdomain | null>(null);
@@ -114,10 +116,12 @@ function SubdomainsPageInner() {
     setCreating(true);
     setCreateError("");
     try {
+      const altchaEl = createFormRef.current?.querySelector<HTMLInputElement>('input[name="altcha"]');
+      const altchaPayload = altchaEl?.value ?? null;
       const res = await fetch("/api/v1/subdomains", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subdomain, type, target }),
+        body: JSON.stringify({ subdomain, type, target, altcha: altchaPayload }),
       });
       const data = await res.json();
       if (!res.ok) { setCreateError(data.error ?? "생성에 실패했습니다."); return; }
@@ -382,7 +386,7 @@ function SubdomainsPageInner() {
                 {createError}
               </div>
             )}
-            <form onSubmit={handleCreate} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            <form ref={createFormRef} onSubmit={handleCreate} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
               <div>
                 <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 500, marginBottom: "6px" }}>서브도메인 * (최소 4자)</label>
                 <div style={{ display: "flex", alignItems: "center" }}>
@@ -422,7 +426,9 @@ function SubdomainsPageInner() {
                     placeholder={TYPE_PLACEHOLDERS[type] ?? "https://..."} required className="input" />
                 </div>
               )}
-              <div style={{ display: "flex", gap: "12px", marginTop: "8px" }}>
+              {/* Altcha PoW CAPTCHA */}
+              <AltchaWidget name="altcha" />
+              <div style={{ display: "flex", gap: "12px", marginTop: "4px" }}>
                 <button type="button" onClick={() => setShowCreate(false)} className="btn btn-secondary btn-pill" style={{ flex: 1, justifyContent: "center" }}>취소</button>
                 <button type="submit" disabled={creating || !subdomain || !target} className="btn btn-primary btn-pill" style={{ flex: 1, justifyContent: "center" }}>
                   {creating ? "등록 중..." : "등록하기"}

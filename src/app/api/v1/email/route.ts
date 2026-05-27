@@ -11,6 +11,7 @@ import { getDB } from "@/lib/env";
 import { requireAuth } from "@/lib/auth";
 import { generateId } from "@/lib/utils";
 import { deleteEmailForwardingRule } from "@/lib/email";
+import { verifyAltcha } from "@/components/AltchaWidget";
 import { z } from "zod";
 
 const CreateAliasSchema = z.object({
@@ -22,6 +23,7 @@ const CreateAliasSchema = z.object({
       /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/,
       "영문자, 숫자, 점(.), 하이픈(-), 언더스코어(_)만 사용 가능합니다."
     ),
+  altcha: z.string().nullable().optional(),
 });
 
 const ALIAS_LIMIT = 5; // 모든 사용자 동일
@@ -86,7 +88,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { alias } = parsed.data;
+    const { alias, altcha } = parsed.data;
+
+    // Altcha PoW verification
+    const skipAltcha = process.env.SKIP_ALTCHA === "1";
+    if (!skipAltcha) {
+      const valid = await verifyAltcha(altcha);
+      if (!valid) {
+        return NextResponse.json(
+          { error: "보안 인증을 완료해주세요.", code: "ALTCHA_FAILED" },
+          { status: 400 }
+        );
+      }
+    }
     const aliasLower = alias.toLowerCase();
     const fullEmail = `${aliasLower}@krl.kr`;
 

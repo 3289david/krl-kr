@@ -2,11 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDB } from "@/lib/env";
 import { z } from "zod";
 import { verifyPassword, createToken, getSessionCookieOptions, checkRateLimit } from "@/lib/auth";
+import { verifyAltcha } from "@/components/AltchaWidget";
 
 const LoginSchema = z.object({
   email: z.string().email("유효한 이메일을 입력해주세요."),
   password: z.string().min(1, "비밀번호를 입력해주세요."),
   remember: z.boolean().optional(),
+  altcha: z.string().nullable().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -40,7 +42,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { email, password } = parsed.data;
+    const { email, password, altcha } = parsed.data;
+
+    // Altcha PoW verification (skip in dev)
+    const skipAltcha = process.env.SKIP_ALTCHA === "1";
+    if (!skipAltcha) {
+      const valid = await verifyAltcha(altcha);
+      if (!valid) {
+        return NextResponse.json(
+          { error: "보안 인증을 완료해주세요.", code: "ALTCHA_FAILED" },
+          { status: 400 }
+        );
+      }
+    }
     const db = getDB(request);
 
     // Find user
