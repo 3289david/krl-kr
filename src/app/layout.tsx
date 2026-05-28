@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
-import Script from "next/script";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -81,11 +80,12 @@ export default function RootLayout({
   return (
     <html lang="ko" className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <head>
-        <Script
+        {/* Google AdSense — must be in raw <head> for verification */}
+        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
+        <script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3656867929224668"
           crossOrigin="anonymous"
-          strategy="afterInteractive"
         />
       </head>
       <body className={GeistSans.className}>{children}</body>
