@@ -30,19 +30,17 @@ const NAV_MENUS = [
     items: [
       { href: "/dashboard/subdomains", icon: "M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z M2 12h20 M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z", label: "서브도메인", desc: "내이름.krl.kr 주소 만들기" },
       { href: "/tools/bio", icon: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z", label: "Link-in-bio", desc: "krl.kr/@닉네임 프로필 페이지" },
-      { href: "/dashboard/subdomains?tab=html", icon: "M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z M13 2v7h7", label: "HTML 배포", desc: "HTML 입력하면 HTTPS 자동 적용" },
-      { href: "/dashboard/subdomains?tab=redirect", icon: "M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8 M3 3v5h5 M12 7v5l3 3", label: "리다이렉트", desc: "krl.kr 주소에서 다른 URL로 이동" },
     ],
   },
   {
     label: "개발 도구",
     items: [
-      { href: "/tools/dev#ip",     icon: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z", label: "IP 조회", desc: "IP 주소와 지역 정보 확인" },
-      { href: "/tools/dev#uuid",   icon: "M7 7h10v10H7z M12 3v4 M12 17v4 M3 12h4 M17 12h4", label: "UUID 생성기", desc: "랜덤 UUID v4 생성" },
-      { href: "/tools/dev#hash",   icon: "M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18", label: "Hash 계산기", desc: "SHA-256/512 해시값 계산" },
-      { href: "/tools/dev#base64", icon: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6", label: "Base64", desc: "Base64 인코딩/디코딩" },
-      { href: "/tools/dev#dns",    icon: "M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8 M3 3v5h5 M12 7v5l3 3", label: "DNS 조회", desc: "A/CNAME/MX/TXT 레코드 확인" },
-      { href: "/tools/dev#jwt",    icon: "M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z", label: "JWT 디코드", desc: "JWT 토큰 파싱 및 확인" },
+      { href: "/tools/dev", icon: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z", label: "IP 조회", desc: "IP 주소와 지역 정보 확인" },
+      { href: "/tools/dev", icon: "M7 7h10v10H7z M12 3v4 M12 17v4 M3 12h4 M17 12h4", label: "UUID 생성기", desc: "랜덤 UUID v4 생성" },
+      { href: "/tools/dev", icon: "M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18", label: "Hash 계산기", desc: "SHA-256/512 해시값 계산" },
+      { href: "/tools/dev", icon: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6", label: "Base64", desc: "Base64 인코딩/디코딩" },
+      { href: "/tools/dev", icon: "M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8 M3 3v5h5 M12 7v5l3 3", label: "DNS 조회", desc: "A/CNAME/MX/TXT 레코드 확인" },
+      { href: "/tools/dev", icon: "M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z", label: "JWT 디코드", desc: "JWT 토큰 파싱 및 확인" },
     ],
   },
 ];
@@ -179,14 +177,6 @@ export function SiteHeader() {
               onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
             >커뮤니티</Link>
 
-            <Link href="/docs" style={{
-              padding: "6px 10px", borderRadius: "6px", fontSize: "0.875rem",
-              fontWeight: 500, color: "var(--color-body)", textDecoration: "none", transition: "background 0.1s",
-            }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--color-surface-card)")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-            >API</Link>
-
             {isLoggedIn && (
               <Link href="/dashboard" style={{
                 padding: "6px 10px", borderRadius: "6px", fontSize: "0.875rem",
@@ -200,6 +190,22 @@ export function SiteHeader() {
 
           {/* Right side */}
           <div className="krl-desktop-nav" style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+            {/* Search button */}
+            <Link href="/search" title="검색" style={{
+              display: "inline-flex", alignItems: "center", justifyContent: "center",
+              width: "34px", height: "34px", borderRadius: "8px",
+              color: "var(--color-body)", textDecoration: "none",
+              transition: "background 0.1s",
+            }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--color-surface-card)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+            >
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            </Link>
             {/* Donate button */}
             <Link href="/support" style={{
               display: "inline-flex", alignItems: "center", gap: "5px",
@@ -367,7 +373,7 @@ export function SiteHeader() {
               </div>
             ))}
             <div style={{ height: "1px", background: "var(--color-hairline)", margin: "8px 0" }} />
-            {[{ href: "/community", label: "커뮤니티" }, { href: "/docs", label: "API" }].map((item) => (
+            {[{ href: "/community", label: "커뮤니티" }, { href: "/search", label: "🔍 검색" }].map((item) => (
               <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)} style={{
                 display: "block", padding: "11px 4px", fontSize: "0.9375rem",
                 fontWeight: 500, color: "var(--color-ink)", textDecoration: "none",
