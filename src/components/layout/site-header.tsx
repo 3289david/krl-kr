@@ -373,7 +373,7 @@ export function SiteHeader() {
               </div>
             ))}
             <div style={{ height: "1px", background: "var(--color-hairline)", margin: "8px 0" }} />
-            {[{ href: "/community", label: "커뮤니티" }, { href: "/search", label: "🔍 검색" }].map((item) => (
+            {[{ href: "/community", label: "커뮤니티" }, { href: "/search", label: "검색" }].map((item) => (
               <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)} style={{
                 display: "block", padding: "11px 4px", fontSize: "0.9375rem",
                 fontWeight: 500, color: "var(--color-ink)", textDecoration: "none",
