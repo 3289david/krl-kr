@@ -1,19 +1,68 @@
 "use client";
-import { useState, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 
+// ─── Tab definitions (id / label / icon path / description) ──────────────────
 const TABS = [
-  { id: "ip",        label: "IP 조회" },
-  { id: "uuid",      label: "UUID" },
-  { id: "hash",      label: "Hash" },
-  { id: "base64",    label: "Base64" },
-  { id: "url",       label: "URL 인코딩" },
-  { id: "json",      label: "JSON" },
-  { id: "timestamp", label: "Timestamp" },
-  { id: "color",     label: "색상 변환" },
-  { id: "regex",     label: "정규식" },
-  { id: "text",      label: "텍스트 도구" },
-  { id: "dns",       label: "DNS 조회" },
-  { id: "jwt",       label: "JWT 디코드" },
+  {
+    id: "ip", label: "IP 조회",
+    icon: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z",
+    desc: "IP 주소와 지역·ISP·좌표 정보를 조회합니다. 직접 IP를 입력해 조회할 수도 있습니다.",
+  },
+  {
+    id: "uuid", label: "UUID",
+    icon: "M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18",
+    desc: "랜덤 UUID를 생성합니다. v4(완전 랜덤) 또는 v7(시간순 정렬) 방식을 선택하세요.",
+  },
+  {
+    id: "hash", label: "Hash",
+    icon: "M4 7h16M4 12h16M4 17h7",
+    desc: "SHA-1 / SHA-256 / SHA-384 / SHA-512 해시값을 브라우저 내에서 계산합니다.",
+  },
+  {
+    id: "base64", label: "Base64",
+    icon: "M8 9l4-4 4 4m0 6l-4 4-4-4",
+    desc: "텍스트를 Base64로 인코딩하거나 디코딩합니다. URL-safe 모드도 지원합니다.",
+  },
+  {
+    id: "url", label: "URL",
+    icon: "M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1",
+    desc: "URL 인코딩·디코딩, URL 파싱(프로토콜/호스트/경로/쿼리 분해)을 제공합니다.",
+  },
+  {
+    id: "json", label: "JSON",
+    icon: "M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z M14 2v6h6 M16 13H8 M16 17H8 M10 9H8",
+    desc: "JSON을 포맷·최소화하고 유효성을 검사합니다. 키 수와 중첩 깊이도 표시합니다.",
+  },
+  {
+    id: "timestamp", label: "Timestamp",
+    icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z",
+    desc: "Unix timestamp(초·밀리초)와 날짜/시간을 상호 변환합니다. KST도 표시됩니다.",
+  },
+  {
+    id: "color", label: "색상",
+    icon: "M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01",
+    desc: "HEX, RGB, HSL 세 가지 색상 형식을 서로 변환합니다. 컬러피커도 지원합니다.",
+  },
+  {
+    id: "regex", label: "정규식",
+    icon: "M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4",
+    desc: "정규식 패턴을 테스트하고 매치 결과·인덱스·그룹을 확인합니다.",
+  },
+  {
+    id: "text", label: "텍스트",
+    icon: "M4 6h16M4 12h16M4 18h7",
+    desc: "대/소문자 변환, 정렬, 중복 제거, 슬러그 생성 등 텍스트 도구 모음입니다.",
+  },
+  {
+    id: "dns", label: "DNS",
+    icon: "M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9",
+    desc: "Google DNS를 통해 A, AAAA, CNAME, MX, TXT, NS, SRV 레코드를 조회합니다.",
+  },
+  {
+    id: "jwt", label: "JWT",
+    icon: "M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z",
+    desc: "JWT 토큰을 Header·Payload·Signature로 분해합니다. 만료 여부도 확인합니다.",
+  },
 ];
 
 // ─── Shared Copy Button ───────────────────────────────────────────────────────
@@ -34,6 +83,38 @@ function CopyBtn({ text, style }: { text: string; style?: React.CSSProperties })
     }}>
       {copied ? "✓ 복사됨" : "복사"}
     </button>
+  );
+}
+
+// ─── Tool Header ──────────────────────────────────────────────────────────────
+function ToolHeader({ id }: { id: string }) {
+  const tab = TABS.find((t) => t.id === id)!;
+  return (
+    <div style={{
+      display: "flex", alignItems: "flex-start", gap: "12px",
+      paddingBottom: "18px", marginBottom: "20px",
+      borderBottom: "1px solid var(--color-hairline)",
+    }}>
+      <div style={{
+        width: "36px", height: "36px", borderRadius: "10px",
+        background: "var(--color-ink)", display: "flex", alignItems: "center",
+        justifyContent: "center", flexShrink: 0, marginTop: "1px",
+      }}>
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+          stroke="var(--color-canvas)" strokeWidth="1.75"
+          strokeLinecap="round" strokeLinejoin="round">
+          <path d={tab.icon} />
+        </svg>
+      </div>
+      <div>
+        <h2 style={{ fontSize: "1.0625rem", fontWeight: 700, color: "var(--color-ink)", margin: 0, lineHeight: 1.3 }}>
+          {tab.label}
+        </h2>
+        <p style={{ fontSize: "0.8125rem", color: "var(--color-muted)", marginTop: "3px", lineHeight: 1.5 }}>
+          {tab.desc}
+        </p>
+      </div>
+    </div>
   );
 }
 
@@ -81,7 +162,6 @@ function IpTool() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-      <p style={{ fontSize: "0.875rem", color: "var(--color-muted)" }}>IP 주소와 지역 정보를 확인합니다. 다른 IP 주소도 조회할 수 있습니다.</p>
       <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
         <button className="btn btn-primary btn-sm" onClick={() => lookup()} disabled={loading}>
           {loading ? "조회 중…" : "내 IP 조회"}
@@ -120,11 +200,9 @@ function UuidTool() {
   function generate() {
     const generated = Array.from({ length: count }, () => {
       if (version === "v7") {
-        // UUID v7: time-ordered (first 48 bits = ms timestamp)
-        const now = Date.now(); // milliseconds, 48-bit safe integer
+        const now = Date.now();
         const rand = crypto.getRandomValues(new Uint8Array(10));
-        // Split 48-bit timestamp: hi = upper 36 bits, mid = lower 12 bits
-        const hi = Math.floor(now / 4096) >>> 0; // ts >> 12, lower 32 bits
+        const hi = Math.floor(now / 4096) >>> 0;
         const mid = now & 0xfff;
         const b = new Uint8Array(16);
         b[0] = (hi >> 24) & 0xff; b[1] = (hi >> 16) & 0xff; b[2] = (hi >> 8) & 0xff; b[3] = hi & 0xff;
@@ -141,7 +219,6 @@ function UuidTool() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-      <p style={{ fontSize: "0.875rem", color: "var(--color-muted)" }}>랜덤 UUID를 생성합니다. v4(랜덤) 또는 v7(시간순) 방식을 선택하세요.</p>
       <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
         <div style={{ display: "flex", gap: "4px" }}>
           {(["v4", "v7"] as const).map((v) => (
@@ -193,7 +270,6 @@ function HashTool() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-      <p style={{ fontSize: "0.875rem", color: "var(--color-muted)" }}>텍스트의 해시값을 계산합니다. 브라우저 내에서 직접 처리됩니다.</p>
       <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
         {["SHA-1", "SHA-256", "SHA-384", "SHA-512"].map((a) => (
           <button key={a} onClick={() => { setAlgo(a); setAllMode(false); }} style={{
@@ -252,7 +328,6 @@ function Base64Tool() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-      <p style={{ fontSize: "0.875rem", color: "var(--color-muted)" }}>텍스트를 Base64로 인코딩하거나 디코딩합니다.</p>
       <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
         {(["encode", "decode"] as const).map((m) => (
           <button key={m} onClick={() => setMode(m)} style={{
@@ -298,7 +373,6 @@ function UrlTool() {
       } else if (mode === "decode") {
         setOutput(decodeURIComponent(input));
       } else {
-        // Parse URL
         const u = new URL(input.startsWith("http") ? input : "https://" + input);
         const params: Record<string, string> = {};
         u.searchParams.forEach((v, k) => { params[k] = v; });
@@ -319,7 +393,6 @@ function UrlTool() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-      <p style={{ fontSize: "0.875rem", color: "var(--color-muted)" }}>URL 인코딩/디코딩, URL 파싱 도구입니다.</p>
       <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
         {([["encode", "인코딩"], ["decode", "디코딩"], ["parse", "URL 분석"]] as const).map(([m, label]) => (
           <button key={m} onClick={() => setMode(m)} style={{
@@ -395,7 +468,6 @@ function JsonTool() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-      <p style={{ fontSize: "0.875rem", color: "var(--color-muted)" }}>JSON을 포맷하고 검증합니다.</p>
       <textarea className="input" rows={6} placeholder='{"key": "value", "array": [1, 2, 3]}' value={input} onChange={(e) => setInput(e.target.value)} style={{ resize: "vertical", fontFamily: "var(--font-mono)", fontSize: "0.875rem" }} />
       <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
         <button className="btn btn-primary btn-sm" onClick={format} disabled={!input}>포맷</button>
@@ -441,9 +513,9 @@ function TimestampTool() {
       const input = ts.trim();
       let date: Date;
       if (/^\d{10}$/.test(input)) {
-        date = new Date(Number(input) * 1000); // Unix seconds
+        date = new Date(Number(input) * 1000);
       } else if (/^\d{13}$/.test(input)) {
-        date = new Date(Number(input)); // Unix milliseconds
+        date = new Date(Number(input));
       } else {
         date = new Date(input);
       }
@@ -466,13 +538,11 @@ function TimestampTool() {
   }
 
   function now() {
-    const n = Date.now();
-    setTs(Math.floor(n / 1000).toString());
+    setTs(Math.floor(Date.now() / 1000).toString());
   }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-      <p style={{ fontSize: "0.875rem", color: "var(--color-muted)" }}>Unix timestamp와 날짜/시간을 변환합니다. 초(10자리), 밀리초(13자리) 또는 날짜 문자열을 입력하세요.</p>
       <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
         <input className="input" style={{ flex: 1, minWidth: "200px" }} placeholder="1748304000 또는 2026-05-27T00:00:00Z" value={ts} onChange={(e) => setTs(e.target.value)} onKeyDown={(e) => e.key === "Enter" && convert()} />
         <button className="btn btn-primary btn-sm" onClick={convert} disabled={!ts}>변환</button>
@@ -543,7 +613,6 @@ function ColorTool() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-      <p style={{ fontSize: "0.875rem", color: "var(--color-muted)" }}>HEX, RGB, HSL 색상 형식을 변환합니다.</p>
       <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
         <div style={{ width: "64px", height: "64px", borderRadius: "12px", background: hex, border: "1px solid var(--color-hairline-strong)", flexShrink: 0 }} />
         <div style={{ flex: 1 }}>
@@ -608,7 +677,6 @@ function RegexTool() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-      <p style={{ fontSize: "0.875rem", color: "var(--color-muted)" }}>정규식을 테스트합니다. 매치된 결과를 실시간으로 확인하세요.</p>
       <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
         <span style={{ fontFamily: "var(--font-mono)", color: "var(--color-muted)", fontSize: "1.1rem" }}>/</span>
         <input className="input" style={{ flex: 1, fontFamily: "var(--font-mono)" }} placeholder="정규식 패턴…" value={pattern} onChange={(e) => setPattern(e.target.value)} />
@@ -671,7 +739,6 @@ function TextTool() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-      <p style={{ fontSize: "0.875rem", color: "var(--color-muted)" }}>텍스트 변환, 통계, 정렬 등 다양한 텍스트 도구입니다.</p>
       <textarea className="input" rows={6} placeholder="텍스트를 입력하세요…" value={text} onChange={(e) => setText(e.target.value)} style={{ resize: "vertical" }} />
       {text && (
         <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", fontSize: "0.8125rem", color: "var(--color-muted)", background: "var(--color-surface-card)", borderRadius: "8px", padding: "10px 14px" }}>
@@ -726,7 +793,6 @@ function DnsTool() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-      <p style={{ fontSize: "0.875rem", color: "var(--color-muted)" }}>Google DNS를 통해 DNS 레코드를 조회합니다.</p>
       <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
         {["A", "AAAA", "CNAME", "MX", "TXT", "NS", "SRV"].map((t) => (
           <button key={t} onClick={() => setType(t)} style={{
@@ -792,7 +858,6 @@ function JwtTool() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-      <p style={{ fontSize: "0.875rem", color: "var(--color-muted)" }}>JWT 토큰을 디코딩합니다. 검증 없이 클라이언트에서만 처리됩니다.</p>
       <textarea className="input" rows={4} placeholder="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9…" value={token} onChange={(e) => setToken(e.target.value)} style={{ resize: "vertical", fontFamily: "var(--font-mono)", fontSize: "0.8125rem", wordBreak: "break-all" }} />
       <button className="btn btn-primary btn-sm" onClick={decode} disabled={!token} style={{ alignSelf: "flex-start" }}>디코드</button>
       {error && <p style={{ color: "var(--color-danger)", fontSize: "0.875rem" }}>{error}</p>}
@@ -835,56 +900,126 @@ function JwtTool() {
   );
 }
 
-// ─── Main ─────────────────────────────────────────────────────────────────────
+// ─── Tool map ─────────────────────────────────────────────────────────────────
 const TOOL_COMPONENTS: Record<string, React.FC> = {
   ip: IpTool, uuid: UuidTool, hash: HashTool, base64: Base64Tool,
   url: UrlTool, json: JsonTool, timestamp: TimestampTool, color: ColorTool,
   regex: RegexTool, text: TextTool, dns: DnsTool, jwt: JwtTool,
 };
 
+// ─── Slide Tab Bar ────────────────────────────────────────────────────────────
+function SlideTabBar({ active, onSelect }: { active: string; onSelect: (id: string) => void }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const btnRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  // Scroll active tab into view (centred) whenever it changes
+  useEffect(() => {
+    const btn = btnRefs.current[active];
+    const container = scrollRef.current;
+    if (!btn || !container) return;
+    const btnLeft = btn.offsetLeft;
+    const btnCenter = btnLeft + btn.offsetWidth / 2;
+    const target = btnCenter - container.clientWidth / 2;
+    container.scrollTo({ left: Math.max(0, target), behavior: "smooth" });
+  }, [active]);
+
+  return (
+    <div style={{ position: "relative" }}>
+      {/* fade edges */}
+      <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "24px", background: "linear-gradient(to right, var(--color-canvas), transparent)", zIndex: 1, pointerEvents: "none" }} />
+      <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "24px", background: "linear-gradient(to left, var(--color-canvas), transparent)", zIndex: 1, pointerEvents: "none" }} />
+
+      <div
+        ref={scrollRef}
+        className="dev-tab-scroll"
+        style={{
+          display: "flex", gap: "4px",
+          overflowX: "auto", paddingBottom: "2px",
+          scrollbarWidth: "none",
+          WebkitOverflowScrolling: "touch",
+          padding: "4px 24px",
+        } as React.CSSProperties}
+      >
+        {TABS.map((tab) => {
+          const isActive = tab.id === active;
+          return (
+            <button
+              key={tab.id}
+              ref={(el) => { btnRefs.current[tab.id] = el; }}
+              onClick={() => onSelect(tab.id)}
+              style={{
+                display: "flex", alignItems: "center", gap: "6px",
+                padding: "7px 14px", borderRadius: "99px",
+                border: "1px solid",
+                borderColor: isActive ? "var(--color-ink)" : "var(--color-hairline-strong)",
+                background: isActive ? "var(--color-ink)" : "var(--color-lifted)",
+                color: isActive ? "var(--color-canvas)" : "var(--color-body)",
+                cursor: "pointer", fontFamily: "var(--font-sans)",
+                fontSize: "0.875rem", fontWeight: isActive ? 600 : 400,
+                whiteSpace: "nowrap", flexShrink: 0,
+                transition: "background 0.18s, border-color 0.18s, color 0.18s",
+                boxShadow: isActive ? "0 1px 4px rgba(0,0,0,0.12)" : "none",
+              }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="1.75"
+                strokeLinecap="round" strokeLinejoin="round"
+                style={{ flexShrink: 0 }}>
+                <path d={tab.icon} />
+              </svg>
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function DevToolsPage() {
   const [active, setActive] = useState("ip");
   const ToolComponent = TOOL_COMPONENTS[active];
 
+  const handleSelect = useCallback((id: string) => setActive(id), []);
+
   return (
     <main style={{ minHeight: "100vh", background: "var(--color-canvas)" }}>
-      <div style={{ maxWidth: "860px", margin: "0 auto", padding: "40px 16px 80px" }}>
-        {/* Header */}
-        <div style={{ marginBottom: "28px" }}>
+      <div style={{ maxWidth: "860px", margin: "0 auto", padding: "40px 0 80px" }}>
+
+        {/* Page header */}
+        <div style={{ padding: "0 16px", marginBottom: "28px" }}>
           <p className="section-label" style={{ marginBottom: "8px" }}>웹 서비스</p>
-          <h1 style={{ fontSize: "1.75rem", fontWeight: 700, letterSpacing: "-0.025em", marginBottom: "6px" }}>개발자 도구</h1>
-          <p style={{ color: "var(--color-muted)", fontSize: "0.9375rem" }}>IP, UUID, Hash, Base64, URL, JSON, Timestamp, 색상, 정규식, DNS, JWT 등 12가지 도구</p>
+          <h1 style={{ fontSize: "1.75rem", fontWeight: 700, letterSpacing: "-0.025em", marginBottom: "6px" }}>
+            개발자 도구
+          </h1>
+          <p style={{ color: "var(--color-muted)", fontSize: "0.9375rem" }}>
+            IP · UUID · Hash · Base64 · URL · JSON · Timestamp · 색상 · 정규식 · 텍스트 · DNS · JWT
+          </p>
         </div>
 
-        {/* Tabs — horizontal scroll on mobile */}
-        <div style={{
-          display: "flex", gap: "6px", marginBottom: "20px",
-          overflowX: "auto", paddingBottom: "6px",
-          // Hide scrollbar but keep scrollability
-          scrollbarWidth: "none",
-          WebkitOverflowScrolling: "touch",
-        } as React.CSSProperties}>
-          {TABS.map((tab) => (
-            <button key={tab.id} onClick={() => setActive(tab.id)} style={{
-              padding: "8px 14px", borderRadius: "99px", border: "1px solid",
-              borderColor: active === tab.id ? "var(--color-ink)" : "var(--color-hairline-strong)",
-              background: active === tab.id ? "var(--color-ink)" : "var(--color-lifted)",
-              color: active === tab.id ? "var(--color-canvas)" : "var(--color-body)",
-              cursor: "pointer", fontSize: "0.875rem", fontWeight: 500, fontFamily: "var(--font-sans)",
-              whiteSpace: "nowrap", transition: "all 0.15s", flexShrink: 0,
-            }}>
-              {tab.label}
-            </button>
-          ))}
+        {/* ── Slide Tab Bar ── */}
+        <div style={{ marginBottom: "16px" }}>
+          <SlideTabBar active={active} onSelect={handleSelect} />
         </div>
 
-        {/* Tool panel */}
-        <div style={{ background: "var(--color-lifted)", border: "1px solid var(--color-hairline)", borderRadius: "16px", padding: "24px" }}>
-          <ToolComponent />
+        {/* ── Tool Panel ── */}
+        <div style={{ padding: "0 16px" }}>
+          <div style={{
+            background: "var(--color-lifted)",
+            border: "1px solid var(--color-hairline)",
+            borderRadius: "16px",
+            padding: "24px",
+          }}>
+            {/* Per-tool header */}
+            <ToolHeader id={active} />
+            {/* Tool content */}
+            <ToolComponent />
+          </div>
         </div>
 
-        {/* Other tools grid */}
-        <div style={{ marginTop: "40px" }}>
+        {/* ── Other Tools Grid ── */}
+        <div style={{ padding: "0 16px", marginTop: "40px" }}>
           <p className="section-label" style={{ marginBottom: "16px" }}>다른 도구</p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: "10px" }}>
             {[
@@ -905,10 +1040,9 @@ export default function DevToolsPage() {
         </div>
       </div>
 
-      {/* Hide scrollbar for tab bar */}
       <style>{`
-        div[style*="scrollbarWidth"] { scrollbar-width: none; }
-        div[style*="scrollbarWidth"]::-webkit-scrollbar { display: none; }
+        .dev-tab-scroll { scrollbar-width: none; }
+        .dev-tab-scroll::-webkit-scrollbar { display: none; }
       `}</style>
     </main>
   );
