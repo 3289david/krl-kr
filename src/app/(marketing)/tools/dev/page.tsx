@@ -121,10 +121,11 @@ function UuidTool() {
     const generated = Array.from({ length: count }, () => {
       if (version === "v7") {
         // UUID v7: time-ordered (first 48 bits = ms timestamp)
-        const ts = BigInt(Date.now());
+        const now = Date.now(); // milliseconds, 48-bit safe integer
         const rand = crypto.getRandomValues(new Uint8Array(10));
-        const hi = Number((ts >> 12n) & 0xffffffffn);
-        const mid = Number(ts & 0xfffn);
+        // Split 48-bit timestamp: hi = upper 36 bits, mid = lower 12 bits
+        const hi = Math.floor(now / 4096) >>> 0; // ts >> 12, lower 32 bits
+        const mid = now & 0xfff;
         const b = new Uint8Array(16);
         b[0] = (hi >> 24) & 0xff; b[1] = (hi >> 16) & 0xff; b[2] = (hi >> 8) & 0xff; b[3] = hi & 0xff;
         b[4] = (mid >> 8) & 0xff; b[5] = mid & 0xff;
