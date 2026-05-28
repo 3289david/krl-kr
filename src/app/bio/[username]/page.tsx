@@ -157,6 +157,7 @@ export default async function BioPublicPage({ params }: PageProps) {
         )}
 
         {/* Links */}
+        <style>{`.bio-link:hover{opacity:0.8!important}`}</style>
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           {links.map((link, i) => (
             <a
@@ -164,6 +165,7 @@ export default async function BioPublicPage({ params }: PageProps) {
               href={link.url}
               target="_blank"
               rel="noopener noreferrer"
+              className="bio-link"
               style={{
                 display: "block",
                 padding: "16px 24px",
@@ -177,8 +179,6 @@ export default async function BioPublicPage({ params }: PageProps) {
                 textAlign: "center",
                 transition: "opacity 0.15s",
               }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.opacity = "0.8"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}
             >
               {link.title}
             </a>

@@ -69,9 +69,9 @@ export async function GET(
     content: paste.content,
     language: paste.language,
     is_public: paste.is_public,
-    expires_at: paste.expires_at ? new Date(paste.expires_at).toISOString() : null,
+    expires_at: paste.expires_at ? new Date(Number(paste.expires_at)).toISOString() : null,
     view_count: paste.view_count + 1,
-    created_at: new Date(paste.created_at).toISOString(),
+    created_at: new Date(Number(paste.created_at)).toISOString(),
     has_password: !!paste.password_hash,
   });
 }
