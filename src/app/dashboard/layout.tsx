@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { SiteHeader } from "@/components/layout/site-header";
+import { DashboardMobileNav } from "@/components/layout/dashboard-mobile-nav";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   // Server-side auth guard
@@ -13,6 +14,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <div className="dashboard-outer" style={{ maxWidth: "1100px", margin: "0 auto", padding: "24px 0" }}>
         {children}
       </div>
+      {/* Mobile bottom navigation - only visible on small screens */}
+      <DashboardMobileNav />
     </div>
   );
 }

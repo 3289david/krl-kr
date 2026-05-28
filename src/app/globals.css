@@ -625,6 +625,38 @@ code, pre {
 
   /* Pre blocks mobile */
   pre { max-width: 100%; overflow-x: auto; }
+
+  /* Dashboard page padding */
+  .dashboard-page { padding: 20px 12px !important; }
+
+  /* Stack header row on very small screens */
+  .dashboard-header-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+  .dashboard-header-row .btn { width: 100% !important; justify-content: center !important; }
+}
+
+/* ─── Dashboard page utility ─────────────────────────────────────────────── */
+.dashboard-page { padding: 32px; }
+@media (max-width: 768px) {
+  .dashboard-page { padding: 20px 16px !important; }
+}
+
+/* ─── Mobile scroll indicators ───────────────────────────────────────────── */
+.scroll-x {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.scroll-x::-webkit-scrollbar { display: none; }
+
+/* ─── Touch-friendly row heights ─────────────────────────────────────────── */
+@media (hover: none) and (pointer: coarse) {
+  /* Touch device: increase tap targets */
+  .data-table td { min-height: 48px; }
+  .sidebar-link { min-height: 48px; }
+  select, .input { min-height: 44px; }
 }
 
 /* ─── Pulse animation ────────────────────────────────────────────────────── */

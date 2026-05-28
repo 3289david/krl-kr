@@ -84,13 +84,12 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // @username → /bio/username (link-in-bio public pages)
+  // @username → /bio/username is handled by next.config.ts rewrites() at the
+  // framework level, which avoids the HTTPS proxy EPROTO issue in standalone mode.
+  // Do NOT do a NextResponse.rewrite() here — it triggers http-proxy to
+  // https://localhost:3000 when the incoming request is HTTPS.
   if (firstSegment.startsWith("@")) {
-    const rewriteUrl = request.nextUrl.clone();
-    rewriteUrl.pathname = `/bio/${firstSegment.slice(1)}${
-      segments.length > 1 ? "/" + segments.slice(1).join("/") : ""
-    }`;
-    return NextResponse.rewrite(rewriteUrl);
+    return NextResponse.next();
   }
 
   // Short link slug — pass through to [slug] page with CF geo headers

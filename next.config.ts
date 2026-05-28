@@ -10,6 +10,16 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // /@username → /bio/username (Link-in-Bio public pages)
+  // Handled at config level to avoid middleware HTTPS proxy issue in standalone mode
+  async rewrites() {
+    return [
+      {
+        source: "/@:username",
+        destination: "/bio/:username",
+      },
+    ];
+  },
   async headers() {
     return [
       {

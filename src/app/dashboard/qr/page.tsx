@@ -66,10 +66,23 @@ export default function QRPage() {
   }
 
   function downloadPNG() {
+    // Convert base64 data URL to Blob for reliable cross-browser download
+    const base64Data = pngBase64.split(",")[1];
+    if (!base64Data) return;
+    const byteChars = atob(base64Data);
+    const byteArr = new Uint8Array(byteChars.length);
+    for (let i = 0; i < byteChars.length; i++) {
+      byteArr[i] = byteChars.charCodeAt(i);
+    }
+    const blob = new Blob([byteArr], { type: "image/png" });
+    const blobUrl = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = pngBase64;
+    a.href = blobUrl;
     a.download = "qr-code.png";
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(blobUrl);
   }
 
   return (
