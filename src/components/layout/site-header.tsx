@@ -188,13 +188,13 @@ export function SiteHeader() {
             >API</Link>
 
             {isLoggedIn && (
-              <Link href="/dashboard/links" style={{
+              <Link href="/dashboard" style={{
                 padding: "6px 10px", borderRadius: "6px", fontSize: "0.875rem",
                 fontWeight: 500, color: "var(--color-body)", textDecoration: "none", transition: "background 0.1s",
               }}
                 onMouseEnter={(e) => (e.currentTarget.style.background = "var(--color-surface-card)")}
                 onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-              >내 링크</Link>
+              >대시보드</Link>
             )}
           </nav>
 
@@ -265,7 +265,7 @@ export function SiteHeader() {
                     </p>
                     <div style={{ height: "1px", background: "var(--color-hairline)", margin: "4px 0" }} />
                     {[
-                      { href: "/dashboard/links", label: "내 링크", icon: "M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" },
+                      { href: "/dashboard", label: "대시보드", icon: "M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z M9 22V12h6v10" },
                       { href: "/dashboard/api-keys", label: "API 키", icon: "M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" },
                       { href: "/dashboard/settings", label: "설정", icon: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z" },
                     ].map((item) => (
@@ -376,7 +376,7 @@ export function SiteHeader() {
             ))}
             {isLoggedIn ? (
               <>
-                <Link href="/dashboard/links" onClick={() => setMobileOpen(false)} style={{ display: "block", padding: "11px 4px", fontSize: "0.9375rem", fontWeight: 500, color: "var(--color-ink)", textDecoration: "none", borderBottom: "1px solid var(--color-hairline)" }}>내 링크</Link>
+                <Link href="/dashboard" onClick={() => setMobileOpen(false)} style={{ display: "block", padding: "11px 4px", fontSize: "0.9375rem", fontWeight: 500, color: "var(--color-ink)", textDecoration: "none", borderBottom: "1px solid var(--color-hairline)" }}>대시보드</Link>
                 <Link href="/dashboard/api-keys" onClick={() => setMobileOpen(false)} style={{ display: "block", padding: "11px 4px", fontSize: "0.9375rem", fontWeight: 500, color: "var(--color-ink)", textDecoration: "none", borderBottom: "1px solid var(--color-hairline)" }}>API 키</Link>
                 <Link href="/dashboard/settings" onClick={() => setMobileOpen(false)} style={{ display: "block", padding: "11px 4px", fontSize: "0.9375rem", fontWeight: 500, color: "var(--color-ink)", textDecoration: "none", borderBottom: "1px solid var(--color-hairline)" }}>설정</Link>
                 <button onClick={handleLogout} style={{ display: "block", width: "100%", padding: "11px 4px", background: "none", border: "none", textAlign: "left", fontSize: "0.9375rem", fontWeight: 500, color: "#DC2626", cursor: "pointer", fontFamily: "var(--font-sans)", borderBottom: "1px solid var(--color-hairline)" }}>로그아웃</button>
