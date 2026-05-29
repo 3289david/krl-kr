@@ -742,60 +742,125 @@ print(res.json()["url"])`,
           {/* ── 서브도메인 ── */}
           <Section id="subdomains" title="서브도메인">
             <Alert type="info">
-              서브도메인을 생성하면 <strong>이름.krl.kr</strong>이 할당됩니다. GitHub Pages, Vercel, HTML 배포, 리다이렉트 등 4가지 타입을 지원합니다.
+              서브도메인을 생성하면 <strong>이름.krl.kr</strong>이 할당됩니다. GitHub Pages, Vercel, HTML 배포, 리다이렉트, A/AAAA/CNAME 직접 DNS 레코드 등 <strong>8가지 타입</strong>을 지원합니다.
             </Alert>
 
             <Endpoint method="GET" path="/api/v1/subdomains" desc="내 서브도메인 목록" auth />
 
             <Endpoint method="POST" path="/api/v1/subdomains" desc="새 서브도메인 생성" auth>
               <ParamTable rows={[
-                ["subdomain", "string", true,  "서브도메인 이름 (영문자·숫자·하이픈, 최대 32자)"],
-                ["type",      "string", true,  "redirect | github | vercel | html | api"],
+                ["subdomain", "string", true,  "서브도메인 이름 (소문자·숫자·하이픈, 최소 4자, 최대 63자)"],
+                ["type",      "string", true,  "redirect | github | vercel | html | api | a | aaaa | cname"],
                 ["target",    "string", true,  "목적지 (타입에 따라 다름, 아래 참조)"],
+                ["altcha",    "string", false, "Altcha PoW 토큰 (/api/v1/altcha 에서 취득)"],
               ]} />
-              <Block label="타입별 target 형식" code={`// redirect — 외부 URL로 302 리다이렉트
+              <Block label="타입별 target 형식" code={`// redirect — 외부 URL로 302 리다이렉트 (CNAME → krl.kr)
 { "type": "redirect", "target": "https://danwoo.dev" }
 
-// github — GitHub Pages로 프록시
-{ "type": "github", "target": "username/repo" }
+// github — GitHub Pages 연결 (CNAME → username.github.io)
+{ "type": "github", "target": "username.github.io" }
 
-// vercel — Vercel 프로젝트로 프록시
-{ "type": "vercel", "target": "project.vercel.app" }
+// vercel — Vercel 배포 연결 (CNAME → cname.vercel-dns.com)
+{ "type": "vercel", "target": "myapp.vercel.app" }
 
-// html — HTML 직접 호스팅 (최대 500KB)
-{ "type": "html", "target": "<!DOCTYPE html><html>...</html>" }`} />
+// html — HTML 직접 호스팅 (CNAME → krl.kr, 서버에서 서빙)
+{ "type": "html", "target": "<!DOCTYPE html><html>...</html>" }
+
+// api — API 엔드포인트 프록시 (CNAME → krl.kr)
+{ "type": "api", "target": "https://api.example.com" }
+
+// a — IPv4 A 레코드 직접 설정
+{ "type": "a", "target": "1.2.3.4" }
+
+// aaaa — IPv6 AAAA 레코드 직접 설정
+{ "type": "aaaa", "target": "2001:db8::1" }
+
+// cname — 커스텀 CNAME 레코드 직접 설정
+{ "type": "cname", "target": "example.com" }`} />
               <LangBlock examples={{
-                curl: `# GitHub Pages 연결
+                curl: `# A 레코드 등록 (IPv4 직접 연결)
 curl -X POST https://krl.kr/api/v1/subdomains \\
   -H "Content-Type: application/json" \\
   -H "X-API-Key: krl_xxxx" \\
   -d '{
-    "subdomain": "danwoo",
-    "type": "github",
-    "target": "3289david/krl-kr"
+    "subdomain": "myserver",
+    "type": "a",
+    "target": "1.2.3.4"
+  }'
+
+# 리다이렉트 등록
+curl -X POST https://krl.kr/api/v1/subdomains \\
+  -H "Content-Type: application/json" \\
+  -H "X-API-Key: krl_xxxx" \\
+  -d '{
+    "subdomain": "blog",
+    "type": "redirect",
+    "target": "https://danwoo.dev"
   }'`,
-                js: `await fetch("https://krl.kr/api/v1/subdomains", {
+                js: `// A 레코드 등록
+await fetch("https://krl.kr/api/v1/subdomains", {
+  method: "POST",
+  headers: { "Content-Type": "application/json", "X-API-Key": "krl_xxxx" },
+  body: JSON.stringify({
+    subdomain: "myserver",
+    type: "a",
+    target: "1.2.3.4",
+  }),
+});
+
+// 커스텀 CNAME 등록
+await fetch("https://krl.kr/api/v1/subdomains", {
   method: "POST",
   headers: { "Content-Type": "application/json", "X-API-Key": "krl_xxxx" },
   body: JSON.stringify({
     subdomain: "danwoo",
-    type: "redirect",
-    target: "https://danwoo.dev",
+    type: "cname",
+    target: "example.com",
   }),
 });`,
-                python: `client.post(
+                python: `# A 레코드 등록
+client.post(
     "https://krl.kr/api/v1/subdomains",
     json={
-        "subdomain": "danwoo",
-        "type": "redirect",
-        "target": "https://danwoo.dev",
+        "subdomain": "myserver",
+        "type": "a",
+        "target": "1.2.3.4",
+    },
+)
+
+# AAAA 레코드 등록
+client.post(
+    "https://krl.kr/api/v1/subdomains",
+    json={
+        "subdomain": "myserver6",
+        "type": "aaaa",
+        "target": "2001:db8::1",
     },
 )`,
               }} />
+              <Block label="응답 예시" code={`{
+  "id": "sub_xxxxxxxxxxxx",
+  "subdomain": "myserver",
+  "full_domain": "myserver.krl.kr",
+  "type": "a",
+  "target": "1.2.3.4",
+  "is_active": true,
+  "cf_configured": true,
+  "cname_target": "1.2.3.4",
+  "created_at": 1748000000000,
+  "note": "DNS 레코드가 생성되었습니다. 전파까지 최대 5분이 소요될 수 있습니다."
+}`} />
             </Endpoint>
 
-            <Endpoint method="PATCH" path="/api/v1/subdomains/:id" desc="서브도메인 목적지 또는 타입 변경" auth />
-            <Endpoint method="DELETE" path="/api/v1/subdomains/:id" desc="서브도메인 삭제. DNS 레코드도 자동 제거됩니다." auth />
+            <Endpoint method="PATCH" path="/api/v1/subdomains/:id" desc="서브도메인 타입·목적지·활성 상태 변경. 타입 또는 target 변경 시 Cloudflare DNS가 자동 업데이트됩니다." auth>
+              <ParamTable rows={[
+                ["type",      "string",  false, "새 타입 (redirect | github | vercel | html | api | a | aaaa | cname)"],
+                ["target",    "string",  false, "새 목적지 (타입에 맞는 값)"],
+                ["is_active", "boolean", false, "활성 상태 (true / false)"],
+              ]} />
+            </Endpoint>
+            <Endpoint method="DELETE" path="/api/v1/subdomains/:id" desc="서브도메인 삭제. Cloudflare DNS 레코드도 자동 제거됩니다." auth />
+            <Endpoint method="POST" path="/api/v1/subdomains/:id/sync-dns" desc="Cloudflare DNS 레코드를 강제 재동기화합니다. DNS가 불일치할 때 사용하세요." auth />
           </Section>
 
           {/* ── 커뮤니티 ── */}
