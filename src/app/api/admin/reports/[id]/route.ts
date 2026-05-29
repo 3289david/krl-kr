@@ -70,6 +70,17 @@ export async function PATCH(
     };
     const tbl = tableMap[report.target_type];
     if (tbl) {
+      // 서브도메인이면 Cloudflare DNS 레코드도 함께 제거
+      if (report.target_type === "subdomain") {
+        const subRow = await pool.query<{ cf_dns_record_id: string | null }>(
+          `SELECT cf_dns_record_id FROM subdomains WHERE id = $1`, [report.target_id]
+        );
+        const cfRecordId = subRow.rows[0]?.cf_dns_record_id;
+        if (cfRecordId) {
+          const { deleteCloudflareDnsRecord } = await import("@/app/api/v1/subdomains/route");
+          await deleteCloudflareDnsRecord(cfRecordId);
+        }
+      }
       await pool.query(`DELETE FROM ${tbl} WHERE id = $1`, [report.target_id]);
       await pool.query(
         `INSERT INTO admin_log (admin_email, action, target_type, target_id, details, created_at) VALUES ($1, $2, $3, $4, $5, $6)`,

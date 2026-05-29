@@ -40,7 +40,16 @@ export default function EmailInboxPage() {
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
   const [unreadCount, setUnreadCount] = useState(0);
+  const [isAdmin, setIsAdmin] = useState(false);
   const createFormRef = useRef<HTMLFormElement>(null);
+
+  // Admin check — skip Altcha & frontend limits for admin
+  useEffect(() => {
+    fetch("/api/admin/check")
+      .then((r) => r.json())
+      .then((d) => setIsAdmin(!!d.isAdmin))
+      .catch(() => {});
+  }, []);
 
   // Load aliases
   const loadAliases = useCallback(async () => {
@@ -204,8 +213,8 @@ export default function EmailInboxPage() {
                 <span style={{ padding: "0 14px", fontSize: "0.8125rem", color: "var(--color-muted)", whiteSpace: "nowrap", borderLeft: "1px solid var(--color-hairline)" }}>@krl.kr</span>
               </div>
             </div>
-            {/* Altcha PoW CAPTCHA */}
-            <AltchaWidget name="altcha" />
+            {/* Altcha PoW CAPTCHA — admin은 우회 */}
+            {!isAdmin && <AltchaWidget name="altcha" />}
             <div style={{ display: "flex", gap: "10px" }}>
               <button type="button" onClick={() => { setShowCreateForm(false); setError(""); }} className="btn btn-secondary btn-pill" style={{ flex: 1, justifyContent: "center" }}>취소</button>
               <button type="submit" disabled={creating || !newAlias.trim()} className="btn btn-primary btn-pill" style={{ flex: 1, justifyContent: "center" }}>

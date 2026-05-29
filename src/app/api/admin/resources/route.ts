@@ -79,6 +79,18 @@ export async function DELETE(request: NextRequest) {
   const tbl = tableMap[type];
   if (!tbl) return NextResponse.json({ error: "유효하지 않은 유형" }, { status: 400 });
 
+  // 서브도메인 삭제 시 Cloudflare DNS 레코드도 함께 제거
+  if (type === "subdomain") {
+    const subRow = await pool.query<{ cf_dns_record_id: string | null }>(
+      `SELECT cf_dns_record_id FROM subdomains WHERE id = $1`, [id]
+    );
+    const cfRecordId = subRow.rows[0]?.cf_dns_record_id;
+    if (cfRecordId) {
+      const { deleteCloudflareDnsRecord } = await import("@/app/api/v1/subdomains/route");
+      await deleteCloudflareDnsRecord(cfRecordId);
+    }
+  }
+
   await pool.query(`DELETE FROM ${tbl} WHERE id = $1`, [id]);
   await pool.query(
     `INSERT INTO admin_log (admin_email, action, target_type, target_id, details, created_at) VALUES ($1, $2, $3, $4, $5, $6)`,

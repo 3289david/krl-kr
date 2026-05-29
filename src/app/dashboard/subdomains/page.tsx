@@ -86,6 +86,7 @@ function SubdomainsPageInner() {
 
   const [subdomains, setSubdomains] = useState<Subdomain[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // Create modal
   const [showCreate, setShowCreate] = useState(false);
@@ -108,6 +109,14 @@ function SubdomainsPageInner() {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [syncingId, setSyncingId] = useState<string | null>(null);
   const [syncMsg, setSyncMsg] = useState<Record<string, string>>({});
+
+  // Admin check on mount — skip Altcha & frontend restrictions for admin
+  useEffect(() => {
+    fetch("/api/admin/check")
+      .then((r) => r.json())
+      .then((d) => setIsAdmin(!!d.isAdmin))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -409,10 +418,12 @@ function SubdomainsPageInner() {
             )}
             <form ref={createFormRef} onSubmit={handleCreate} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
               <div>
-                <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 500, marginBottom: "6px" }}>서브도메인 * (최소 4자)</label>
+                <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 500, marginBottom: "6px" }}>
+                  서브도메인 *{!isAdmin && " (최소 4자)"}
+                </label>
                 <div style={{ display: "flex", alignItems: "center" }}>
                   <input type="text" value={subdomain} onChange={(e) => setSubdomain(e.target.value.toLowerCase())}
-                    placeholder="mysite" required minLength={4} className="input"
+                    placeholder="mysite" required className="input"
                     style={{ borderRadius: "var(--radius-sm) 0 0 var(--radius-sm)" }} />
                   <span style={{ padding: "10px 14px", background: "var(--color-surface-card)", border: "1px solid var(--color-hairline-strong)", borderLeft: "none", borderRadius: "0 var(--radius-sm) var(--radius-sm) 0", fontSize: "0.875rem", color: "var(--color-muted)", whiteSpace: "nowrap" }}>
                     .krl.kr
@@ -451,8 +462,8 @@ function SubdomainsPageInner() {
                     placeholder={TYPE_PLACEHOLDERS[type] ?? "https://..."} required className="input" />
                 </div>
               )}
-              {/* Altcha PoW CAPTCHA */}
-              <AltchaWidget name="altcha" />
+              {/* Altcha PoW CAPTCHA — admin은 우회 */}
+              {!isAdmin && <AltchaWidget name="altcha" />}
               <div style={{ display: "flex", gap: "12px", marginTop: "4px" }}>
                 <button type="button" onClick={() => setShowCreate(false)} className="btn btn-secondary btn-pill" style={{ flex: 1, justifyContent: "center" }}>취소</button>
                 <button type="submit" disabled={creating || !subdomain || !target} className="btn btn-primary btn-pill" style={{ flex: 1, justifyContent: "center" }}>
