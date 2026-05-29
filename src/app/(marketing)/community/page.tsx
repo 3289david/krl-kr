@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getSession } from "@/lib/auth";
 import { formatRelativeTime } from "@/lib/utils";
 import { getDB } from "@/lib/env";
+import { getPool } from "@/lib/db/postgres";
 
 export const metadata: Metadata = {
   title: "커뮤니티 | KRL.KR",
@@ -16,6 +17,33 @@ const BOARD_META: Record<string, { label: string; icon: string; color: string }>
 };
 
 function toNum(v: unknown) { return v != null ? Number(v) : 0; }
+
+interface AdminNotice {
+  id: number; title: string; content: string; notice_type: string; pinned: number; created_at: number;
+}
+
+async function fetchAdminNotices(): Promise<AdminNotice[]> {
+  try {
+    const pool = getPool();
+    const result = await pool.query(
+      `SELECT id, title, content, notice_type, pinned, created_at
+       FROM notices
+       WHERE visible = 1
+       ORDER BY pinned DESC, created_at DESC
+       LIMIT 10`
+    );
+    return result.rows as AdminNotice[];
+  } catch {
+    return [];
+  }
+}
+
+const NOTICE_TYPE_META: Record<string, { label: string; color: string; bg: string }> = {
+  notice:  { label: "공지",    color: "#1d4ed8", bg: "#EFF6FF" },
+  update:  { label: "업데이트", color: "#059669", bg: "#ECFDF5" },
+  legal:   { label: "법적고지", color: "#DC2626", bg: "#FEF2F2" },
+  event:   { label: "이벤트",  color: "#7C3AED", bg: "#F5F3FF" },
+};
 
 async function fetchBoardPosts(board: string) {
   try {
@@ -199,10 +227,11 @@ export default async function CommunityPage({
   }
 
   // Main community page — show all boards
-  const [noticePosts, freePosts, featurePosts] = await Promise.all([
+  const [noticePosts, freePosts, featurePosts, adminNotices] = await Promise.all([
     fetchBoardPosts("notice"),
     fetchBoardPosts("free"),
     fetchBoardPosts("feature"),
+    fetchAdminNotices(),
   ]);
 
   return (
@@ -248,6 +277,48 @@ export default async function CommunityPage({
             </Link>
           ))}
         </div>
+
+        {/* Admin Notices section */}
+        {adminNotices.length > 0 && (
+          <div style={{ marginBottom: "24px", display: "flex", flexDirection: "column", gap: "8px" }}>
+            {adminNotices.map((n) => {
+              const meta = NOTICE_TYPE_META[n.notice_type] ?? NOTICE_TYPE_META.notice;
+              return (
+                <div key={n.id} style={{
+                  background: meta.bg,
+                  border: `1px solid ${meta.color}30`,
+                  borderLeft: `3px solid ${meta.color}`,
+                  borderRadius: "8px",
+                  padding: "12px 16px",
+                  display: "flex", gap: "12px", alignItems: "flex-start",
+                }}>
+                  <div style={{ flexShrink: 0, marginTop: "1px" }}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={meta.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                    </svg>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "2px", flexWrap: "wrap" }}>
+                      <span style={{
+                        fontSize: "0.65rem", fontWeight: 700, padding: "1px 7px",
+                        borderRadius: "4px", background: meta.color + "18",
+                        color: meta.color, textTransform: "uppercase", letterSpacing: "0.04em",
+                      }}>{meta.label}</span>
+                      {n.pinned === 1 && (
+                        <span style={{ fontSize: "0.65rem", fontWeight: 700, color: meta.color }}>고정</span>
+                      )}
+                      <span style={{ fontWeight: 700, fontSize: "0.875rem", color: "#111" }}>{n.title}</span>
+                    </div>
+                    <p style={{ fontSize: "0.8125rem", color: "#555", lineHeight: 1.55, whiteSpace: "pre-wrap" }}>{n.content}</p>
+                    <p style={{ fontSize: "0.7rem", color: "#999", marginTop: "4px" }}>
+                      {new Date(Number(n.created_at)).toLocaleDateString("ko-KR")}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "16px" }}>
           <BoardCard board="notice" posts={noticePosts as unknown as Post[]} />
