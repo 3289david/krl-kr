@@ -14,7 +14,6 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const publicOnly = searchParams.get("public") === "1";
 
-  // Public endpoint: active popup notices for all visitors
   if (publicOnly) {
     const now = Date.now();
     const popups = await db
@@ -35,7 +34,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ notices: popups.results });
   }
 
-  // Admin endpoint
   const session = await getSessionFromRequest(request);
   const check = await requireAdmin(db, session);
   if (!check.ok) return check.response;
@@ -58,24 +56,32 @@ export async function POST(request: NextRequest) {
   const check = await requireAdmin(db, session);
   if (!check.ok) return check.response;
 
-  const { title, content, notice_type = "notice", pinned = 0, popup = 0, popup_expires_at } =
+  const { title, content, notice_type = "notice", pinned = false, popup = false, popup_expires_at } =
     await request.json();
 
   if (!title?.trim() || !content?.trim()) {
     return NextResponse.json({ error: "제목과 내용을 입력하세요." }, { status: 400 });
   }
 
-  const result = await db
-    .prepare(
-      `INSERT INTO notices (title, content, author_email, notice_type, pinned, popup, popup_expires_at, visible, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?) RETURNING id`
-    )
-    .bind(
+  // Use raw pool to avoid RETURNING + LIMIT 1 bug
+  const { getPool } = await import("@/lib/db/postgres");
+  const pool = getPool();
+  const result = await pool.query(
+    `INSERT INTO notices (title, content, author_email, notice_type, pinned, popup, popup_expires_at, visible, created_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, 1, $8) RETURNING id`,
+    [
       title.trim(), content.trim(), check.email,
       notice_type, pinned ? 1 : 0, popup ? 1 : 0,
       popup_expires_at ?? null, Date.now()
-    )
-    .first<{ id: number }>();
+    ]
+  );
 
-  return NextResponse.json({ ok: true, id: result?.id });
+  // Log
+  await pool.query(
+    `INSERT INTO admin_log (admin_email, action, target_type, target_id, details, created_at)
+     VALUES ($1, 'create_notice', 'notice', $2, $3, $4)`,
+    [check.email, String(result.rows[0]?.id), title.trim(), Date.now()]
+  );
+
+  return NextResponse.json({ ok: true, id: result.rows[0]?.id });
 }

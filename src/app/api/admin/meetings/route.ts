@@ -40,13 +40,18 @@ export async function POST(request: NextRequest) {
   const { title } = await request.json();
   if (!title?.trim()) return NextResponse.json({ error: "회의 제목을 입력하세요." }, { status: 400 });
 
-  const result = await db
-    .prepare(
-      `INSERT INTO admin_meetings (title, created_by, status, created_at)
-       VALUES (?, ?, 'open', ?) RETURNING id`
-    )
-    .bind(title.trim(), check.email, Date.now())
-    .first<{ id: number }>();
+  // Use raw pool to avoid RETURNING + LIMIT 1 bug
+  const { getPool } = await import("@/lib/db/postgres");
+  const pool = getPool();
+  const result = await pool.query(
+    `INSERT INTO admin_meetings (title, created_by, status, created_at) VALUES ($1, $2, 'open', $3) RETURNING id`,
+    [title.trim(), check.email, Date.now()]
+  );
 
-  return NextResponse.json({ ok: true, id: result?.id });
+  await pool.query(
+    `INSERT INTO admin_log (admin_email, action, target_type, target_id, details, created_at) VALUES ($1, 'create_meeting', 'meeting', $2, $3, $4)`,
+    [check.email, String(result.rows[0]?.id), title.trim(), Date.now()]
+  );
+
+  return NextResponse.json({ ok: true, id: result.rows[0]?.id });
 }

@@ -140,19 +140,25 @@ export async function POST(request: NextRequest) {
 
     const { subdomain, type, target, altcha } = parsed.data;
 
-    // Altcha PoW verification
-    const skipAltcha = process.env.SKIP_ALTCHA === "1";
-    if (!skipAltcha) {
-      const valid = await verifyAltcha(altcha);
-      if (!valid) {
-        return NextResponse.json(
-          { error: "보안 인증을 완료해주세요.", code: "ALTCHA_FAILED" },
-          { status: 400 }
-        );
+    // 관리자 여부 확인 (관리자는 Altcha/예약 이름/중복 제한 우회 가능)
+    const { isAdmin: checkAdminFn } = await import("@/lib/admin");
+    const adminBypass = await checkAdminFn(db, user.email);
+
+    // Altcha PoW verification (관리자 우회)
+    if (!adminBypass) {
+      const skipAltcha = process.env.SKIP_ALTCHA === "1";
+      if (!skipAltcha) {
+        const valid = await verifyAltcha(altcha);
+        if (!valid) {
+          return NextResponse.json(
+            { error: "보안 인증을 완료해주세요.", code: "ALTCHA_FAILED" },
+            { status: 400 }
+          );
+        }
       }
     }
 
-    if (RESERVED_SUBDOMAINS.has(subdomain.toLowerCase())) {
+    if (!adminBypass && RESERVED_SUBDOMAINS.has(subdomain.toLowerCase())) {
       return NextResponse.json(
         { error: "예약된 서브도메인 이름입니다. 다른 이름을 사용해주세요." },
         { status: 409 }

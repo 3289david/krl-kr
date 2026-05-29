@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 
 interface AdminUser {
   id: string; email: string; name: string | null; plan: string;
@@ -169,6 +170,9 @@ export default function AdminUsersPage() {
                           style={{ color: "#D97706", fontSize: "0.8rem" }}
                         >커뮤 차단</button>
                       )}
+                      <Link href={`/dashboard/admin/users/${u.id}`} className="btn btn-ghost btn-sm" style={{ fontSize: "0.8rem" }}>
+                        상세
+                      </Link>
                     </div>
                   </td>
                 </tr>

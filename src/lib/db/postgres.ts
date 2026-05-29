@@ -81,8 +81,11 @@ class PostgresPreparedStatement {
     col?: string
   ): Promise<T | null> {
     const pool = getPool();
-    // Only append LIMIT 1 if the query doesn't already have a LIMIT clause
-    const sqlWithLimit = /LIMIT\s+\d+/i.test(this.sql) ? this.sql : this.sql + " LIMIT 1";
+    // For INSERT/UPDATE/DELETE with RETURNING, don't append LIMIT (invalid PG syntax)
+    const isWriteWithReturning = /^\s*(INSERT|UPDATE|DELETE)/i.test(this.sql) && /RETURNING/i.test(this.sql);
+    const sqlWithLimit = isWriteWithReturning || /LIMIT\s+\d+/i.test(this.sql)
+      ? this.sql
+      : this.sql + " LIMIT 1";
     const pgSql = convertPlaceholders(convertSqliteToPg(sqlWithLimit));
     try {
       const result = await pool.query<T>(pgSql, this.params as unknown[]);
