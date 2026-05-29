@@ -17,7 +17,7 @@ const RESERVED_SUBDOMAINS = new Set([
 const CreateSubdomainSchema = z.object({
   subdomain: z
     .string()
-    .min(4, "서브도메인은 최소 4자 이상이어야 합니다.")
+    .min(1, "서브도메인을 입력해주세요.")
     .max(63, "서브도메인은 최대 63자까지 가능합니다.")
     .regex(
       /^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$/,
@@ -140,9 +140,17 @@ export async function POST(request: NextRequest) {
 
     const { subdomain, type, target, altcha } = parsed.data;
 
-    // 관리자 여부 확인 (관리자는 Altcha/예약 이름/중복 제한 우회 가능)
+    // 관리자 여부 확인 (관리자는 모든 제한 우회 가능)
     const { isAdmin: checkAdminFn } = await import("@/lib/admin");
     const adminBypass = await checkAdminFn(db, user.email);
+
+    // 최소 길이 체크 (관리자 우회)
+    if (!adminBypass && subdomain.length < 4) {
+      return NextResponse.json(
+        { error: "서브도메인은 최소 4자 이상이어야 합니다." },
+        { status: 400 }
+      );
+    }
 
     // Altcha PoW verification (관리자 우회)
     if (!adminBypass) {

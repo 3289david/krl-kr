@@ -17,7 +17,7 @@ import { z } from "zod";
 const CreateAliasSchema = z.object({
   alias: z
     .string()
-    .min(3, "별칭은 최소 3자 이상이어야 합니다.")
+    .min(1, "별칭을 입력해주세요.")
     .max(64, "별칭은 최대 64자까지 가능합니다.")
     .regex(
       /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/,
@@ -110,6 +110,14 @@ export async function POST(request: NextRequest) {
 
     const aliasLower = alias.toLowerCase();
     const fullEmail = `${aliasLower}@krl.kr`;
+
+    // 최소 길이 체크 (관리자 우회)
+    if (!adminBypass && aliasLower.length < 3) {
+      return NextResponse.json(
+        { error: "별칭은 최소 3자 이상이어야 합니다." },
+        { status: 400 }
+      );
+    }
 
     // 한도 체크 — 관리자는 무제한
     if (!adminBypass) {
