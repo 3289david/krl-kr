@@ -53,15 +53,15 @@ function getDnsRecordInfo(type: string, target: string): { cfType: string; conte
     case "vercel":
       return { cfType: "CNAME", content: "cname.vercel-dns.com", proxied: false };
     case "cname": {
-      // User-supplied custom CNAME hostname
+      // User-supplied custom CNAME hostname — DNS-only (no proxy), bypasses krl.kr
       const host = target.replace(/^https?:\/\//, "").split("/")[0];
-      return { cfType: "CNAME", content: host || target, proxied: true };
+      return { cfType: "CNAME", content: host || target, proxied: false };
     }
     case "a":
-      // A record — target is an IPv4 address
-      return { cfType: "A", content: target.trim(), proxied: true };
+      // A record — DNS-only (no Cloudflare proxy), resolves directly to IPv4
+      return { cfType: "A", content: target.trim(), proxied: false };
     case "aaaa":
-      // AAAA record — target is an IPv6 address
+      // AAAA record — DNS-only (no Cloudflare proxy), resolves directly to IPv6
       return { cfType: "AAAA", content: target.trim(), proxied: false };
     case "redirect":
     case "html":

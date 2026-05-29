@@ -308,9 +308,9 @@ function SubdomainsPageInner() {
         • <strong>리다이렉트 / HTML / API</strong>: CNAME → <code>krl.kr</code> (KRL.KR 서버 경유)<br />
         • <strong>GitHub Pages</strong>: CNAME → <code>username.github.io</code> (GitHub 직접 연결)<br />
         • <strong>Vercel</strong>: CNAME → <code>cname.vercel-dns.com</code> (Vercel 요구사항)<br />
-        • <strong>A 레코드</strong>: IPv4 주소로 직접 연결 (예: <code>1.2.3.4</code>)<br />
-        • <strong>AAAA 레코드</strong>: IPv6 주소로 직접 연결 (예: <code>2001:db8::1</code>)<br />
-        • <strong>CNAME</strong>: 커스텀 호스트명으로 연결 (예: <code>example.com</code>)<br />
+        • <strong>A 레코드</strong>: IPv4 직접 연결 (DNS-only, krl.kr 미경유) 예: <code>1.2.3.4</code><br />
+        • <strong>AAAA 레코드</strong>: IPv6 직접 연결 (DNS-only, krl.kr 미경유) 예: <code>2001:db8::1</code><br />
+        • <strong>CNAME</strong>: 커스텀 호스트명 직접 연결 (DNS-only, krl.kr 미경유) 예: <code>example.com</code><br />
         DNS가 잘못됐다면 <strong>DNS 동기화</strong> 버튼으로 재설정하세요.
       </div>
 

@@ -80,6 +80,16 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // a / aaaa / cname — DNS-only records, Cloudflare proxy is OFF.
+    // Traffic should never reach this handler; the client connects directly
+    // to the target IP or hostname via DNS. If we somehow get called, 404.
+    if (row.type === "a" || row.type === "aaaa" || row.type === "cname") {
+      return new NextResponse(NOT_FOUND_HTML(name), {
+        status: 404,
+        headers: { "Content-Type": "text/html; charset=utf-8" },
+      });
+    }
+
     // HTML type: serve the stored HTML directly.
     // But if the target looks like a URL (user accidentally entered a URL),
     // fall back to a redirect instead of serving the URL string as HTML.
