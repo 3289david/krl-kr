@@ -53,13 +53,15 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
   const [user, setUser] = useState<{ name: string | null; email: string; plan: string } | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     async function loadData() {
       try {
-        const [linksRes, meRes] = await Promise.all([
+        const [linksRes, meRes, adminRes] = await Promise.all([
           fetch("/api/links?limit=5"),
           fetch("/api/auth/me"),
+          fetch("/api/admin/check"),
         ]);
 
         if (linksRes.ok) {
@@ -78,6 +80,11 @@ export default function DashboardPage() {
         if (meRes.ok) {
           const data = await meRes.json();
           setUser(data.user);
+        }
+
+        if (adminRes.ok) {
+          const data = await adminRes.json();
+          setIsAdmin(data.isAdmin);
         }
       } catch {
         // silently fail
@@ -230,6 +237,16 @@ export default function DashboardPage() {
               <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
           ), title: "검색", desc: "개인정보 수집 없는 검색" },
+          { href: "/dashboard/support", icon: (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+          ), title: "문의 채팅", desc: "관리자에게 문의" },
+          ...(isAdmin ? [{ href: "/dashboard/admin", icon: (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+          ), title: "관리자", desc: "사이트 관리 패널" }] : []),
         ].map((item) => (
           <Link key={item.href} href={item.href} style={{
             display: "flex", alignItems: "center", gap: "12px", padding: "16px",

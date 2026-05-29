@@ -104,20 +104,24 @@ export async function POST(request: NextRequest) {
     const aliasLower = alias.toLowerCase();
     const fullEmail = `${aliasLower}@krl.kr`;
 
-    // 한도 체크 (모든 사용자 최대 5개)
-    const currentCount = await db
-      .prepare("SELECT COUNT(*) as count FROM email_aliases WHERE user_id = ?")
-      .bind(user.id)
-      .first<{ count: number }>();
+    // 한도 체크 — 관리자는 무제한
+    const { isAdmin: checkAdmin } = await import("@/lib/admin");
+    const adminBypass = await checkAdmin(db, user.email);
+    if (!adminBypass) {
+      const currentCount = await db
+        .prepare("SELECT COUNT(*) as count FROM email_aliases WHERE user_id = ?")
+        .bind(user.id)
+        .first<{ count: number }>();
 
-    if (Number(currentCount?.count ?? 0) >= ALIAS_LIMIT) {
-      return NextResponse.json(
-        {
-          error: `이메일 별칭은 최대 ${ALIAS_LIMIT}개까지 만들 수 있습니다.`,
-          code: "LIMIT_REACHED",
-        },
-        { status: 403 }
-      );
+      if (Number(currentCount?.count ?? 0) >= ALIAS_LIMIT) {
+        return NextResponse.json(
+          {
+            error: `이메일 별칭은 최대 ${ALIAS_LIMIT}개까지 만들 수 있습니다.`,
+            code: "LIMIT_REACHED",
+          },
+          { status: 403 }
+        );
+      }
     }
 
     // 중복 체크
