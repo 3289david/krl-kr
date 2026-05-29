@@ -23,42 +23,59 @@ const CreateSubdomainSchema = z.object({
       /^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$/,
       "서브도메인은 소문자, 숫자, 하이픈(-)만 사용 가능하며 하이픈으로 시작/끝날 수 없습니다."
     ),
-  type: z.enum(["github", "vercel", "html", "redirect", "api"]),
+  type: z.enum(["github", "vercel", "html", "redirect", "api", "a", "aaaa", "cname"]),
   target: z.string().min(1, "대상 URL을 입력해주세요."),
   altcha: z.string().nullable().optional(),
 });
 
 /**
- * Returns the correct CNAME target for each subdomain type.
+ * Returns the DNS record info for each subdomain type.
  *
  * redirect / html / api → traffic must reach KRL.KR server → CNAME krl.kr
  * github               → CNAME to the user's github.io hostname
  * vercel               → CNAME to cname.vercel-dns.com (Vercel requirement)
+ * cname                → CNAME to user-supplied hostname
+ * a                    → A record with user-supplied IPv4 address
+ * aaaa                 → AAAA record with user-supplied IPv6 address
  */
-function getCnameTarget(type: string, target: string): { content: string; proxied: boolean } {
+function getDnsRecordInfo(type: string, target: string): { cfType: string; content: string; proxied: boolean } {
   switch (type) {
     case "github": {
       // target can be "username.github.io" or "https://username.github.io"
       try {
         const url = new URL(target.startsWith("http") ? target : `https://${target}`);
-        return { content: url.hostname, proxied: true };
+        return { cfType: "CNAME", content: url.hostname, proxied: true };
       } catch {
-        // If it looks like a plain hostname, use as-is
         const host = target.split("/")[0];
-        return { content: host || "krl.kr", proxied: true };
+        return { cfType: "CNAME", content: host || "krl.kr", proxied: true };
       }
     }
     case "vercel":
-      // Vercel requires CNAME → cname.vercel-dns.com for custom subdomains
-      return { content: "cname.vercel-dns.com", proxied: false };
+      return { cfType: "CNAME", content: "cname.vercel-dns.com", proxied: false };
+    case "cname": {
+      // User-supplied custom CNAME hostname
+      const host = target.replace(/^https?:\/\//, "").split("/")[0];
+      return { cfType: "CNAME", content: host || target, proxied: true };
+    }
+    case "a":
+      // A record — target is an IPv4 address
+      return { cfType: "A", content: target.trim(), proxied: true };
+    case "aaaa":
+      // AAAA record — target is an IPv6 address
+      return { cfType: "AAAA", content: target.trim(), proxied: false };
     case "redirect":
     case "html":
     case "api":
     default:
-      // These are all served / proxied by the KRL.KR VPS.
-      // Traffic must hit our nginx → Next.js middleware → internal/sub handler.
-      return { content: "krl.kr", proxied: true };
+      // Served / proxied by KRL.KR VPS.
+      return { cfType: "CNAME", content: "krl.kr", proxied: true };
   }
+}
+
+/** Backwards-compat helper used by GET list to show the resolved DNS target */
+function getCnameTarget(type: string, target: string): { content: string; proxied: boolean } {
+  const { content, proxied } = getDnsRecordInfo(type, target);
+  return { content, proxied };
 }
 
 export async function createCloudflareDnsRecord(
@@ -73,7 +90,7 @@ export async function createCloudflareDnsRecord(
     return { recordId: null, error: "Cloudflare API 미설정" };
   }
 
-  const { content: cnameTarget, proxied } = getCnameTarget(type, target);
+  const { cfType, content: dnsContent, proxied } = getDnsRecordInfo(type, target);
 
   try {
     const response = await fetch(
@@ -85,9 +102,9 @@ export async function createCloudflareDnsRecord(
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          type: "CNAME",
+          type: cfType,
           name: `${subdomain}.krl.kr`,
-          content: cnameTarget,
+          content: dnsContent,
           proxied,
           ttl: 1,
         }),

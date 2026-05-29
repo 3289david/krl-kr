@@ -22,6 +22,9 @@ const TYPE_LABELS: Record<string, string> = {
   html: "HTML",
   redirect: "리다이렉트",
   api: "API 프록시",
+  a: "A 레코드",
+  aaaa: "AAAA 레코드",
+  cname: "CNAME",
 };
 
 const TYPE_TABS = [
@@ -30,6 +33,9 @@ const TYPE_TABS = [
   { key: "github", label: "GitHub" },
   { key: "vercel", label: "Vercel" },
   { key: "html", label: "HTML 배포" },
+  { key: "a", label: "A 레코드" },
+  { key: "aaaa", label: "AAAA 레코드" },
+  { key: "cname", label: "CNAME" },
 ];
 
 const RESERVED = [
@@ -46,6 +52,9 @@ const TYPE_PLACEHOLDERS: Record<string, string> = {
   html: "<!DOCTYPE html>...",
   redirect: "https://example.com",
   api: "https://api.example.com",
+  a: "1.2.3.4",
+  aaaa: "2001:db8::1",
+  cname: "example.com",
 };
 
 const TYPE_HINTS: Record<string, React.ReactNode> = {
@@ -54,14 +63,20 @@ const TYPE_HINTS: Record<string, React.ReactNode> = {
   html: "HTML 코드를 직접 입력해 해당 서브도메인에서 서빙합니다.",
   redirect: <>다른 URL로 리다이렉트합니다. <strong>트래픽이 KRL.KR 서버를 경유</strong>하여 안정적으로 리다이렉트됩니다.</>,
   api: "API 엔드포인트를 서브도메인으로 연결합니다.",
+  a: <>IPv4 주소로 직접 A 레코드를 생성합니다. 대상에 <code>1.2.3.4</code> 형식의 IPv4 주소를 입력하세요.</>,
+  aaaa: <>IPv6 주소로 직접 AAAA 레코드를 생성합니다. 대상에 <code>2001:db8::1</code> 형식의 IPv6 주소를 입력하세요.</>,
+  cname: "커스텀 CNAME을 설정합니다. 대상에 연결할 호스트명(예: example.com)을 입력하세요.",
 };
 
 const CNAME_EXPLAIN: Record<string, string> = {
-  github: "외부 서비스 직접 연결",
-  vercel: "Vercel DNS 연결",
-  html: "KRL.KR 서버 경유 (HTML 서빙)",
-  redirect: "KRL.KR 서버 경유 (서버사이드 리다이렉트)",
-  api: "KRL.KR 서버 경유",
+  github: "외부 서비스 직접 연결 (CNAME)",
+  vercel: "Vercel DNS 연결 (CNAME)",
+  html: "KRL.KR 서버 경유 (CNAME, HTML 서빙)",
+  redirect: "KRL.KR 서버 경유 (CNAME, 서버사이드 리다이렉트)",
+  api: "KRL.KR 서버 경유 (CNAME)",
+  a: "사용자 지정 IPv4 주소 (A 레코드)",
+  aaaa: "사용자 지정 IPv6 주소 (AAAA 레코드)",
+  cname: "사용자 지정 호스트명 (CNAME)",
 };
 
 function SubdomainsPageInner() {
@@ -75,7 +90,7 @@ function SubdomainsPageInner() {
   // Create modal
   const [showCreate, setShowCreate] = useState(false);
   const [subdomain, setSubdomain] = useState("");
-  const [type, setType] = useState<"github" | "vercel" | "html" | "redirect" | "api">("redirect");
+  const [type, setType] = useState<"github" | "vercel" | "html" | "redirect" | "api" | "a" | "aaaa" | "cname">("redirect");
   const [target, setTarget] = useState("");
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState("");
@@ -83,7 +98,7 @@ function SubdomainsPageInner() {
 
   // Edit modal
   const [editItem, setEditItem] = useState<Subdomain | null>(null);
-  const [editType, setEditType] = useState<"github" | "vercel" | "html" | "redirect" | "api">("redirect");
+  const [editType, setEditType] = useState<"github" | "vercel" | "html" | "redirect" | "api" | "a" | "aaaa" | "cname">("redirect");
   const [editTarget, setEditTarget] = useState("");
   const [editActive, setEditActive] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -219,6 +234,9 @@ function SubdomainsPageInner() {
       html: "#e34c26",
       redirect: "var(--color-info)",
       api: "var(--color-arc)",
+      a: "#7c3aed",
+      aaaa: "#5b21b6",
+      cname: "#0369a1",
     };
     return (
       <span style={{
@@ -275,12 +293,15 @@ function SubdomainsPageInner() {
         })}
       </div>
 
-      {/* CNAME 설명 박스 */}
+      {/* DNS 레코드 안내 박스 */}
       <div style={{ padding: "14px 18px", background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: "var(--radius-md)", marginBottom: "20px", fontSize: "0.8125rem", color: "#1e40af", lineHeight: 1.6 }}>
-        <strong>📌 CNAME 구조 안내</strong><br />
-        • <strong>리다이렉트 / HTML / API</strong>: CNAME → <code>krl.kr</code> (KRL.KR 서버가 처리 → 안정적인 서버사이드 리다이렉트)<br />
+        <strong>📌 DNS 레코드 구조 안내</strong><br />
+        • <strong>리다이렉트 / HTML / API</strong>: CNAME → <code>krl.kr</code> (KRL.KR 서버 경유)<br />
         • <strong>GitHub Pages</strong>: CNAME → <code>username.github.io</code> (GitHub 직접 연결)<br />
         • <strong>Vercel</strong>: CNAME → <code>cname.vercel-dns.com</code> (Vercel 요구사항)<br />
+        • <strong>A 레코드</strong>: IPv4 주소로 직접 연결 (예: <code>1.2.3.4</code>)<br />
+        • <strong>AAAA 레코드</strong>: IPv6 주소로 직접 연결 (예: <code>2001:db8::1</code>)<br />
+        • <strong>CNAME</strong>: 커스텀 호스트명으로 연결 (예: <code>example.com</code>)<br />
         DNS가 잘못됐다면 <strong>DNS 동기화</strong> 버튼으로 재설정하세요.
       </div>
 
@@ -310,7 +331,7 @@ function SubdomainsPageInner() {
                   <th>서브도메인</th>
                   <th>유형</th>
                   <th>대상</th>
-                  <th>CNAME →</th>
+                  <th>DNS 레코드</th>
                   <th>상태</th>
                   <th>등록일</th>
                   <th style={{ textAlign: "right" }}>작업</th>
@@ -420,7 +441,11 @@ function SubdomainsPageInner() {
               ) : (
                 <div>
                   <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 500, marginBottom: "6px" }}>
-                    대상 {type === "github" ? "도메인 (username.github.io)" : "URL"} *
+                    {type === "github" ? "대상 도메인 (username.github.io)"
+                      : type === "a" ? "IPv4 주소 *"
+                      : type === "aaaa" ? "IPv6 주소 *"
+                      : type === "cname" ? "대상 호스트명 *"
+                      : "대상 URL *"}
                   </label>
                   <input type="text" value={target} onChange={(e) => setTarget(e.target.value)}
                     placeholder={TYPE_PLACEHOLDERS[type] ?? "https://..."} required className="input" />
@@ -474,7 +499,11 @@ function SubdomainsPageInner() {
               ) : (
                 <div>
                   <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 500, marginBottom: "6px" }}>
-                    대상 {editType === "github" ? "도메인" : "URL"}
+                    {editType === "github" ? "대상 도메인"
+                      : editType === "a" ? "IPv4 주소"
+                      : editType === "aaaa" ? "IPv6 주소"
+                      : editType === "cname" ? "대상 호스트명"
+                      : "대상 URL"}
                   </label>
                   <input type="text" value={editTarget} onChange={(e) => setEditTarget(e.target.value)}
                     required className="input" placeholder={TYPE_PLACEHOLDERS[editType] ?? "https://..."} />
@@ -489,7 +518,7 @@ function SubdomainsPageInner() {
               </div>
               <div style={{ padding: "12px", background: "var(--color-surface-card)", borderRadius: "var(--radius-sm)", fontSize: "0.8125rem", color: "var(--color-muted)" }}>
                 💡 유형·대상 변경 시 Cloudflare DNS가 자동으로 업데이트됩니다.<br />
-                CNAME: <code style={{ fontFamily: "var(--font-mono)" }}>{CNAME_EXPLAIN[editType]}</code>
+                DNS: <code style={{ fontFamily: "var(--font-mono)" }}>{CNAME_EXPLAIN[editType] ?? editType}</code>
               </div>
               <div style={{ display: "flex", gap: "12px" }}>
                 <button type="button" onClick={() => setEditItem(null)} className="btn btn-secondary btn-pill" style={{ flex: 1, justifyContent: "center" }}>취소</button>

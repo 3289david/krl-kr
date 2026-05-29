@@ -9,7 +9,7 @@ import {
 
 const UpdateSchema = z.object({
   target: z.string().min(1).optional(),
-  type: z.enum(["github", "vercel", "html", "redirect", "api"]).optional(),
+  type: z.enum(["github", "vercel", "html", "redirect", "api", "a", "aaaa", "cname"]).optional(),
   is_active: z.boolean().optional(),
 });
 
