@@ -90,23 +90,28 @@ export async function POST(request: NextRequest) {
 
     const { alias, altcha } = parsed.data;
 
-    // Altcha PoW verification
-    const skipAltcha = process.env.SKIP_ALTCHA === "1";
-    if (!skipAltcha) {
-      const valid = await verifyAltcha(altcha);
-      if (!valid) {
-        return NextResponse.json(
-          { error: "보안 인증을 완료해주세요.", code: "ALTCHA_FAILED" },
-          { status: 400 }
-        );
+    // ── 관리자 여부 먼저 확인 (관리자는 Altcha/한도/예약어 모두 우회) ──────────
+    const { isAdmin: checkAdmin } = await import("@/lib/admin");
+    const adminBypass = await checkAdmin(db, user.email);
+
+    // Altcha PoW verification (관리자 우회)
+    if (!adminBypass) {
+      const skipAltcha = process.env.SKIP_ALTCHA === "1";
+      if (!skipAltcha) {
+        const valid = await verifyAltcha(altcha);
+        if (!valid) {
+          return NextResponse.json(
+            { error: "보안 인증을 완료해주세요.", code: "ALTCHA_FAILED" },
+            { status: 400 }
+          );
+        }
       }
     }
+
     const aliasLower = alias.toLowerCase();
     const fullEmail = `${aliasLower}@krl.kr`;
 
     // 한도 체크 — 관리자는 무제한
-    const { isAdmin: checkAdmin } = await import("@/lib/admin");
-    const adminBypass = await checkAdmin(db, user.email);
     if (!adminBypass) {
       const currentCount = await db
         .prepare("SELECT COUNT(*) as count FROM email_aliases WHERE user_id = ?")
@@ -137,13 +142,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 예약어 차단
+    // 예약어 차단 (관리자 우회)
     const RESERVED_ALIASES = new Set([
       "admin", "administrator", "support", "help", "info", "contact",
       "noreply", "no-reply", "postmaster", "hostmaster", "webmaster",
       "abuse", "security", "legal", "billing", "sales", "marketing",
     ]);
-    if (RESERVED_ALIASES.has(aliasLower)) {
+    if (!adminBypass && RESERVED_ALIASES.has(aliasLower)) {
       return NextResponse.json(
         { error: "사용할 수 없는 이메일 별칭입니다." },
         { status: 400 }
