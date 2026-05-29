@@ -6,7 +6,9 @@ import { usePathname, useRouter } from "next/navigation";
 const NAV = [
   { href: "/dashboard/admin", label: "개요", exact: true, icon: "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10" },
   { href: "/dashboard/admin/users", label: "사용자 관리", icon: "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75" },
-  { href: "/dashboard/admin/appeals", label: "이의제기", icon: "M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z M12 8v4 M12 16h.01", masterOnly: false },
+  { href: "/dashboard/admin/resources", label: "리소스 관리", icon: "M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" },
+  { href: "/dashboard/admin/reports", label: "신고 관리", icon: "M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z M12 9v4 M12 17h.01", badge: "reports" },
+  { href: "/dashboard/admin/appeals", label: "이의제기", icon: "M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z M12 8v4 M12 16h.01", badge: "appeals" },
   { href: "/dashboard/admin/notices", label: "공지 관리", icon: "M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9 M13.73 21a2 2 0 0 1-3.46 0" },
   { href: "/dashboard/admin/chat", label: "지원 채팅", icon: "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" },
   { href: "/dashboard/admin/meetings", label: "관리자 회의", icon: "M17 20h5v-2a3 3 0 0 0-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 0 1 5.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 0 1 9.288 0M15 7a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" },
@@ -20,6 +22,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [adminInfo, setAdminInfo] = useState<{ isAdmin: boolean; isMaster: boolean; role: string | null } | null>(null);
   const [loading, setLoading] = useState(true);
   const [pendingAppeals, setPendingAppeals] = useState(0);
+  const [pendingReports, setPendingReports] = useState(0);
 
   useEffect(() => {
     fetch("/api/admin/check")
@@ -31,6 +34,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           fetch("/api/admin/appeals?status=pending")
             .then(r => r.ok ? r.json() : { appeals: [] })
             .then(data => setPendingAppeals((data.appeals ?? []).length));
+          fetch("/api/admin/reports?status=pending")
+            .then(r => r.ok ? r.json() : { pendingCount: 0 })
+            .then(data => setPendingReports(data.pendingCount ?? 0));
         }
       })
       .catch(() => router.replace("/dashboard"))
@@ -87,9 +93,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 {item.icon.split(" M").map((d, i) => <path key={i} d={i === 0 ? d : "M" + d} />)}
               </svg>
               {item.label}
-              {item.href === "/dashboard/admin/appeals" && pendingAppeals > 0 && (
+              {item.badge === "appeals" && pendingAppeals > 0 && (
                 <span style={{ marginLeft: "auto", fontSize: "0.65rem", background: "#DC2626", color: "white", borderRadius: "10px", padding: "1px 5px", fontWeight: 700 }}>
                   {pendingAppeals}
+                </span>
+              )}
+              {item.badge === "reports" && pendingReports > 0 && (
+                <span style={{ marginLeft: "auto", fontSize: "0.65rem", background: "#DC2626", color: "white", borderRadius: "10px", padding: "1px 5px", fontWeight: 700 }}>
+                  {pendingReports}
                 </span>
               )}
             </Link>

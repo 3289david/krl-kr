@@ -2,6 +2,8 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
+const ReportModal = dynamic(() => import("@/components/report-modal"), { ssr: false });
 
 interface User { name: string | null; email: string }
 
@@ -116,6 +118,7 @@ export function SiteHeader() {
   const [user, setUser] = useState<User | null | "loading">("loading");
   const [accountOpen, setAccountOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
   const accountRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
   const router = useRouter();
@@ -206,6 +209,27 @@ export function SiteHeader() {
                 <line x1="21" y1="21" x2="16.65" y2="16.65" />
               </svg>
             </Link>
+            {/* Report button — for logged-in users */}
+            {isLoggedIn && (
+              <button
+                onClick={() => setReportOpen(true)}
+                title="신고하기"
+                style={{
+                  display: "inline-flex", alignItems: "center", justifyContent: "center",
+                  width: "34px", height: "34px", borderRadius: "8px",
+                  color: "var(--color-body)", background: "transparent", border: "none",
+                  cursor: "pointer", transition: "background 0.1s",
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--color-surface-card)"; (e.currentTarget as HTMLElement).style.color = "#DC2626"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "var(--color-body)"; }}
+              >
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                  <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+              </button>
+            )}
             {/* Donate button */}
             <Link href="/support" style={{
               display: "inline-flex", alignItems: "center", gap: "5px",
@@ -380,6 +404,21 @@ export function SiteHeader() {
                 borderBottom: "1px solid var(--color-hairline)",
               }}>{item.label}</Link>
             ))}
+            {isLoggedIn && (
+              <button onClick={() => { setMobileOpen(false); setReportOpen(true); }} style={{
+                display: "flex", alignItems: "center", gap: "8px",
+                width: "100%", padding: "11px 4px", background: "none", border: "none",
+                textAlign: "left", fontSize: "0.9375rem", fontWeight: 500, color: "#DC2626",
+                cursor: "pointer", fontFamily: "var(--font-sans)",
+                borderBottom: "1px solid var(--color-hairline)",
+              }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                  <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+                신고하기
+              </button>
+            )}
             {isLoggedIn ? (
               <>
                 <Link href="/dashboard" onClick={() => setMobileOpen(false)} style={{ display: "block", padding: "11px 4px", fontSize: "0.9375rem", fontWeight: 500, color: "var(--color-ink)", textDecoration: "none", borderBottom: "1px solid var(--color-hairline)" }}>대시보드</Link>
@@ -409,6 +448,9 @@ export function SiteHeader() {
           .krl-account-name { display: none; }
         }
       `}</style>
+
+      {/* Report Modal */}
+      {reportOpen && <ReportModal onClose={() => setReportOpen(false)} />}
     </>
   );
 }

@@ -75,8 +75,8 @@ export default function AdminChatPage() {
 
       <div style={{
         display: "grid", gridTemplateColumns: "270px 1fr", gap: "0",
-        height: "620px", background: "var(--color-lifted)",
-        border: "1px solid var(--color-hairline)", borderRadius: "var(--radius-xl)", overflow: "hidden",
+        height: "620px", background: "#f8fafc",
+        border: "1px solid #e2e8f0", borderRadius: "var(--radius-xl)", overflow: "hidden",
       }}>
         {/* Rooms list */}
         <div style={{ borderRight: "1px solid var(--color-hairline)", overflow: "auto", display: "flex", flexDirection: "column" }}>
@@ -137,23 +137,23 @@ export default function AdminChatPage() {
                   <div key={m.id} style={{ display: "flex", justifyContent: isAdminMsg ? "flex-end" : "flex-start" }}>
                     <div style={{ maxWidth: "70%" }}>
                       {!isAdminMsg && (
-                        <p style={{ fontSize: "0.7rem", marginBottom: "3px", color: "var(--color-muted)", fontWeight: 600 }}>
+                        <p style={{ fontSize: "0.7rem", marginBottom: "3px", color: "#6b7280", fontWeight: 700 }}>
                           {m.sender_email}
                         </p>
                       )}
                       <div style={{
-                        // 관리자 메시지: 검은 배경 / 사용자 메시지: 연한 회색 배경
-                        background: isAdminMsg ? "var(--color-ink)" : "var(--color-surface-card)",
-                        color: isAdminMsg ? "var(--color-canvas)" : "var(--color-ink)",
+                        background: isAdminMsg ? "#2563eb" : "#ffffff",
+                        color: isAdminMsg ? "#ffffff" : "#111827",
+                        border: isAdminMsg ? "none" : "1px solid #e5e7eb",
                         borderRadius: isAdminMsg ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
                         padding: "10px 14px",
+                        boxShadow: isAdminMsg ? "0 1px 3px rgba(37,99,235,0.3)" : "0 1px 2px rgba(0,0,0,0.05)",
                       }}>
-                        <p style={{ fontSize: "0.875rem", lineHeight: 1.5 }}>{m.message}</p>
+                        <p style={{ fontSize: "0.875rem", lineHeight: 1.5, fontWeight: 500 }}>{m.message}</p>
                       </div>
                       <p style={{
                         fontSize: "0.7rem", marginTop: "3px",
-                        // 시간은 항상 연한 색
-                        color: "var(--color-muted)",
+                        color: "#9ca3af",
                         textAlign: isAdminMsg ? "right" : "left",
                       }}>
                         {formatTime(m.created_at)}

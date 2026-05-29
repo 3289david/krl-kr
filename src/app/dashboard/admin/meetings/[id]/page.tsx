@@ -86,7 +86,7 @@ export default function MeetingRoomPage({ params }: { params: Promise<{ id: stri
 
       {/* Chat area */}
       <div style={{
-        flex: 1, background: "var(--color-lifted)", border: "1px solid var(--color-hairline)",
+        flex: 1, background: "#f8fafc", border: "1px solid #e2e8f0",
         borderRadius: "var(--radius-xl)", display: "flex", flexDirection: "column", overflow: "hidden",
         minHeight: 0,
       }}>
@@ -103,28 +103,30 @@ export default function MeetingRoomPage({ params }: { params: Promise<{ id: stri
                 {!isMe && (
                   <div style={{
                     width: "32px", height: "32px", borderRadius: "50%",
-                    background: "var(--color-surface-card)", display: "flex",
+                    background: "#4f46e5", display: "flex",
                     alignItems: "center", justifyContent: "center",
-                    fontSize: "0.75rem", fontWeight: 700, color: "var(--color-muted)", flexShrink: 0,
+                    fontSize: "0.75rem", fontWeight: 700, color: "#ffffff", flexShrink: 0,
                   }}>
                     {m.sender_email[0].toUpperCase()}
                   </div>
                 )}
                 <div style={{ maxWidth: "65%" }}>
                   {!isMe && (
-                    <p style={{ fontSize: "0.7rem", color: "var(--color-muted)", marginBottom: "4px", fontWeight: 600 }}>
+                    <p style={{ fontSize: "0.7rem", color: "#6b7280", marginBottom: "4px", fontWeight: 700 }}>
                       {m.sender_email}
                     </p>
                   )}
                   <div style={{
-                    background: isMe ? "var(--color-ink)" : "var(--color-surface-card)",
-                    color: isMe ? "var(--color-canvas)" : "var(--color-ink)",
+                    background: isMe ? "#2563eb" : "#ffffff",
+                    color: isMe ? "#ffffff" : "#111827",
+                    border: isMe ? "none" : "1px solid #e5e7eb",
                     borderRadius: isMe ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
                     padding: "10px 14px",
+                    boxShadow: isMe ? "0 1px 3px rgba(37,99,235,0.3)" : "0 1px 2px rgba(0,0,0,0.05)",
                   }}>
-                    <p style={{ fontSize: "0.9rem", lineHeight: 1.55, whiteSpace: "pre-wrap" }}>{m.message}</p>
+                    <p style={{ fontSize: "0.9rem", lineHeight: 1.55, whiteSpace: "pre-wrap", fontWeight: 500 }}>{m.message}</p>
                   </div>
-                  <p style={{ fontSize: "0.7rem", color: "var(--color-muted)", marginTop: "3px", textAlign: isMe ? "right" : "left" }}>
+                  <p style={{ fontSize: "0.7rem", color: "#9ca3af", marginTop: "3px", textAlign: isMe ? "right" : "left" }}>
                     {formatTime(m.created_at)}
                   </p>
                 </div>
