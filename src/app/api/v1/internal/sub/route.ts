@@ -80,12 +80,83 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // a / aaaa / cname — DNS-only records, Cloudflare proxy is OFF.
-    // Traffic should never reach this handler; the client connects directly
-    // to the target IP or hostname via DNS. If we somehow get called, 404.
+    // a / aaaa / cname — reverse proxy to the target.
+    // Nginx passes X-Original-URI so we can forward the full path + query.
+    // Cloudflare terminates SSL, so we contact the target over plain HTTP (port 80).
     if (row.type === "a" || row.type === "aaaa" || row.type === "cname") {
-      return new NextResponse(NOT_FOUND_HTML(name), {
-        status: 404,
+      const originalUri = request.headers.get("x-original-uri") ?? "/";
+      const subdomainHost = `${name}.krl.kr`;
+
+      let targetHost: string;
+      if (row.type === "cname") {
+        targetHost = row.target.replace(/^https?:\/\//, "").split("/")[0].trim();
+      } else {
+        targetHost = row.target.trim();
+      }
+
+      // Try HTTPS first, fall back to HTTP (many self-hosted servers use HTTP internally)
+      const tryUrls = [
+        `http://${targetHost}${originalUri}`,
+        `https://${targetHost}${originalUri}`,
+      ];
+
+      for (const proxyUrl of tryUrls) {
+        try {
+          const proxyRes = await fetch(proxyUrl, {
+            method: "GET",
+            headers: {
+              "Host": subdomainHost,
+              "X-Forwarded-For": request.headers.get("x-real-ip") ?? "",
+              "X-Forwarded-Proto": "https",
+              "X-Real-IP": request.headers.get("x-real-ip") ?? "",
+              "User-Agent": request.headers.get("user-agent") ?? "krl.kr-proxy/1.0",
+            },
+            redirect: "follow",
+            signal: AbortSignal.timeout(15000),
+          });
+
+          const responseHeaders = new Headers();
+          proxyRes.headers.forEach((v, k) => {
+            // Strip hop-by-hop headers
+            if (!["transfer-encoding", "connection", "keep-alive",
+                  "proxy-connection", "upgrade", "te", "trailers"].includes(k.toLowerCase())) {
+              responseHeaders.set(k, v);
+            }
+          });
+          responseHeaders.set("X-Proxied-By", "krl.kr");
+
+          return new NextResponse(proxyRes.body, {
+            status: proxyRes.status,
+            statusText: proxyRes.statusText,
+            headers: responseHeaders,
+          });
+        } catch {
+          // Try next URL
+          continue;
+        }
+      }
+
+      // Both HTTP and HTTPS failed
+      const errHtml = `<!DOCTYPE html>
+<html lang="ko"><head><meta charset="UTF-8"><title>${escapeHtml(name)}.krl.kr — 연결 실패</title>
+<style>body{font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;
+min-height:100vh;background:#f4f0e6;color:#1a1714;margin:0}
+.box{text-align:center;padding:48px 32px;max-width:480px}
+.logo{font-family:monospace;font-weight:800;font-size:1.125rem;margin-bottom:32px;opacity:.6}
+h1{font-size:1.375rem;font-weight:600;margin-bottom:10px}
+p{color:rgba(26,23,20,.6);font-size:.9375rem;margin-bottom:8px;line-height:1.6}
+code{background:#e5e0d6;padding:2px 6px;border-radius:4px;font-size:.875rem}
+a{display:inline-block;margin-top:20px;padding:10px 22px;background:#1a1714;color:#f4f0e6;
+border-radius:9999px;text-decoration:none;font-size:.875rem;font-weight:500}</style>
+</head><body><div class="box">
+<div class="logo">KRL.KR</div>
+<h1>서버에 연결할 수 없습니다</h1>
+<p><code>${escapeHtml(targetHost)}</code> 서버가 응답하지 않습니다.</p>
+<p>대상 서버가 실행 중인지, 포트 80/443이 열려 있는지 확인하세요.</p>
+<a href="https://krl.kr">krl.kr 바로가기</a>
+</div></body></html>`;
+      return new NextResponse(errHtml, {
+        status: 502,
         headers: { "Content-Type": "text/html; charset=utf-8" },
       });
     }
