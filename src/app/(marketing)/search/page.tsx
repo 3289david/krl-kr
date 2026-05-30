@@ -2,6 +2,125 @@
 import { useState, useRef, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 
+// ─── AI Summary Box ───────────────────────────────────────────────────────────
+// 로딩은 백그라운드에서 조용히 — 데이터 도착 후에만 박스 표시
+function AISummaryBox({ query, snippets }: {
+  query: string;
+  snippets: { title: string; content: string; url: string }[];
+}) {
+  const [summary, setSummary] = useState<string | null>(null); // null = not yet loaded
+  const calledRef = useRef(false);
+
+  useEffect(() => {
+    if (calledRef.current || !query.trim() || snippets.length === 0) return;
+    calledRef.current = true;
+
+    const controller = new AbortController();
+
+    fetch("/api/v1/ai/search-summary", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query, snippets }),
+      signal: controller.signal,
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        const text = (data.summary ?? "").trim();
+        if (text) setSummary(text);
+      })
+      .catch(() => { /* 실패해도 조용히 */ });
+
+    return () => controller.abort();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 데이터 없으면 아무것도 렌더하지 않음 — 로딩 중엔 invisible
+  if (!summary) return null;
+
+  return (
+    <>
+      <style>{`
+        @keyframes ai-fadein {
+          from { opacity: 0; transform: translateY(-4px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .ai-shimmer {
+          background: linear-gradient(
+            90deg,
+            var(--color-surface-card) 25%,
+            var(--color-lifted) 50%,
+            var(--color-surface-card) 75%
+          );
+          background-size: 200% 100%;
+          animation: ai-shimmer 1.6s ease infinite;
+        }
+        @keyframes ai-shimmer {
+          0%   { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+      `}</style>
+      <div style={{
+        margin: "4px 0 18px",
+        borderRadius: "10px",
+        border: "1px solid var(--color-hairline)",
+        background: "var(--color-canvas)",
+        overflow: "hidden",
+        animation: "ai-fadein 0.3s ease both",
+      }}>
+        {/* 헤더 */}
+        <div style={{
+          display: "flex", alignItems: "center", gap: "7px",
+          padding: "10px 14px 9px",
+          borderBottom: "1px solid var(--color-hairline)",
+          background: "var(--color-surface-card)",
+        }}>
+          {/* 반짝이는 별 아이콘 */}
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+            stroke="var(--color-ink)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+          <span style={{
+            fontSize: "0.75rem", fontWeight: 700,
+            color: "var(--color-ink)", letterSpacing: "0.02em",
+            fontFamily: "var(--font-sans)",
+          }}>AI 요약</span>
+        </div>
+
+        {/* 본문 */}
+        <div style={{ padding: "13px 14px 14px" }}>
+          <p style={{
+            fontSize: "0.9rem",
+            color: "var(--color-body)",
+            lineHeight: 1.75,
+            margin: 0,
+            fontFamily: "var(--font-sans)",
+          }}>
+            {summary}
+          </p>
+        </div>
+
+        {/* 푸터 */}
+        <div style={{
+          padding: "7px 14px",
+          borderTop: "1px solid var(--color-hairline)",
+          background: "var(--color-surface-card)",
+          display: "flex", alignItems: "center", gap: "5px",
+        }}>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none"
+            stroke="var(--color-ash)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <span style={{ fontSize: "0.7rem", color: "var(--color-ash)", fontFamily: "var(--font-sans)" }}>
+            AI가 생성한 내용으로 부정확할 수 있습니다
+          </span>
+        </div>
+      </div>
+    </>
+  );
+}
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface SearchResult {
   url: string;
@@ -215,6 +334,7 @@ function SearchPageInner() {
   const [results, setResults] = useState<SearchResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [aiKey, setAiKey] = useState(0); // force re-mount AI box on new search
   const inputRef = useRef<HTMLInputElement>(null);
   const hasSearched = results !== null || loading;
 
@@ -224,6 +344,7 @@ function SearchPageInner() {
     setLoading(true);
     setError("");
     setResults(null);
+    setAiKey((k) => k + 1);
 
     // update URL without navigation
     const params = new URLSearchParams({ q: trimmed, cat, p: String(pg) });
@@ -346,6 +467,19 @@ function SearchPageInner() {
               <p style={{ fontSize: "0.8rem", color: "var(--color-muted)", marginBottom: "4px" }}>
                 약 {results.number_of_results.toLocaleString("ko-KR")}개의 결과
               </p>
+            )}
+
+            {/* AI summary — only for general/web category on page 1 */}
+            {(category === "general" || category === "web") && page === 1 && results.results.length > 0 && (
+              <AISummaryBox
+                key={aiKey}
+                query={query}
+                snippets={results.results.slice(0, 5).map((r) => ({
+                  title: r.title,
+                  content: r.content ?? "",
+                  url: r.url,
+                }))}
+              />
             )}
 
             {/* answer box */}

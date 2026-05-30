@@ -208,6 +208,8 @@ const TOC = [
   { id: "email",      label: "이메일 별칭" },
   { id: "subdomains", label: "서브도메인" },
   { id: "community",  label: "커뮤니티" },
+  { id: "search",     label: "검색" },
+  { id: "ai",         label: "AI 채팅" },
   { id: "keys",       label: "API 키 관리" },
   { id: "errors",     label: "오류 코드" },
 ];
@@ -934,6 +936,127 @@ client.post(
 }`} />
             </Endpoint>
             <Endpoint method="DELETE" path="/api/v1/keys/:id" desc="API 키 즉시 폐기. 해당 키로의 모든 요청이 차단됩니다." auth />
+          </Section>
+
+          {/* ── 검색 ── */}
+          <Section id="search" title="검색">
+            <Alert type="tip">인증 없이 사용할 수 있습니다. 로컬 SearXNG 인스턴스로 구동되며 백업 인스턴스를 사용합니다.</Alert>
+            <Endpoint method="GET" path="/api/v1/search" desc="웹 검색 결과를 JSON으로 반환합니다.">
+              <ParamTable rows={[
+                ["q",        "string",  true,  "검색어"],
+                ["category", "string",  false, "검색 카테고리. general(기본), web, images, news, videos, science, map"],
+                ["page",     "integer", false, "페이지 번호 (기본: 1)"],
+              ]} />
+              <LangBlock examples={{
+                curl: `curl "https://krl.kr/api/v1/search?q=apple&category=general&page=1"`,
+                js: `const res = await fetch(
+  "https://krl.kr/api/v1/search?q=apple&category=general&page=1"
+);
+const data = await res.json();
+console.log(data.results.length, "개 결과");`,
+                python: `import httpx
+
+res = httpx.get("https://krl.kr/api/v1/search", params={
+    "q": "apple",
+    "category": "general",
+    "page": 1,
+})
+data = res.json()
+print(len(data["results"]), "개 결과")`,
+              }} />
+              <Block label="응답" code={`{
+  "query": "apple",
+  "number_of_results": 0,
+  "results": [
+    {
+      "url": "https://www.apple.com",
+      "title": "Apple",
+      "content": "Apple is a technology company...",
+      "engine": "brave",
+      "score": 1.0
+    }
+  ],
+  "suggestions": ["apple inc", "apple watch"],
+  "answers": [],
+  "infoboxes": []
+}`} />
+            </Endpoint>
+          </Section>
+
+          {/* ── AI 채팅 ── */}
+          <Section id="ai" title="AI 채팅">
+            <Alert type="tip">인증 없이 사용할 수 있습니다. AI가 생성한 내용은 부정확할 수 있으니 중요한 정보는 직접 확인하세요.</Alert>
+
+            <Endpoint method="POST" path="/api/v1/ai/chat" desc="AI와 대화합니다. 멀티턴 대화를 지원합니다.">
+              <ParamTable rows={[
+                ["messages", "array",   true,  "대화 메시지 배열. 각 항목은 { role, content }"],
+                ["stream",   "boolean", false, "스트리밍 응답 사용 여부 (기본: false)"],
+              ]} />
+              <LangBlock examples={{
+                curl: `curl -X POST https://krl.kr/api/v1/ai/chat \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "messages": [
+      { "role": "user", "content": "URL 단축 서비스란 무엇인가요?" }
+    ]
+  }'`,
+                js: `const res = await fetch("https://krl.kr/api/v1/ai/chat", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    messages: [
+      { role: "user", content: "URL 단축 서비스란 무엇인가요?" }
+    ]
+  })
+});
+const data = await res.json();
+console.log(data.content);`,
+                python: `import httpx
+
+res = httpx.post("https://krl.kr/api/v1/ai/chat", json={
+    "messages": [
+        {"role": "user", "content": "URL 단축 서비스란 무엇인가요?"}
+    ]
+})
+print(res.json()["content"])`,
+              }} />
+              <Block label="응답" code={`{
+  "content": "URL 단축 서비스는 긴 URL을 짧은 주소로 변환해 주는 서비스입니다..."
+}`} />
+            </Endpoint>
+
+            <Endpoint method="POST" path="/api/v1/ai/search-summary" desc="검색 결과를 기반으로 AI 요약을 생성합니다. 검색 페이지의 'AI 요약' 기능에 사용됩니다.">
+              <ParamTable rows={[
+                ["query",    "string", true,  "검색어"],
+                ["snippets", "array",  false, "검색 결과 스니펫 배열. 각 항목은 { title, content, url }"],
+              ]} />
+              <LangBlock examples={{
+                curl: `curl -X POST https://krl.kr/api/v1/ai/search-summary \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "query": "애플 최신 제품",
+    "snippets": [
+      { "title": "Apple", "content": "Apple announced...", "url": "https://apple.com" }
+    ]
+  }'`,
+                js: `const res = await fetch("https://krl.kr/api/v1/ai/search-summary", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    query: "애플 최신 제품",
+    snippets: results.slice(0, 5).map(r => ({
+      title: r.title,
+      content: r.content,
+      url: r.url
+    }))
+  })
+});
+const { summary } = await res.json();`,
+              }} />
+              <Block label="응답" code={`{
+  "summary": "애플은 최근 iPhone 16 시리즈와 M4 칩셋을 탑재한 Mac을 출시했습니다..."
+}`} />
+            </Endpoint>
           </Section>
 
           {/* ── 오류 코드 ── */}

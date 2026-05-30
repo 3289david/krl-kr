@@ -180,6 +180,21 @@ export function SiteHeader() {
               onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
             >커뮤니티</Link>
 
+            <Link href="/chat" style={{
+              display: "flex", alignItems: "center", gap: "5px",
+              padding: "6px 10px", borderRadius: "6px", fontSize: "0.875rem",
+              fontWeight: 500, color: "var(--color-body)", textDecoration: "none", transition: "background 0.1s",
+            }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--color-surface-card)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7H3a7 7 0 0 1 7-7h1V5.73A2 2 0 0 1 10 4a2 2 0 0 1 2-2z"/>
+                <path d="M5 14v7M19 14v7M9 14v7M15 14v7"/>
+              </svg>
+              AI 채팅
+            </Link>
+
             {isLoggedIn && (
               <Link href="/dashboard" style={{
                 padding: "6px 10px", borderRadius: "6px", fontSize: "0.875rem",
@@ -397,7 +412,7 @@ export function SiteHeader() {
               </div>
             ))}
             <div style={{ height: "1px", background: "var(--color-hairline)", margin: "8px 0" }} />
-            {[{ href: "/community", label: "커뮤니티" }, { href: "/search", label: "검색" }].map((item) => (
+            {[{ href: "/community", label: "커뮤니티" }, { href: "/search", label: "검색" }, { href: "/chat", label: "AI 채팅" }].map((item) => (
               <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)} style={{
                 display: "block", padding: "11px 4px", fontSize: "0.9375rem",
                 fontWeight: 500, color: "var(--color-ink)", textDecoration: "none",

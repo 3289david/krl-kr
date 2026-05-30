@@ -58,6 +58,22 @@ POST /api/v1/community                — Create post (auth required)
 PATCH /api/v1/community/:id           — Update post (auth required, own post)
 DELETE /api/v1/community/:id          — Delete post
 
+### Search (no auth required)
+GET /api/v1/search?q=query&category=general&page=1
+  — Web search powered by local SearXNG (categories: general, web, images, news, videos, science, map)
+  Returns: { query, results: [{url, title, content, engine, score}], suggestions, answers, infoboxes }
+
+### AI Chat (no auth required)
+POST /api/v1/ai/chat
+  Body: { "messages": [{ "role": "user|assistant", "content": "..." }], "stream": false }
+  Returns: { "content": "AI response text" }
+  — Supports multi-turn conversation (up to 20 turns)
+
+### AI Search Summary (no auth required)
+POST /api/v1/ai/search-summary
+  Body: { "query": "search term", "snippets": [{ "title", "content", "url" }] }
+  Returns: { "summary": "2-3 sentence AI summary of results" }
+
 ### Status
 GET /api/v1/status   — Service health check
 GET /api/v1/metrics  — Server metrics (CPU, memory, request count)
