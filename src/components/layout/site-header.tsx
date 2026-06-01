@@ -7,47 +7,137 @@ const ReportModal = dynamic(() => import("@/components/report-modal"), { ssr: fa
 
 interface User { name: string | null; email: string }
 
-const NAV_MENUS = [
-  {
-    label: "링크 · QR",
-    items: [
-      { href: "/", icon: "M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71", icon2: "M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71", label: "URL 단축기", desc: "krl.kr/abc 형태의 짧은 주소" },
-      { href: "/qr", icon: "M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h4 M18 14v4 M14 18h4 M18 18v4", label: "QR 코드", desc: "SVG·PNG 다운로드, 로고 삽입" },
-      { href: "/dashboard/links?tab=dynamic", icon: "M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4", label: "다이나믹 링크", desc: "QR 유지하면서 목적지 변경" },
-      { href: "/dashboard/links?tab=temp", icon: "M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z M12 6v6l4 2", label: "임시 링크", desc: "시간·클릭 후 자동 만료" },
-      { href: "/dashboard/links?tab=app", icon: "M12 18h.01 M8 21h8a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2z", label: "앱 링크", desc: "iOS/Android별 주소 분기" },
-    ],
-  },
-  {
-    label: "파일 · 공유",
-    items: [
-      { href: "/tools/drop", icon: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4 M17 8l-5-5-5 5 M12 3v12", label: "파일 공유", desc: "업로드 후 링크로 공유" },
-      { href: "/tools/paste", icon: "M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2 M15 2H9a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1z", label: "코드·텍스트 공유", desc: "붙여넣고 링크로 공유" },
-      { href: "/dashboard/email", icon: "M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z M22 6l-10 7L2 6", label: "이메일 수신함", desc: "이름@krl.kr로 메일 수신" },
-      { href: "/tools/webhook", icon: "M18 16.98h-5.99c-1.1 0-1.95.68-2.23 1.61A3 3 0 0 1 2 17c0-1.66 1.34-3 3-3h.5 M12 3C9.24 3 7 5.24 7 8c0 2.16 1.28 3.99 3.12 4.82 M17 8c0-2.76-2.24-5-5-5 M22 8c0 2.76-2.24 5-5 5h-1", label: "웹훅 테스트", desc: "요청 실시간 확인" },
-    ],
-  },
-  {
-    label: "웹사이트",
-    items: [
-      { href: "/dashboard/subdomains", icon: "M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z M2 12h20 M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z", label: "서브도메인", desc: "내이름.krl.kr 주소 만들기" },
-      { href: "/tools/bio", icon: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z", label: "Link-in-bio", desc: "krl.kr/@닉네임 프로필 페이지" },
-    ],
-  },
-  {
-    label: "개발 도구",
-    items: [
-      { href: "/tools/dev", icon: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z", label: "IP 조회", desc: "IP 주소와 지역 정보 확인" },
-      { href: "/tools/dev", icon: "M7 7h10v10H7z M12 3v4 M12 17v4 M3 12h4 M17 12h4", label: "UUID 생성기", desc: "랜덤 UUID v4 생성" },
-      { href: "/tools/dev", icon: "M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18", label: "Hash 계산기", desc: "SHA-256/512 해시값 계산" },
-      { href: "/tools/dev", icon: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6", label: "Base64", desc: "Base64 인코딩/디코딩" },
-      { href: "/tools/dev", icon: "M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8 M3 3v5h5 M12 7v5l3 3", label: "DNS 조회", desc: "A/CNAME/MX/TXT 레코드 확인" },
-      { href: "/tools/dev", icon: "M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z", label: "JWT 디코드", desc: "JWT 토큰 파싱 및 확인" },
-    ],
-  },
-];
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-function DropdownMenu({ menu, onClose }: { menu: typeof NAV_MENUS[0]; onClose: () => void }) {
+interface NavItemConfig {
+  id: string;
+  href: string;
+  label: string;
+  desc?: string;
+  icon?: string;
+  icon2?: string;
+  visible: boolean;
+}
+
+interface NavMenuConfig {
+  id: string;
+  label: string;
+  visible: boolean;
+  items: NavItemConfig[];
+}
+
+interface SimpleLinkConfig {
+  id: string;
+  href: string;
+  label: string;
+  icon?: string;
+  visible: boolean;
+}
+
+interface HeaderConfig {
+  logo: { text: string; href: string };
+  navMenus: NavMenuConfig[];
+  simpleLinks: SimpleLinkConfig[];
+  rightButtons: {
+    search: { visible: boolean; href: string };
+    report: { visible: boolean };
+    donate: { visible: boolean; href: string; label: string };
+  };
+}
+
+// ─── Default Config (matches site defaults) ───────────────────────────────────
+
+const DEFAULT_CONFIG: HeaderConfig = {
+  logo: { text: "KRL.KR", href: "/" },
+  navMenus: [
+    {
+      id: "links-qr", label: "링크 · QR", visible: true,
+      items: [
+        { id: "url-shortener", href: "/", label: "URL 단축기", desc: "krl.kr/abc 형태의 짧은 주소", icon: "M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71", icon2: "M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71", visible: true },
+        { id: "qr-code", href: "/qr", label: "QR 코드", desc: "SVG·PNG 다운로드, 로고 삽입", icon: "M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h4 M18 14v4 M14 18h4 M18 18v4", visible: true },
+        { id: "dynamic-link", href: "/dashboard/links?tab=dynamic", label: "다이나믹 링크", desc: "QR 유지하면서 목적지 변경", icon: "M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4", visible: true },
+        { id: "temp-link", href: "/dashboard/links?tab=temp", label: "임시 링크", desc: "시간·클릭 후 자동 만료", icon: "M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z M12 6v6l4 2", visible: true },
+        { id: "app-link", href: "/dashboard/links?tab=app", label: "앱 링크", desc: "iOS/Android별 주소 분기", icon: "M12 18h.01 M8 21h8a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2z", visible: true },
+      ],
+    },
+    {
+      id: "files-share", label: "파일 · 공유", visible: true,
+      items: [
+        { id: "file-share", href: "/tools/drop", label: "파일 공유", desc: "업로드 후 링크로 공유", icon: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4 M17 8l-5-5-5 5 M12 3v12", visible: true },
+        { id: "paste", href: "/tools/paste", label: "코드·텍스트 공유", desc: "붙여넣고 링크로 공유", icon: "M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2 M15 2H9a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1z", visible: true },
+        { id: "email", href: "/dashboard/email", label: "이메일 수신함", desc: "이름@krl.kr로 메일 수신", icon: "M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z M22 6l-10 7L2 6", visible: true },
+        { id: "webhook", href: "/tools/webhook", label: "웹훅 테스트", desc: "요청 실시간 확인", icon: "M18 16.98h-5.99c-1.1 0-1.95.68-2.23 1.61A3 3 0 0 1 2 17c0-1.66 1.34-3 3-3h.5 M12 3C9.24 3 7 5.24 7 8c0 2.16 1.28 3.99 3.12 4.82 M17 8c0-2.76-2.24-5-5-5 M22 8c0 2.76-2.24 5-5 5h-1", visible: true },
+      ],
+    },
+    {
+      id: "website", label: "웹사이트", visible: true,
+      items: [
+        { id: "subdomain", href: "/dashboard/subdomains", label: "서브도메인", desc: "내이름.krl.kr 주소 만들기", icon: "M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z M2 12h20 M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z", visible: true },
+        { id: "bio", href: "/tools/bio", label: "Link-in-bio", desc: "krl.kr/@닉네임 프로필 페이지", icon: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z", visible: true },
+      ],
+    },
+    {
+      id: "dev-tools", label: "개발 도구", visible: true,
+      items: [
+        { id: "ip-lookup", href: "/tools/dev", label: "IP 조회", desc: "IP 주소와 지역 정보 확인", icon: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z", visible: true },
+        { id: "uuid", href: "/tools/dev", label: "UUID 생성기", desc: "랜덤 UUID v4 생성", icon: "M7 7h10v10H7z M12 3v4 M12 17v4 M3 12h4 M17 12h4", visible: true },
+        { id: "hash", href: "/tools/dev", label: "Hash 계산기", desc: "SHA-256/512 해시값 계산", icon: "M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18", visible: true },
+        { id: "base64", href: "/tools/dev", label: "Base64", desc: "Base64 인코딩/디코딩", icon: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6", visible: true },
+        { id: "dns", href: "/tools/dev", label: "DNS 조회", desc: "A/CNAME/MX/TXT 레코드 확인", icon: "M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8 M3 3v5h5 M12 7v5l3 3", visible: true },
+        { id: "jwt", href: "/tools/dev", label: "JWT 디코드", desc: "JWT 토큰 파싱 및 확인", icon: "M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z", visible: true },
+      ],
+    },
+  ],
+  simpleLinks: [
+    { id: "community", href: "/community", label: "커뮤니티", visible: true },
+    { id: "ai-chat", href: "/chat", label: "AI 채팅", icon: "M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7H3a7 7 0 0 1 7-7h1V5.73A2 2 0 0 1 10 4a2 2 0 0 1 2-2z M5 14v7M19 14v7M9 14v7M15 14v7", visible: true },
+  ],
+  rightButtons: {
+    search: { visible: true, href: "/search" },
+    report: { visible: true },
+    donate: { visible: true, href: "/support", label: "후원" },
+  },
+};
+
+const CACHE_KEY = "headerConfig";
+const CACHE_TS_KEY = "headerConfigTs";
+const CACHE_TTL = 30_000; // 30s — matches API max-age
+
+async function loadHeaderConfig(): Promise<HeaderConfig> {
+  try {
+    const raw = sessionStorage.getItem(CACHE_KEY);
+    const ts = parseInt(sessionStorage.getItem(CACHE_TS_KEY) || "0");
+    if (raw && Date.now() - ts < CACHE_TTL) return JSON.parse(raw);
+  } catch {}
+  try {
+    const res = await fetch("/api/header-config");
+    if (res.ok) {
+      const data = await res.json();
+      const cfg = data.config ?? DEFAULT_CONFIG;
+      try {
+        sessionStorage.setItem(CACHE_KEY, JSON.stringify(cfg));
+        sessionStorage.setItem(CACHE_TS_KEY, String(Date.now()));
+      } catch {}
+      return cfg;
+    }
+  } catch {}
+  return DEFAULT_CONFIG;
+}
+
+// ─── Dropdown Components ──────────────────────────────────────────────────────
+
+function SvgIcon({ path, path2 }: { path: string; path2?: string }) {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"
+      style={{ color: "var(--color-muted)" }}>
+      {path.split(" M").map((d, i) => <path key={i} d={i === 0 ? d : "M" + d} />)}
+      {path2 && path2.split(" M").map((d, i) => <path key={`p2-${i}`} d={i === 0 ? d : "M" + d} />)}
+    </svg>
+  );
+}
+
+function DropdownMenu({ menu, onClose }: { menu: NavMenuConfig; onClose: () => void }) {
   return (
     <div style={{
       position: "absolute", top: "calc(100% + 8px)", left: 0,
@@ -55,22 +145,20 @@ function DropdownMenu({ menu, onClose }: { menu: typeof NAV_MENUS[0]; onClose: (
       borderRadius: "12px", boxShadow: "0 8px 32px rgba(20,20,19,0.12)",
       padding: "8px", minWidth: "260px", zIndex: 200,
     }}>
-      {menu.items.map((item) => (
-        <Link key={item.href} href={item.href} onClick={onClose} style={{ textDecoration: "none" }}>
+      {menu.items.filter(i => i.visible).map((item) => (
+        <Link key={item.id} href={item.href} onClick={onClose} style={{ textDecoration: "none" }}>
           <div style={{ display: "flex", alignItems: "flex-start", gap: "10px", padding: "9px 10px", borderRadius: "8px", cursor: "pointer", transition: "background 0.1s" }}
             onMouseEnter={(e) => (e.currentTarget.style.background = "var(--color-surface-card)")}
             onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
           >
-            <div style={{ marginTop: "2px", flexShrink: 0 }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"
-                style={{ color: "var(--color-muted)" }}>
-                <path d={item.icon} />
-              </svg>
-            </div>
+            {item.icon && (
+              <div style={{ marginTop: "2px", flexShrink: 0 }}>
+                <SvgIcon path={item.icon} path2={item.icon2} />
+              </div>
+            )}
             <div>
               <p style={{ fontSize: "0.875rem", fontWeight: 600, color: "var(--color-ink)", marginBottom: "1px" }}>{item.label}</p>
-              <p style={{ fontSize: "0.775rem", color: "var(--color-muted)", lineHeight: 1.3 }}>{item.desc}</p>
+              {item.desc && <p style={{ fontSize: "0.775rem", color: "var(--color-muted)", lineHeight: 1.3 }}>{item.desc}</p>}
             </div>
           </div>
         </Link>
@@ -79,7 +167,7 @@ function DropdownMenu({ menu, onClose }: { menu: typeof NAV_MENUS[0]; onClose: (
   );
 }
 
-function NavDropdown({ menu }: { menu: typeof NAV_MENUS[0] }) {
+function NavDropdown({ menu }: { menu: NavMenuConfig }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -114,11 +202,14 @@ function NavDropdown({ menu }: { menu: typeof NAV_MENUS[0] }) {
   );
 }
 
+// ─── Site Header ──────────────────────────────────────────────────────────────
+
 export function SiteHeader() {
   const [user, setUser] = useState<User | null | "loading">("loading");
   const [accountOpen, setAccountOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [config, setConfig] = useState<HeaderConfig>(DEFAULT_CONFIG);
   const accountRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
   const router = useRouter();
@@ -129,6 +220,10 @@ export function SiteHeader() {
       .then((d) => setUser(d?.user ?? null))
       .catch(() => setUser(null));
   }, [pathname]);
+
+  useEffect(() => {
+    loadHeaderConfig().then(setConfig);
+  }, []);
 
   useEffect(() => {
     function handler(e: MouseEvent) {
@@ -147,6 +242,9 @@ export function SiteHeader() {
   }
 
   const isLoggedIn = user !== "loading" && user !== null;
+  const rb = config.rightButtons;
+  const visibleMenus = config.navMenus.filter(m => m.visible);
+  const visibleLinks = config.simpleLinks.filter(l => l.visible);
 
   return (
     <>
@@ -159,41 +257,36 @@ export function SiteHeader() {
           maxWidth: "1100px", margin: "0 auto", padding: "0 20px",
           display: "flex", alignItems: "center", height: "54px", gap: "2px",
         }}>
-          {/* Logo — circular gradient badge */}
-          <Link href="/" style={{
+          {/* Logo */}
+          <Link href={config.logo.href} style={{
             fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: "1rem",
             letterSpacing: "0.04em", color: "var(--color-ink)", textDecoration: "none",
             marginRight: "16px", flexShrink: 0,
-          }}>KRL.KR</Link>
+          }}>{config.logo.text}</Link>
 
           {/* Desktop nav */}
           <nav className="krl-desktop-nav" style={{ display: "flex", alignItems: "center", gap: "2px", flex: 1 }}>
-            {NAV_MENUS.map((menu) => (
-              <NavDropdown key={menu.label} menu={menu} />
+            {visibleMenus.map((menu) => (
+              <NavDropdown key={menu.id} menu={menu} />
             ))}
 
-            <Link href="/community" style={{
-              padding: "6px 10px", borderRadius: "6px", fontSize: "0.875rem",
-              fontWeight: 500, color: "var(--color-body)", textDecoration: "none", transition: "background 0.1s",
-            }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--color-surface-card)")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-            >커뮤니티</Link>
-
-            <Link href="/chat" style={{
-              display: "flex", alignItems: "center", gap: "5px",
-              padding: "6px 10px", borderRadius: "6px", fontSize: "0.875rem",
-              fontWeight: 500, color: "var(--color-body)", textDecoration: "none", transition: "background 0.1s",
-            }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--color-surface-card)")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7H3a7 7 0 0 1 7-7h1V5.73A2 2 0 0 1 10 4a2 2 0 0 1 2-2z"/>
-                <path d="M5 14v7M19 14v7M9 14v7M15 14v7"/>
-              </svg>
-              AI 채팅
-            </Link>
+            {visibleLinks.map((link) => (
+              <Link key={link.id} href={link.href} style={{
+                display: "flex", alignItems: "center", gap: "5px",
+                padding: "6px 10px", borderRadius: "6px", fontSize: "0.875rem",
+                fontWeight: 500, color: "var(--color-body)", textDecoration: "none", transition: "background 0.1s",
+              }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "var(--color-surface-card)")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+              >
+                {link.icon && (
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    {link.icon.split(" M").map((d, i) => <path key={i} d={i === 0 ? d : "M" + d} />)}
+                  </svg>
+                )}
+                {link.label}
+              </Link>
+            ))}
 
             {isLoggedIn && (
               <Link href="/dashboard" style={{
@@ -208,24 +301,25 @@ export function SiteHeader() {
 
           {/* Right side */}
           <div className="krl-desktop-nav" style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
-            {/* Search button */}
-            <Link href="/search" title="검색" style={{
-              display: "inline-flex", alignItems: "center", justifyContent: "center",
-              width: "34px", height: "34px", borderRadius: "8px",
-              color: "var(--color-body)", textDecoration: "none",
-              transition: "background 0.1s",
-            }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--color-surface-card)")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-            >
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="11" r="8" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-            </Link>
-            {/* Report button — for logged-in users */}
-            {isLoggedIn && (
+            {rb.search.visible && (
+              <Link href={rb.search.href} title="검색" style={{
+                display: "inline-flex", alignItems: "center", justifyContent: "center",
+                width: "34px", height: "34px", borderRadius: "8px",
+                color: "var(--color-body)", textDecoration: "none",
+                transition: "background 0.1s",
+              }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "var(--color-surface-card)")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+              >
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+              </Link>
+            )}
+
+            {rb.report.visible && isLoggedIn && (
               <button
                 onClick={() => setReportOpen(true)}
                 title="신고하기"
@@ -245,31 +339,33 @@ export function SiteHeader() {
                 </svg>
               </button>
             )}
-            {/* Donate button */}
-            <Link href="/support" style={{
-              display: "inline-flex", alignItems: "center", gap: "5px",
-              padding: "5px 12px", borderRadius: "99px",
-              background: "var(--color-surface-card)",
-              border: "1px solid var(--color-hairline-strong)",
-              color: "#c0392b", textDecoration: "none",
-              fontSize: "0.8125rem", fontWeight: 600,
-              transition: "all 0.15s",
-            }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.background = "#FFF1F2";
-                (e.currentTarget as HTMLElement).style.borderColor = "#FECDD3";
+
+            {rb.donate.visible && (
+              <Link href={rb.donate.href} style={{
+                display: "inline-flex", alignItems: "center", gap: "5px",
+                padding: "5px 12px", borderRadius: "99px",
+                background: "var(--color-surface-card)",
+                border: "1px solid var(--color-hairline-strong)",
+                color: "#c0392b", textDecoration: "none",
+                fontSize: "0.8125rem", fontWeight: 600,
+                transition: "all 0.15s",
               }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.background = "var(--color-surface-card)";
-                (e.currentTarget as HTMLElement).style.borderColor = "var(--color-hairline-strong)";
-              }}
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none">
-                <path d="M12 21.593c-.425-.439-6.593-6.408-6.593-10.093 0-3.535 2.878-6.5 6.593-6.5s6.593 2.965 6.593 6.5c0 3.685-6.168 9.654-6.593 10.093z" opacity=".3"/>
-                <path d="M12 2C7.589 2 4 5.589 4 10c0 4.766 7.078 11.485 7.38 11.77a.83.83 0 001.24 0C12.922 21.485 20 14.766 20 10c0-4.411-3.589-8-8-8zm0 12a4 4 0 110-8 4 4 0 010 8z"/>
-              </svg>
-              후원
-            </Link>
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.background = "#FFF1F2";
+                  (e.currentTarget as HTMLElement).style.borderColor = "#FECDD3";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.background = "var(--color-surface-card)";
+                  (e.currentTarget as HTMLElement).style.borderColor = "var(--color-hairline-strong)";
+                }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                  <path d="M12 21.593c-.425-.439-6.593-6.408-6.593-10.093 0-3.535 2.878-6.5 6.593-6.5s6.593 2.965 6.593 6.5c0 3.685-6.168 9.654-6.593 10.093z" opacity=".3"/>
+                  <path d="M12 2C7.589 2 4 5.589 4 10c0 4.766 7.078 11.485 7.38 11.77a.83.83 0 001.24 0C12.922 21.485 20 14.766 20 10c0-4.411-3.589-8-8-8zm0 12a4 4 0 110-8 4 4 0 010 8z"/>
+                </svg>
+                {rb.donate.label}
+              </Link>
+            )}
 
             {user === "loading" ? null : isLoggedIn ? (
               <div ref={accountRef} style={{ position: "relative" }}>
@@ -283,8 +379,7 @@ export function SiteHeader() {
                   <div style={{
                     width: "22px", height: "22px", borderRadius: "50%",
                     background: "var(--color-ink)",
-                    display: "flex",
-                    alignItems: "center", justifyContent: "center",
+                    display: "flex", alignItems: "center", justifyContent: "center",
                     fontSize: "0.625rem", color: "var(--color-canvas)", fontWeight: 800,
                   }}>
                     {(user as User).email[0].toUpperCase()}
@@ -320,7 +415,7 @@ export function SiteHeader() {
                           onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                         >
                           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--color-muted)", flexShrink: 0 }}>
-                            <path d={item.icon} />
+                            {item.icon.split(" M").map((d, i) => <path key={i} d={i === 0 ? d : "M" + d} />)}
                           </svg>
                           {item.label}
                         </div>
@@ -374,52 +469,66 @@ export function SiteHeader() {
         {/* Mobile menu */}
         {mobileOpen && (
           <div style={{ borderTop: "1px solid var(--color-hairline)", background: "var(--color-white)", padding: "8px 16px 20px", maxHeight: "85vh", overflowY: "auto" }}>
-            {/* Donate banner on mobile */}
-            <Link href="/support" onClick={() => setMobileOpen(false)} style={{
-              display: "flex", alignItems: "center", gap: "8px",
-              margin: "8px 0 12px",
-              padding: "12px 14px",
-              background: "linear-gradient(135deg, #fff0f0 0%, #fffbf0 100%)",
-              border: "1px solid rgba(255,107,107,0.25)",
-              borderRadius: "10px", textDecoration: "none",
-            }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="#c0392b" stroke="none">
-                <path d="M12 21.593c-.425-.439-6.593-6.408-6.593-10.093 0-3.535 2.878-6.5 6.593-6.5s6.593 2.965 6.593 6.5c0 3.685-6.168 9.654-6.593 10.093z"/>
-              </svg>
-              <div>
-                <p style={{ fontSize: "0.875rem", fontWeight: 700, color: "#c0392b", marginBottom: "1px" }}>후원하기</p>
-                <p style={{ fontSize: "0.75rem", color: "#e57373" }}>KRL.KR 개발을 응원해주세요</p>
-              </div>
-            </Link>
+            {rb.donate.visible && (
+              <Link href={rb.donate.href} onClick={() => setMobileOpen(false)} style={{
+                display: "flex", alignItems: "center", gap: "8px",
+                margin: "8px 0 12px", padding: "12px 14px",
+                background: "linear-gradient(135deg, #fff0f0 0%, #fffbf0 100%)",
+                border: "1px solid rgba(255,107,107,0.25)",
+                borderRadius: "10px", textDecoration: "none",
+              }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="#c0392b" stroke="none">
+                  <path d="M12 21.593c-.425-.439-6.593-6.408-6.593-10.093 0-3.535 2.878-6.5 6.593-6.5s6.593 2.965 6.593 6.5c0 3.685-6.168 9.654-6.593 10.093z"/>
+                </svg>
+                <div>
+                  <p style={{ fontSize: "0.875rem", fontWeight: 700, color: "#c0392b", marginBottom: "1px" }}>{rb.donate.label}하기</p>
+                  <p style={{ fontSize: "0.75rem", color: "#e57373" }}>KRL.KR 개발을 응원해주세요</p>
+                </div>
+              </Link>
+            )}
 
-            {NAV_MENUS.map((menu) => (
-              <div key={menu.label}>
+            {visibleMenus.map((menu) => (
+              <div key={menu.id}>
                 <p style={{ fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--color-muted)", padding: "10px 4px 4px" }}>
                   {menu.label}
                 </p>
-                {menu.items.map((item) => (
-                  <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)} style={{
+                {menu.items.filter(i => i.visible).map((item) => (
+                  <Link key={item.id} href={item.href} onClick={() => setMobileOpen(false)} style={{
                     display: "flex", alignItems: "center", gap: "10px", padding: "11px 4px",
                     fontSize: "0.9375rem", fontWeight: 500, color: "var(--color-ink)", textDecoration: "none",
                     borderBottom: "1px solid var(--color-hairline)",
                   }}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--color-muted)", flexShrink: 0 }}>
-                      <path d={item.icon} />
-                    </svg>
+                    {item.icon && (
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--color-muted)", flexShrink: 0 }}>
+                        {item.icon.split(" M").map((d, i) => <path key={i} d={i === 0 ? d : "M" + d} />)}
+                        {item.icon2 && item.icon2.split(" M").map((d, i) => <path key={`p2-${i}`} d={i === 0 ? d : "M" + d} />)}
+                      </svg>
+                    )}
                     {item.label}
                   </Link>
                 ))}
               </div>
             ))}
+
             <div style={{ height: "1px", background: "var(--color-hairline)", margin: "8px 0" }} />
-            {[{ href: "/community", label: "커뮤니티" }, { href: "/search", label: "검색" }, { href: "/chat", label: "AI 채팅" }].map((item) => (
-              <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)} style={{
+
+            {visibleLinks.map((link) => (
+              <Link key={link.id} href={link.href} onClick={() => setMobileOpen(false)} style={{
                 display: "block", padding: "11px 4px", fontSize: "0.9375rem",
                 fontWeight: 500, color: "var(--color-ink)", textDecoration: "none",
                 borderBottom: "1px solid var(--color-hairline)",
-              }}>{item.label}</Link>
+              }}>{link.label}</Link>
             ))}
-            {isLoggedIn && (
+
+            {rb.search.visible && (
+              <Link href={rb.search.href} onClick={() => setMobileOpen(false)} style={{
+                display: "block", padding: "11px 4px", fontSize: "0.9375rem",
+                fontWeight: 500, color: "var(--color-ink)", textDecoration: "none",
+                borderBottom: "1px solid var(--color-hairline)",
+              }}>검색</Link>
+            )}
+
+            {rb.report.visible && isLoggedIn && (
               <button onClick={() => { setMobileOpen(false); setReportOpen(true); }} style={{
                 display: "flex", alignItems: "center", gap: "8px",
                 width: "100%", padding: "11px 4px", background: "none", border: "none",
@@ -434,6 +543,7 @@ export function SiteHeader() {
                 신고하기
               </button>
             )}
+
             {isLoggedIn ? (
               <>
                 <Link href="/dashboard" onClick={() => setMobileOpen(false)} style={{ display: "block", padding: "11px 4px", fontSize: "0.9375rem", fontWeight: 500, color: "var(--color-ink)", textDecoration: "none", borderBottom: "1px solid var(--color-hairline)" }}>대시보드</Link>
@@ -464,7 +574,6 @@ export function SiteHeader() {
         }
       `}</style>
 
-      {/* Report Modal */}
       {reportOpen && <ReportModal onClose={() => setReportOpen(false)} />}
     </>
   );

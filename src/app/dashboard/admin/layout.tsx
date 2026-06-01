@@ -12,6 +12,7 @@ const NAV = [
   { href: "/dashboard/admin/notices", label: "공지 관리", icon: "M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9 M13.73 21a2 2 0 0 1-3.46 0" },
   { href: "/dashboard/admin/chat", label: "지원 채팅", icon: "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" },
   { href: "/dashboard/admin/meetings", label: "관리자 회의", icon: "M17 20h5v-2a3 3 0 0 0-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 0 1 5.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 0 1 9.288 0M15 7a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" },
+  { href: "/dashboard/admin/header", label: "헤더 관리", icon: "M4 6h16M4 12h16M4 18h7", masterOnly: true },
   { href: "/dashboard/admin/admins", label: "관리자 설정", icon: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z", masterOnly: true },
   { href: "/dashboard/admin/log", label: "활동 로그", icon: "M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2 M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2 M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2 M9 12h6 M9 16h4" },
 ];
