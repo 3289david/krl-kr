@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
-export const DEFAULT_HEADER_CONFIG = {
+const DEFAULT_HEADER_CONFIG = {
   logo: { text: "KRL.KR", href: "/" },
   navMenus: [
     {
