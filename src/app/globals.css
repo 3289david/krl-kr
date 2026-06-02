@@ -591,6 +591,8 @@ code, pre {
   /* Touch targets */
   .btn { min-height: 44px; }
   .btn-sm { min-height: 36px; }
+  /* Icon-only buttons: keep compact, no padding override */
+  .btn-icon { width: 32px !important; height: 32px !important; padding: 0 !important; min-height: unset !important; }
   .sidebar-link { min-height: 44px; padding: 10px 12px !important; }
   .data-table td { padding: 12px 12px !important; }
 

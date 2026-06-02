@@ -339,7 +339,7 @@ function LinksPageInner() {
   };
 
   return (
-    <div style={{ padding: "32px" }}>
+    <div className="dashboard-page">
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px", flexWrap: "wrap", gap: "16px" }}>
         <div>
           <h1 style={{ fontSize: "1.5rem", fontWeight: 600, letterSpacing: "-0.02em", marginBottom: "4px" }}>{TAB_LABELS[tab] ?? "링크 관리"}</h1>
@@ -399,11 +399,11 @@ function LinksPageInner() {
               <thead>
                 <tr>
                   <th>링크</th>
-                  <th>원본 URL</th>
-                  <th>클릭</th>
-                  {tab === "temp" && <th>만료</th>}
-                  {tab === "app" && <th>iOS/Android</th>}
-                  <th>생성일</th>
+                  <th className="hide-mobile">원본 URL</th>
+                  <th className="hide-mobile">클릭</th>
+                  {tab === "temp" && <th className="hide-mobile">만료</th>}
+                  {tab === "app" && <th className="hide-mobile">iOS/Android</th>}
+                  <th className="hide-mobile">생성일</th>
                   <th>상태</th>
                   <th style={{ textAlign: "right" }}>작업</th>
                 </tr>
@@ -415,27 +415,27 @@ function LinksPageInner() {
                       <span style={{ fontFamily: "var(--font-mono)", fontWeight: 600, fontSize: "0.9rem" }}>/{link.slug}</span>
                       {link.is_dynamic === 1 && <span style={{ marginLeft: "6px", fontSize: "0.6875rem", color: "var(--color-arc)", fontWeight: 600 }}>다이나믹</span>}
                     </td>
-                    <td>
+                    <td className="hide-mobile">
                       <span style={{ fontSize: "0.875rem", color: "var(--color-muted)" }}>
                         {link.title ? link.title : truncate(link.original_url, 40)}
                       </span>
                     </td>
-                    <td>
+                    <td className="hide-mobile">
                       <span style={{ fontWeight: 600 }}>{formatNumber(link.click_count)}</span>
                     </td>
                     {tab === "temp" && (
-                      <td style={{ fontSize: "0.875rem", color: "var(--color-muted)" }}>
+                      <td className="hide-mobile" style={{ fontSize: "0.875rem", color: "var(--color-muted)" }}>
                         {link.expires_at ? formatDate(link.expires_at) : ""}
                         {link.max_clicks ? <span style={{ display: "block" }}>{link.max_clicks}회 클릭</span> : ""}
                       </td>
                     )}
                     {tab === "app" && (
-                      <td style={{ fontSize: "0.8125rem" }}>
+                      <td className="hide-mobile" style={{ fontSize: "0.8125rem" }}>
                         {link.ios_url && <div style={{ color: "var(--color-muted)" }}>iOS: {truncate(link.ios_url, 25)}</div>}
                         {link.android_url && <div style={{ color: "var(--color-muted)" }}>Android: {truncate(link.android_url, 25)}</div>}
                       </td>
                     )}
-                    <td style={{ fontSize: "0.875rem", color: "var(--color-muted)" }}>
+                    <td className="hide-mobile" style={{ fontSize: "0.875rem", color: "var(--color-muted)" }}>
                       {formatRelativeTime(link.created_at)}
                     </td>
                     <td>
@@ -451,10 +451,10 @@ function LinksPageInner() {
                         <button onClick={() => setEditingLink(link)} className="btn btn-ghost btn-sm btn-icon" title="수정">
                           <EditIcon size={14} />
                         </button>
-                        <Link href={`/dashboard/analytics/${link.id}`} className="btn btn-ghost btn-sm btn-icon" title="분석">
+                        <Link href={`/dashboard/analytics/${link.id}`} className="btn btn-ghost btn-sm btn-icon hide-mobile" title="분석">
                           <BarChartIcon size={14} />
                         </Link>
-                        <Link href={`/dashboard/qr?url=https://krl.kr/${link.slug}`} className="btn btn-ghost btn-sm btn-icon" title="QR 코드">
+                        <Link href={`/dashboard/qr?url=https://krl.kr/${link.slug}`} className="btn btn-ghost btn-sm btn-icon hide-mobile" title="QR 코드">
                           <QrCodeIcon size={14} />
                         </Link>
                         <a href={link.original_url} target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-sm btn-icon" title="원본 URL">

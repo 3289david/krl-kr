@@ -45,6 +45,9 @@ const DEFAULT_HEADER_CONFIG = {
   ],
   simpleLinks: [
     { id: "community", href: "/community", label: "커뮤니티", visible: true },
+    { id: "blog", href: "/blog", label: "블로그", visible: true },
+    { id: "changelog", href: "/changelog", label: "변경 이력", visible: false },
+    { id: "contact", href: "/contact", label: "문의", visible: false },
     { id: "ai-chat", href: "/chat", label: "AI 채팅", icon: "M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7H3a7 7 0 0 1 7-7h1V5.73A2 2 0 0 1 10 4a2 2 0 0 1 2-2z M5 14v7M19 14v7M9 14v7M15 14v7", visible: true },
   ],
   rightButtons: {

@@ -22,15 +22,18 @@ interface AdminNotice {
   id: number; title: string; content: string; notice_type: string; pinned: number; created_at: number;
 }
 
-async function fetchAdminNotices(): Promise<AdminNotice[]> {
+async function fetchAdminNotices(allVisible = false): Promise<AdminNotice[]> {
   try {
     const pool = getPool();
     const result = await pool.query(
-      `SELECT id, title, content, notice_type, pinned, created_at
-       FROM notices
-       WHERE visible = 1
-       ORDER BY pinned DESC, created_at DESC
-       LIMIT 10`
+      allVisible
+        ? `SELECT id, title, content, notice_type, pinned, created_at
+           FROM notices
+           ORDER BY pinned DESC, created_at DESC LIMIT 100`
+        : `SELECT id, title, content, notice_type, pinned, created_at
+           FROM notices
+           WHERE visible = 1
+           ORDER BY pinned DESC, created_at DESC LIMIT 10`
     );
     return result.rows as AdminNotice[];
   } catch {
@@ -164,18 +167,20 @@ export default async function CommunityPage({
   const activeBoard = boardParam && ["notice", "free", "feature"].includes(boardParam) ? boardParam : null;
 
   if (activeBoard) {
-    // Full board view
     const db = getDB();
-    const result = await db
-      .prepare(
-        `SELECT p.id, p.title, p.view_count, p.like_count, p.comment_count, p.is_pinned, p.created_at,
-                u.name AS author_name, u.email AS author_email
-         FROM community_posts p JOIN users u ON u.id = p.user_id
-         WHERE p.board = ? AND p.is_deleted = 0
-         ORDER BY p.is_pinned DESC, p.created_at DESC LIMIT 50`
-      )
-      .bind(activeBoard)
-      .all<Record<string, unknown>>();
+    const [postsResult, boardAdminNotices] = await Promise.all([
+      db
+        .prepare(
+          `SELECT p.id, p.title, p.view_count, p.like_count, p.comment_count, p.is_pinned, p.created_at,
+                  u.name AS author_name, u.email AS author_email
+           FROM community_posts p JOIN users u ON u.id = p.user_id
+           WHERE p.board = ? AND p.is_deleted = 0
+           ORDER BY p.is_pinned DESC, p.created_at DESC LIMIT 50`
+        )
+        .bind(activeBoard)
+        .all<Record<string, unknown>>(),
+      activeBoard === "notice" ? fetchAdminNotices(true) : Promise.resolve([]),
+    ]);
 
     const meta = BOARD_META[activeBoard];
 
@@ -209,14 +214,55 @@ export default async function CommunityPage({
             )}
           </div>
 
+          {/* Admin notices shown in board view (all notices, including hidden) */}
+          {boardAdminNotices.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px" }}>
+              {boardAdminNotices.map((n) => {
+                const nm = NOTICE_TYPE_META[n.notice_type] ?? NOTICE_TYPE_META.notice;
+                return (
+                  <div key={`admin-${n.id}`} style={{
+                    background: nm.bg, border: `1px solid ${nm.color}30`,
+                    borderLeft: `3px solid ${nm.color}`, borderRadius: "8px",
+                    padding: "12px 16px", display: "flex", gap: "12px", alignItems: "flex-start",
+                  }}>
+                    <div style={{ flexShrink: 0, marginTop: "1px" }}>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={nm.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                      </svg>
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "2px", flexWrap: "wrap" }}>
+                        <span style={{
+                          fontSize: "0.65rem", fontWeight: 700, padding: "1px 7px",
+                          borderRadius: "4px", background: nm.color + "18",
+                          color: nm.color, textTransform: "uppercase", letterSpacing: "0.04em",
+                        }}>{nm.label}</span>
+                        {n.pinned === 1 && <span style={{ fontSize: "0.65rem", fontWeight: 700, color: nm.color }}>고정</span>}
+                        <span style={{ fontWeight: 700, fontSize: "0.875rem", color: "#111" }}>{n.title}</span>
+                      </div>
+                      <p style={{ fontSize: "0.8125rem", color: "#555", lineHeight: 1.55, whiteSpace: "pre-wrap" }}>{n.content}</p>
+                      <p style={{ fontSize: "0.7rem", color: "#999", marginTop: "4px" }}>
+                        {new Date(Number(n.created_at)).toLocaleDateString("ko-KR")}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
           <div style={{ background: "var(--color-lifted)", border: "1px solid var(--color-hairline)", borderRadius: "12px", overflow: "hidden" }}>
-            {result.results.length === 0 ? (
+            {postsResult.results.length === 0 && boardAdminNotices.length === 0 ? (
               <div style={{ padding: "60px 24px", textAlign: "center" }}>
                 <p style={{ fontWeight: 600, marginBottom: "8px" }}>아직 게시물이 없습니다</p>
                 <p style={{ fontSize: "0.875rem", color: "var(--color-muted)" }}>첫 번째 글을 작성해보세요!</p>
               </div>
+            ) : postsResult.results.length === 0 ? (
+              <div style={{ padding: "28px 24px", textAlign: "center", color: "var(--color-muted)", fontSize: "0.875rem" }}>
+                커뮤니티 게시글이 없습니다.
+              </div>
             ) : (
-              result.results.map((p) => (
+              postsResult.results.map((p) => (
                 <PostRow key={p.id as string} post={p as unknown as Post} />
               ))
             )}
