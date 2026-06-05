@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
 
     const planRow = await pool.query("SELECT plan FROM user_plans WHERE user_id = $1", [user.id]);
     const plan = planRow.rows[0]?.plan ?? "free";
-    const dailyLimit = DAILY_LIMITS[plan] ?? DAILY_LIMITS.free;
+    const dailyLimit = plan === "free" ? 0 : (DAILY_LIMITS[plan] ?? DAILY_LIMITS.pro);
 
     const dayStart = new Date();
     dayStart.setHours(0, 0, 0, 0);
@@ -75,7 +75,15 @@ export async function POST(request: NextRequest) {
 
     const planRow = await pool.query("SELECT plan FROM user_plans WHERE user_id = $1", [user.id]);
     const plan = planRow.rows[0]?.plan ?? "free";
-    const dailyLimit = DAILY_LIMITS[plan] ?? DAILY_LIMITS.free;
+
+    if (plan === "free") {
+      return NextResponse.json(
+        { error: "AI 이미지 생성은 Pro 이상 플랜에서만 사용 가능합니다.", upgrade_required: true },
+        { status: 403 }
+      );
+    }
+
+    const dailyLimit = DAILY_LIMITS[plan] ?? DAILY_LIMITS.pro;
 
     // Check daily usage
     const dayStart = new Date();

@@ -85,9 +85,46 @@ export default function AIImagePage() {
   const remaining = dailyLimit - usedToday;
   const limitPct = Math.min(100, (usedToday / dailyLimit) * 100);
 
+  const BMC = "https://buymeacoffee.com/rukkitofficial/membership";
+
   if (loading) return (
     <div className="dashboard-page">
       <p style={{ color: "var(--color-muted)", textAlign: "center", padding: 48 }}>불러오는 중...</p>
+    </div>
+  );
+
+  if (plan === "free") return (
+    <div className="dashboard-page">
+      <div style={{ marginBottom: 28 }}>
+        <h1 style={{ fontSize: "1.5rem", fontWeight: 700, letterSpacing: "-0.02em", margin: "0 0 4px" }}>AI 이미지 생성</h1>
+        <p style={{ fontSize: "0.9375rem", color: "var(--color-muted)", margin: 0 }}>Pollinations AI</p>
+      </div>
+      <div style={{ padding: "48px 32px", background: "linear-gradient(135deg, #1e1b4b 0%, #4c1d95 100%)", borderRadius: 20, textAlign: "center" }}>
+        <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#a5b4fc" strokeWidth={1.5} style={{ margin: "0 auto 20px", display: "block" }}>
+          <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>
+        </svg>
+        <h2 style={{ fontSize: "1.5rem", fontWeight: 800, color: "#fff", marginBottom: 12, letterSpacing: "-0.02em" }}>유료 플랜 전용 기능</h2>
+        <p style={{ fontSize: "0.9375rem", color: "#c7d2fe", marginBottom: 8, lineHeight: 1.6 }}>
+          AI 이미지 생성은 Pro 이상 플랜에서 사용할 수 있습니다.
+        </p>
+        <p style={{ fontSize: "0.9375rem", color: "#c7d2fe", marginBottom: 32, lineHeight: 1.6 }}>
+          Pro: <strong style={{ color: "#fff" }}>50장/일</strong> &nbsp;·&nbsp; VIP: <strong style={{ color: "#fff" }}>200장/일 (고화질)</strong>
+        </p>
+        <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+          <a href={BMC} target="_blank" rel="noreferrer" style={{
+            padding: "12px 28px", background: "#6366f1", color: "#fff",
+            borderRadius: 10, fontWeight: 700, textDecoration: "none", fontSize: "0.9375rem",
+          }}>
+            지금 구독하기
+          </a>
+          <a href="/pricing" style={{
+            padding: "12px 28px", background: "rgba(255,255,255,0.12)", color: "#fff",
+            borderRadius: 10, fontWeight: 600, textDecoration: "none", fontSize: "0.9375rem",
+          }}>
+            요금제 보기
+          </a>
+        </div>
+      </div>
     </div>
   );
 
@@ -181,7 +218,7 @@ export default function AIImagePage() {
       {/* Plan limits info */}
       <div style={{ display: "flex", gap: 10, marginBottom: 28, flexWrap: "wrap" }}>
         {[
-          { name: "Free", limit: "5장/일", model: "flux", color: "#6b7280", active: plan === "free" },
+          { name: "Free", limit: "불가", model: "—", color: "#6b7280", active: plan === "free" },
           { name: "Pro", limit: "50장/일", model: "flux + enhance", color: "#2563eb", active: plan === "pro" },
           { name: "VIP", limit: "200장/일", model: "flux-pro + enhance", color: "#7c3aed", active: plan === "vip" },
         ].map(p => (

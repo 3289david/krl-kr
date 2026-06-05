@@ -7,8 +7,7 @@ export const metadata: Metadata = {
 };
 
 // Update these to your actual BMC membership URLs
-const BMC_BASE = "https://www.buymeacoffee.com/krlkr";
-const BMC_MEMBERSHIP = `${BMC_BASE}/membership`;
+const BMC_MEMBERSHIP = "https://buymeacoffee.com/rukkitofficial/membership";
 
 const PLANS = [
   {
