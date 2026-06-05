@@ -27,11 +27,14 @@ async function ensureTables() {
       framework TEXT DEFAULT 'static',
       status TEXT DEFAULT 'active',
       storage_used BIGINT DEFAULT 0,
+      visit_count BIGINT DEFAULT 0,
       cf_dns_record_id TEXT,
       created_at BIGINT NOT NULL,
       updated_at BIGINT
     )
   `);
+  // Migrate: add visit_count if table existed before this column was added
+  await pool.query(`ALTER TABLE hosting_sites ADD COLUMN IF NOT EXISTS visit_count BIGINT DEFAULT 0`);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS user_plans (
       id SERIAL PRIMARY KEY,

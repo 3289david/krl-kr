@@ -13,10 +13,11 @@ const SYSTEM_PROMPT = `당신은 krl.kr의 AI 어시스턴트입니다. 친절�
 - 간결하고 명확하게 답변하세요.
 - 마크다운을 지원합니다.`;
 
-const PLAN_MODELS: Record<string, string> = {
-  free: "claude-haiku-4-5-20251001",
-  pro: "claude-sonnet-4-6",
-  vip: "claude-opus-4-7",
+// Plan → OpenAI model (GPT-5 tier)
+const PLAN_OPENAI_MODEL: Record<string, string> = {
+  free: "",                                           // no OpenAI — use Pollinations
+  pro: process.env.OPENAI_PRO_MODEL ?? "gpt-5",
+  vip: process.env.OPENAI_VIP_MODEL ?? "gpt-5-pro",
 };
 
 async function getUserPlan(request: NextRequest): Promise<string> {
@@ -32,32 +33,31 @@ async function getUserPlan(request: NextRequest): Promise<string> {
   }
 }
 
-async function anthropicChat(messages: Message[], model: string, stream: boolean): Promise<Response> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) throw new Error("Anthropic API key not configured");
+async function openaiChat(messages: Message[], model: string, stream: boolean): Promise<Response> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) throw new Error("OpenAI API key not configured");
 
-  const userMessages = messages.filter(m => m.role !== "system");
-
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-      "content-type": "application/json",
+      "Authorization": `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({
       model,
-      max_tokens: 4096,
-      system: SYSTEM_PROMPT,
-      messages: userMessages.slice(-20),
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        ...messages.slice(-20),
+      ],
       stream,
+      max_completion_tokens: 4096,
     }),
     signal: AbortSignal.timeout(60000),
   });
 
   if (!response.ok) {
     const err = await response.text();
-    throw new Error(`Anthropic API error ${response.status}: ${err}`);
+    throw new Error(`OpenAI API error ${response.status}: ${err.slice(0, 200)}`);
   }
 
   if (stream) {
@@ -72,8 +72,8 @@ async function anthropicChat(messages: Message[], model: string, stream: boolean
     });
   }
 
-  const data = await response.json() as { content: Array<{ text: string }> };
-  const text = data.content?.[0]?.text ?? "";
+  const data = await response.json() as { choices: Array<{ message: { content: string } }> };
+  const text = data.choices?.[0]?.message?.content ?? "";
   return new Response(JSON.stringify({ content: text, model }), {
     headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
   });
@@ -102,7 +102,7 @@ async function pollinationsChat(messages: Message[], stream: boolean): Promise<R
     signal: AbortSignal.timeout(30000),
   });
 
-  if (!upstream.ok) throw new Error(`AI service error: ${upstream.status}`);
+  if (!upstream.ok) throw new Error(`Pollinations error: ${upstream.status}`);
 
   if (stream) {
     return new Response(upstream.body, {
@@ -135,15 +135,20 @@ export async function POST(request: NextRequest) {
     }
 
     const plan = await getUserPlan(request);
-    const model = PLAN_MODELS[plan] ?? PLAN_MODELS.free;
+    const openaiModel = PLAN_OPENAI_MODEL[plan] ?? "";
+    const openaiKey = process.env.OPENAI_API_KEY;
 
-    // Use Anthropic for authenticated users (pro/vip), or if API key configured for all
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (apiKey) {
-      return await anthropicChat(messages, model, stream);
+    // Pro/VIP with OpenAI API key → use GPT-5
+    if (plan !== "free" && openaiKey && openaiModel) {
+      try {
+        return await openaiChat(messages, openaiModel, stream);
+      } catch (e) {
+        console.error("[chat] OpenAI failed, falling back:", e);
+        // Fall through to Pollinations
+      }
     }
 
-    // Fallback: Pollinations for free tier / no API key
+    // Free (or fallback): Pollinations
     return await pollinationsChat(messages, stream);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "알 수 없는 오류";

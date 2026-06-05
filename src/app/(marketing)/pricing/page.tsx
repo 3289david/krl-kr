@@ -6,72 +6,89 @@ export const metadata: Metadata = {
   description: "KRL.KR Pro/VIP 플랜으로 더 많은 기능을 이용하세요. 웹 호스팅, Drive, AI 이미지 생성 등.",
 };
 
+// Update these to your actual BMC membership URLs
+const BMC_BASE = "https://www.buymeacoffee.com/krlkr";
+const BMC_MEMBERSHIP = `${BMC_BASE}/membership`;
+
 const PLANS = [
   {
     id: "free",
     name: "Free",
     price: "무료",
     period: "",
+    priceKrw: null,
     description: "개인 사용자를 위한 기본 플랜",
     color: "#1a1714",
+    accentBg: "transparent",
     features: [
-      "URL 단축 무제한",
-      "QR 코드 생성",
-      "서브도메인 (4자 이상)",
-      "파일 공유 (100MB/파일)",
-      "이메일 수신함 (1개)",
-      "KRL Drive 5GB",
-      "웹 호스팅 1개 사이트 (500MB)",
-      "AI 채팅 (Claude Haiku)",
-      "Link-in-Bio 프로필",
-      "커뮤니티 참여",
+      { text: "URL 단축 무제한" },
+      { text: "QR 코드 생성" },
+      { text: "서브도메인 (4자 이상)" },
+      { text: "파일 공유 (100MB/파일)" },
+      { text: "이메일 수신함 1개" },
+      { text: "KRL Drive 5GB" },
+      { text: "웹 호스팅 1개 사이트 (500MB)" },
+      { text: "AI 채팅 (Pollinations AI)" },
+      { text: "AI 이미지 생성 5장/일" },
+      { text: "Link-in-Bio 프로필" },
+      { text: "커뮤니티 참여" },
     ],
     cta: "무료로 시작하기",
     ctaHref: "/register",
+    ctaExternal: false,
     highlight: false,
+    badge: null,
   },
   {
     id: "pro",
     name: "Pro",
     price: "₩9,900",
     period: "/월",
+    priceKrw: 9900,
     description: "개인 크리에이터와 개발자를 위한 플랜",
     color: "#2563eb",
+    accentBg: "#eff6ff",
     features: [
-      "Free 플랜의 모든 기능",
-      "KRL Drive 20GB",
-      "웹 호스팅 5개 사이트 (사이트당 3GB)",
-      "AI 채팅 업그레이드 (Claude Sonnet)",
-      "AI 이미지 생성 (DALL-E 3, 월 200장)",
-      "서브도메인 제한 없음 (1자~)",
-      "파일 공유 (500MB/파일)",
-      "우선 지원",
-      "추후 추가 기능 우선 제공",
+      { text: "Free 플랜의 모든 기능" },
+      { text: "KRL Drive 20GB" },
+      { text: "웹 호스팅 5개 사이트 (사이트당 3GB)" },
+      { text: "AI 채팅 — GPT-5", bold: true },
+      { text: "AI 이미지 생성 50장/일", bold: true },
+      { text: "서브도메인 제한 없음 (1자~)" },
+      { text: "파일 공유 (500MB/파일)" },
+      { text: "웹훅 자동 플랜 활성화" },
+      { text: "우선 지원" },
     ],
-    cta: "Pro 시작하기",
-    ctaHref: "https://www.buymeacoffee.com/krlkr/membership",
+    cta: "Pro 구독하기",
+    ctaHref: BMC_MEMBERSHIP,
+    ctaExternal: true,
     highlight: true,
+    badge: "가장 인기",
   },
   {
     id: "vip",
     name: "VIP",
     price: "₩29,900",
     period: "/월",
+    priceKrw: 29900,
     description: "팀과 전문가를 위한 최상위 플랜",
     color: "#7c3aed",
+    accentBg: "#f5f3ff",
     features: [
-      "Pro 플랜의 모든 기능",
-      "KRL Drive 100GB",
-      "웹 호스팅 무제한 사이트 (사이트당 10GB)",
-      "AI 채팅 최고급 (Claude Opus)",
-      "AI 이미지 생성 (DALL-E 3 HD, 월 1000장)",
-      "우선 지원 (빠른 응답)",
-      "커스텀 기능 요청",
-      "베타 기능 조기 접근",
+      { text: "Pro 플랜의 모든 기능" },
+      { text: "KRL Drive 100GB" },
+      { text: "웹 호스팅 무제한 사이트 (10GB/사이트)" },
+      { text: "AI 채팅 — GPT-5 Pro", bold: true },
+      { text: "AI 이미지 생성 200장/일 (고화질)", bold: true },
+      { text: "우선 지원 (빠른 응답)" },
+      { text: "커스텀 기능 요청" },
+      { text: "베타 기능 조기 접근" },
     ],
-    cta: "VIP 시작하기",
-    ctaHref: "https://www.buymeacoffee.com/krlkr/membership",
+    cta: "VIP 구독하기",
+    ctaHref: BMC_MEMBERSHIP,
+    ctaExternal: true,
     highlight: false,
+    badge: "최상위",
   },
 ];
 
@@ -81,9 +98,10 @@ const COMPARE_ROWS = [
   { label: "서브도메인", free: "4자 이상", pro: "제한 없음", vip: "제한 없음" },
   { label: "KRL Drive", free: "5GB", pro: "20GB", vip: "100GB" },
   { label: "웹 호스팅 사이트", free: "1개 (500MB)", pro: "5개 (3GB/사이트)", vip: "무제한 (10GB/사이트)" },
-  { label: "AI 채팅 모델", free: "Claude Haiku", pro: "Claude Sonnet", vip: "Claude Opus" },
-  { label: "AI 이미지 생성", free: "불가", pro: "200장/월", vip: "1,000장/월" },
+  { label: "AI 채팅 모델", free: "Pollinations AI", pro: "GPT-5", vip: "GPT-5 Pro" },
+  { label: "AI 이미지 생성", free: "5장/일", pro: "50장/일", vip: "200장/일 (고화질)" },
   { label: "파일 공유 용량", free: "100MB/파일", pro: "500MB/파일", vip: "500MB/파일" },
+  { label: "플랜 활성화", free: "—", pro: "웹훅 자동", vip: "웹훅 자동" },
   { label: "지원", free: "커뮤니티", pro: "우선 지원", vip: "우선 + 빠른 응답" },
 ];
 
@@ -95,10 +113,10 @@ function CheckSvg({ color = "#16a34a" }: { color?: string }) {
   );
 }
 
-function CrossSvg() {
+function BmcLogo() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth={2} strokeLinecap="round">
-      <path d="M18 6L6 18M6 6l12 12" />
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M20.216 6.415l-.132-.666c-.119-.598-.388-1.163-1.001-1.379-.197-.069-.42-.098-.57-.241-.152-.143-.196-.366-.231-.572-.065-.378-.125-.756-.192-1.133-.057-.325-.102-.69-.25-.987-.195-.4-.597-.634-.996-.788a5.723 5.723 0 00-.626-.194c-1-.263-2.05-.36-3.077-.416a25.834 25.834 0 00-3.7.062c-.915.083-1.88.184-2.75.5-.318.116-.646.256-.888.501-.297.302-.393.77-.177 1.146.154.267.415.456.692.58.36.162.737.284 1.107.405 2.06.674 4.428 1.02 6.577.088.396-.167.738-.41 1.023-.754.129-.15.205-.336.186-.539-.015-.148-.073-.32-.124-.464-.114-.33-.343-.607-.629-.78a2.93 2.93 0 00-.423-.199c-.674-.233-1.499-.208-2.183.021-.173.057-.32.171-.516.116-.17-.049-.29-.178-.33-.349a.557.557 0 01.06-.39c.181-.305.534-.499.876-.621.636-.225 1.335-.303 2.01-.302.667 0 1.365.063 1.994.296.464.17.917.47 1.093.948.12.33.07.706-.13.992-.177.25-.438.42-.712.527l-.023.009c.49.1.974.24 1.366.556.462.372.682.946.706 1.535.025.617-.207 1.295-.628 1.736C15.8 11.416 14.645 11.882 13.5 12c-1.131.114-2.294.035-3.387-.277a7.88 7.88 0 01-1.567-.655c-.415-.235-.804-.52-1.057-.935-.2-.326-.32-.721-.268-1.1.038-.27.16-.539.34-.748.222-.26.543-.414.882-.444.366-.03.74.063 1.066.224.328.164.577.425.836.668.507.47 1.044.91 1.67 1.204.621.293 1.316.416 1.988.299.346-.06.69-.2.963-.425.346-.285.552-.73.48-1.16-.072-.422-.392-.77-.768-.952a3.04 3.04 0 00-.634-.194c-.49-.096-.99-.05-1.473.065-.163.039-.312.105-.476.134a.637.637 0 01-.47-.094.605.605 0 01-.223-.41c-.028-.208.07-.407.226-.539.296-.248.693-.336 1.064-.383.707-.09 1.44-.04 2.135.108.673.143 1.347.404 1.842.905.477.484.72 1.16.68 1.835-.037.65-.32 1.294-.79 1.74-.932.888-2.272 1.116-3.508 1.102-1.18-.013-2.352-.26-3.413-.748a9.046 9.046 0 01-1.498-.877 5.64 5.64 0 01-1.163-1.159c-.342-.478-.545-1.038-.575-1.605a3.39 3.39 0 01.397-1.77c.323-.573.834-1.031 1.415-1.315.606-.296 1.28-.433 1.947-.482a9.92 9.92 0 012.038.048 9.46 9.46 0 011.974.468c.604.224 1.178.555 1.603 1.043.453.52.677 1.218.618 1.891z"/>
     </svg>
   );
 }
@@ -107,31 +125,35 @@ export default function PricingPage() {
   return (
     <div style={{ fontFamily: "var(--font-sans)", background: "var(--color-canvas)", minHeight: "100vh", paddingBottom: 80 }}>
       <style>{`
-        .plan-card { background: var(--color-surface); border: 1px solid var(--color-hairline); border-radius: 20px; padding: 32px 28px; display: flex; flex-direction: column; }
-        .plan-card.highlight { border: 2px solid #2563eb; box-shadow: 0 0 0 4px #2563eb18; }
-        .plan-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-        @media (max-width: 768px) { .plan-grid { grid-template-columns: 1fr; } }
+        .plan-card { background: var(--color-surface); border: 1.5px solid var(--color-hairline); border-radius: 20px; padding: 32px 28px; display: flex; flex-direction: column; transition: box-shadow 0.2s; }
+        .plan-card:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.08); }
+        .plan-card.highlight { border: 2px solid #2563eb; box-shadow: 0 0 0 4px #2563eb14; }
+        .plan-card.highlight:hover { box-shadow: 0 0 0 4px #2563eb20, 0 8px 32px rgba(37,99,235,0.15); }
+        .plan-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; align-items: start; }
+        @media (max-width: 900px) { .plan-grid { grid-template-columns: 1fr; max-width: 480px; margin: 0 auto; } }
         .feature-item { display: flex; align-items: flex-start; gap: 10px; padding: 5px 0; font-size: 0.9rem; }
         .compare-table { width: 100%; border-collapse: collapse; }
         .compare-table th, .compare-table td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--color-hairline); font-size: 0.875rem; }
-        .compare-table th { font-weight: 600; background: var(--color-canvas); }
-        .compare-table td:not(:first-child) { text-align: center; }
-        .compare-table th:not(:first-child) { text-align: center; }
+        .compare-table th { font-weight: 600; background: var(--color-canvas); position: sticky; top: 0; }
+        .compare-table td:not(:first-child), .compare-table th:not(:first-child) { text-align: center; }
+        .cta-btn { display: block; text-align: center; padding: 13px 20px; border-radius: 10px; font-weight: 700; text-decoration: none; font-size: 0.9375rem; transition: opacity 0.15s, transform 0.1s; cursor: pointer; }
+        .cta-btn:hover { opacity: 0.87; transform: translateY(-1px); }
+        .cta-btn:active { transform: translateY(0); }
+        .step-num { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8125rem; flex-shrink: 0; }
+        .faq-item { padding: 20px; background: var(--color-surface); border-radius: 12px; border: 1px solid var(--color-hairline); margin-bottom: 12px; }
       `}</style>
 
       {/* Hero */}
       <div style={{ textAlign: "center", padding: "72px 24px 48px", maxWidth: 640, margin: "0 auto" }}>
-        <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "#eff6ff", color: "#1d4ed8", padding: "4px 14px", borderRadius: 9999, fontSize: "0.8125rem", fontWeight: 600, marginBottom: 20 }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-          </svg>
-          BuyMeACoffee Membership
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "#fef9c3", color: "#854d0e", padding: "5px 14px", borderRadius: 9999, fontSize: "0.8125rem", fontWeight: 700, marginBottom: 20, border: "1px solid #fde68a" }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          BuyMeACoffee 멤버십으로 즉시 결제
         </div>
         <h1 style={{ fontSize: "clamp(2rem, 5vw, 3rem)", fontWeight: 800, letterSpacing: "-0.03em", margin: "0 0 16px" }}>
           나에게 맞는 플랜을 선택하세요
         </h1>
         <p style={{ fontSize: "1.0625rem", color: "var(--color-muted)", lineHeight: 1.6, margin: 0 }}>
-          기본 기능은 영원히 무료. 더 많은 저장공간, 더 강력한 AI, 더 많은 호스팅이 필요하다면 Pro 또는 VIP로 업그레이드하세요.
+          기본 기능은 영원히 무료.<br />더 강력한 AI와 더 많은 호스팅이 필요하면 업그레이드하세요.
         </p>
       </div>
 
@@ -140,61 +162,169 @@ export default function PricingPage() {
         <div className="plan-grid">
           {PLANS.map(plan => (
             <div key={plan.id} className={`plan-card${plan.highlight ? " highlight" : ""}`} style={{ position: "relative" }}>
-              {plan.highlight && (
-                <div style={{ position: "absolute", top: -14, left: "50%", transform: "translateX(-50%)", background: "#2563eb", color: "#fff", fontSize: "0.75rem", fontWeight: 700, padding: "3px 14px", borderRadius: 9999, whiteSpace: "nowrap" }}>
-                  가장 인기
+              {plan.badge && (
+                <div style={{
+                  position: "absolute", top: -14, left: "50%", transform: "translateX(-50%)",
+                  background: plan.id === "vip" ? "#7c3aed" : "#2563eb",
+                  color: "#fff", fontSize: "0.7rem", fontWeight: 800,
+                  padding: "4px 14px", borderRadius: 9999, whiteSpace: "nowrap", letterSpacing: "0.04em",
+                }}>
+                  {plan.badge}
                 </div>
               )}
-              <div style={{ marginBottom: 8 }}>
+
+              <div>
                 <div style={{ fontWeight: 800, fontSize: "1.375rem", color: plan.color }}>{plan.name}</div>
                 <div style={{ color: "var(--color-muted)", fontSize: "0.875rem", marginTop: 4 }}>{plan.description}</div>
               </div>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 4, margin: "20px 0" }}>
-                <span style={{ fontSize: "2.25rem", fontWeight: 800, letterSpacing: "-0.03em" }}>{plan.price}</span>
+
+              <div style={{ display: "flex", alignItems: "baseline", gap: 4, margin: "20px 0 4px" }}>
+                <span style={{ fontSize: "2.375rem", fontWeight: 800, letterSpacing: "-0.04em" }}>{plan.price}</span>
                 {plan.period && <span style={{ color: "var(--color-muted)", fontSize: "0.9375rem" }}>{plan.period}</span>}
               </div>
-              <ul style={{ listStyle: "none", padding: 0, margin: "0 0 28px", flex: 1 }}>
+              {plan.priceKrw && (
+                <div style={{ color: "var(--color-muted)", fontSize: "0.8rem", marginBottom: 16 }}>
+                  약 ${(plan.priceKrw / 1350).toFixed(2)} USD · 카드/PayPal 결제 가능
+                </div>
+              )}
+              {!plan.priceKrw && <div style={{ marginBottom: 16 }} />}
+
+              <ul style={{ listStyle: "none", padding: 0, margin: "0 0 24px", flex: 1 }}>
                 {plan.features.map((f, i) => (
                   <li key={i} className="feature-item">
-                    <CheckSvg color={plan.color} />
-                    <span style={{ lineHeight: 1.4 }}>{f}</span>
+                    <CheckSvg color={plan.id === "free" ? "#16a34a" : plan.color} />
+                    <span style={{ lineHeight: 1.4, fontWeight: f.bold ? 600 : 400 }}>{f.text}</span>
                   </li>
                 ))}
               </ul>
-              <a href={plan.ctaHref} target={plan.ctaHref.startsWith("http") ? "_blank" : undefined} rel="noreferrer"
-                style={{
-                  display: "block", textAlign: "center", padding: "12px 20px", borderRadius: 10,
-                  background: plan.highlight ? plan.color : "transparent",
-                  border: `2px solid ${plan.id === "free" ? "var(--color-hairline)" : plan.color}`,
-                  color: plan.highlight ? "#fff" : plan.color,
-                  fontWeight: 700, textDecoration: "none", fontSize: "0.9375rem", transition: "opacity 0.15s",
-                }}>
-                {plan.cta}
-              </a>
+
+              {plan.ctaExternal ? (
+                <a
+                  href={plan.ctaHref}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="cta-btn"
+                  style={{
+                    background: plan.highlight ? plan.color : plan.id === "vip" ? plan.color : "transparent",
+                    border: `2px solid ${plan.color}`,
+                    color: (plan.highlight || plan.id === "vip") ? "#fff" : plan.color,
+                  }}
+                >
+                  <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 12V7H5a2 2 0 010-4h14v4"/><path d="M3 5v14a2 2 0 002 2h16v-5"/><path d="M18 12a2 2 0 000 4h4v-4z"/>
+                    </svg>
+                    {plan.cta}
+                  </span>
+                </a>
+              ) : (
+                <Link
+                  href={plan.ctaHref}
+                  className="cta-btn"
+                  style={{
+                    background: "var(--color-ink)",
+                    border: "2px solid var(--color-ink)",
+                    color: "var(--color-canvas)",
+                  }}
+                >
+                  {plan.cta}
+                </Link>
+              )}
+
               {plan.id !== "free" && (
-                <p style={{ textAlign: "center", fontSize: "0.75rem", color: "var(--color-muted)", marginTop: 10 }}>
-                  BuyMeACoffee 멤버십 후 <Link href="/dashboard/settings" style={{ color: "var(--color-ink)" }}>이메일 인증</Link>
+                <p style={{ textAlign: "center", fontSize: "0.75rem", color: "var(--color-muted)", marginTop: 10, lineHeight: 1.5 }}>
+                  결제 후 웹훅으로 <strong>즉시 자동 활성화</strong>
                 </p>
               )}
             </div>
           ))}
         </div>
 
-        {/* BMC verification guide */}
-        <div style={{ marginTop: 48, padding: 28, background: "var(--color-surface)", borderRadius: 16, border: "1px solid var(--color-hairline)" }}>
-          <h3 style={{ fontWeight: 700, marginBottom: 12, fontSize: "1.0625rem", display: "flex", alignItems: "center", gap: 10 }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10" /><path d="M12 8v4l3 3" /></svg>
+        {/* How it works */}
+        <div style={{ marginTop: 56, padding: "32px 28px", background: "var(--color-surface)", borderRadius: 20, border: "1px solid var(--color-hairline)" }}>
+          <h3 style={{ fontWeight: 800, marginBottom: 28, fontSize: "1.25rem", textAlign: "center", letterSpacing: "-0.02em" }}>
             업그레이드 방법
           </h3>
-          <ol style={{ paddingLeft: 20, margin: 0, lineHeight: 2, color: "var(--color-ink)", fontSize: "0.9375rem" }}>
-            <li><a href="https://www.buymeacoffee.com/krlkr/membership" target="_blank" rel="noreferrer" style={{ color: "#2563eb", fontWeight: 600 }}>BuyMeACoffee 멤버십</a>에서 원하는 플랜을 구독합니다.</li>
-            <li>KRL.KR에 로그인 후 <Link href="/dashboard/settings" style={{ color: "#2563eb", fontWeight: 600 }}>설정 페이지</Link>에서 BMC 이메일을 입력합니다.</li>
-            <li>관리자가 확인 후 24시간 이내에 플랜을 활성화합니다.</li>
-          </ol>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 24 }}>
+            {[
+              {
+                num: "1",
+                color: "#2563eb",
+                title: "BMC에서 구독",
+                desc: "아래 버튼으로 BuyMeACoffee 멤버십 페이지에서 Pro 또는 VIP를 선택하고 결제합니다.",
+              },
+              {
+                num: "2",
+                color: "#16a34a",
+                title: "자동 감지",
+                desc: "BMC 웹훅이 결제를 즉시 감지하여 KRL.KR 계정을 자동으로 업그레이드합니다.",
+              },
+              {
+                num: "3",
+                color: "#7c3aed",
+                title: "즉시 사용",
+                desc: "새로운 기능이 바로 활성화됩니다. 별도 이메일 인증 없이 모든 플랜 혜택을 즉시 이용하세요.",
+              },
+            ].map((s) => (
+              <div key={s.num} style={{ display: "flex", gap: 14 }}>
+                <div className="step-num" style={{ background: s.color, color: "#fff", marginTop: 2 }}>{s.num}</div>
+                <div>
+                  <div style={{ fontWeight: 700, marginBottom: 6, fontSize: "0.9375rem" }}>{s.title}</div>
+                  <div style={{ color: "var(--color-muted)", fontSize: "0.875rem", lineHeight: 1.6 }}>{s.desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ textAlign: "center", marginTop: 28, paddingTop: 24, borderTop: "1px solid var(--color-hairline)" }}>
+            <p style={{ color: "var(--color-muted)", fontSize: "0.875rem", marginBottom: 16 }}>
+              BMC 이메일과 KRL.KR 이메일이 다를 경우, 설정에서 BMC 이메일을 등록해주세요.
+            </p>
+            <Link href="/dashboard/settings" style={{ color: "#2563eb", fontWeight: 600, fontSize: "0.875rem", textDecoration: "none" }}>
+              설정 페이지에서 BMC 이메일 등록 →
+            </Link>
+          </div>
+        </div>
+
+        {/* Direct payment buttons */}
+        <div style={{ marginTop: 40, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          <a
+            href={BMC_MEMBERSHIP}
+            target="_blank"
+            rel="noreferrer"
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+              padding: "18px 24px", borderRadius: 14,
+              background: "linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%)",
+              color: "#fff", textDecoration: "none", fontWeight: 700, fontSize: "1rem",
+              boxShadow: "0 4px 20px #2563eb30",
+            }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 12V7H5a2 2 0 010-4h14v4"/><path d="M3 5v14a2 2 0 002 2h16v-5"/><path d="M18 12a2 2 0 000 4h4v-4z"/>
+            </svg>
+            Pro 구독하기 — ₩9,900/월
+          </a>
+          <a
+            href={BMC_MEMBERSHIP}
+            target="_blank"
+            rel="noreferrer"
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+              padding: "18px 24px", borderRadius: 14,
+              background: "linear-gradient(135deg, #5b21b6 0%, #7c3aed 100%)",
+              color: "#fff", textDecoration: "none", fontWeight: 700, fontSize: "1rem",
+              boxShadow: "0 4px 20px #7c3aed30",
+            }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            </svg>
+            VIP 구독하기 — ₩29,900/월
+          </a>
         </div>
 
         {/* Comparison table */}
-        <div style={{ marginTop: 64 }}>
+        <div style={{ marginTop: 72 }}>
           <h2 style={{ fontSize: "1.625rem", fontWeight: 800, letterSpacing: "-0.02em", marginBottom: 24, textAlign: "center" }}>상세 비교</h2>
           <div style={{ background: "var(--color-surface)", borderRadius: 16, border: "1px solid var(--color-hairline)", overflow: "hidden", overflowX: "auto" }}>
             <table className="compare-table">
@@ -210,13 +340,7 @@ export default function PricingPage() {
                 {COMPARE_ROWS.map((row, i) => (
                   <tr key={i}>
                     <td style={{ fontWeight: 500 }}>{row.label}</td>
-                    <td>
-                      {row.free === "불가" ? (
-                        <div style={{ display: "flex", justifyContent: "center" }}><CrossSvg /></div>
-                      ) : (
-                        <span style={{ color: "var(--color-muted)" }}>{row.free}</span>
-                      )}
-                    </td>
+                    <td><span style={{ color: "var(--color-muted)" }}>{row.free}</span></td>
                     <td style={{ color: "#2563eb", fontWeight: 500 }}>{row.pro}</td>
                     <td style={{ color: "#7c3aed", fontWeight: 500 }}>{row.vip}</td>
                   </tr>
@@ -227,33 +351,62 @@ export default function PricingPage() {
         </div>
 
         {/* FAQ */}
-        <div style={{ marginTop: 64, maxWidth: 640, margin: "64px auto 0" }}>
-          <h2 style={{ fontSize: "1.625rem", fontWeight: 800, letterSpacing: "-0.02em", marginBottom: 28, textAlign: "center" }}>자주 묻는 질문</h2>
+        <div style={{ marginTop: 72, maxWidth: 680, margin: "72px auto 0" }}>
+          <h2 style={{ fontSize: "1.625rem", fontWeight: 800, letterSpacing: "-0.02em", marginBottom: 24, textAlign: "center" }}>자주 묻는 질문</h2>
           {[
-            { q: "무료 플랜은 얼마나 오래 유지되나요?", a: "영원히 무료입니다. 기본 기능에 제한 없이 사용하실 수 있습니다." },
-            { q: "결제 방법은 무엇인가요?", a: "BuyMeACoffee 멤버십을 통해 결제합니다. 카드, PayPal 등 다양한 방법을 지원합니다." },
-            { q: "언제든 취소할 수 있나요?", a: "네, BuyMeACoffee에서 언제든 구독을 취소할 수 있습니다. 취소 후 남은 기간은 계속 사용 가능합니다." },
-            { q: "업그레이드 후 언제 활성화되나요?", a: "BMC 이메일 인증 후 24시간 이내에 수동으로 확인 및 활성화합니다." },
-            { q: "웹 호스팅에서 어떤 프레임워크를 지원하나요?", a: "정적 파일을 생성하는 모든 프레임워크를 지원합니다. React (CRA/Vite), Next.js (static export), Vue, Svelte, Astro 등." },
+            {
+              q: "무료 플랜은 얼마나 오래 유지되나요?",
+              a: "영원히 무료입니다. 기본 기능은 제한 없이 사용하실 수 있습니다.",
+            },
+            {
+              q: "결제 방법은 무엇인가요?",
+              a: "BuyMeACoffee를 통해 결제합니다. 신용카드, 직불카드, PayPal 등 다양한 방법을 지원합니다.",
+            },
+            {
+              q: "결제 후 언제 활성화되나요?",
+              a: "BuyMeACoffee 웹훅을 통해 결제 즉시 자동으로 플랜이 활성화됩니다. BMC와 KRL.KR의 이메일이 다를 경우 설정 페이지에서 BMC 이메일을 등록하면 됩니다.",
+            },
+            {
+              q: "언제든 취소할 수 있나요?",
+              a: "네, BuyMeACoffee 대시보드에서 언제든 구독을 취소할 수 있습니다. 취소 후 남은 기간은 계속 사용 가능하며, 기간 만료 후 Free로 자동 다운그레이드됩니다.",
+            },
+            {
+              q: "웹 호스팅에서 어떤 프레임워크를 지원하나요?",
+              a: "정적 파일을 생성하는 모든 프레임워크를 지원합니다. React (Vite/CRA), Next.js (static export), Vue, Svelte, Astro 등. 빌드 결과물(dist/ 또는 out/ 폴더)을 ZIP으로 압축해 업로드하세요.",
+            },
+            {
+              q: "AI 모델은 어떻게 다른가요?",
+              a: "Free는 Pollinations AI를 사용합니다. Pro는 OpenAI GPT-5, VIP는 GPT-5 Pro를 사용하여 더 정확하고 빠른 응답을 제공합니다. 이미지 생성도 VIP는 고화질(flux-pro) 모델이 적용됩니다.",
+            },
           ].map((faq, i) => (
-            <div key={i} style={{ marginBottom: 20, padding: 20, background: "var(--color-surface)", borderRadius: 12, border: "1px solid var(--color-hairline)" }}>
+            <div key={i} className="faq-item">
               <h4 style={{ fontWeight: 700, marginBottom: 8, fontSize: "0.9375rem" }}>{faq.q}</h4>
               <p style={{ color: "var(--color-muted)", margin: 0, fontSize: "0.9375rem", lineHeight: 1.6 }}>{faq.a}</p>
             </div>
           ))}
         </div>
 
-        {/* CTA bottom */}
-        <div style={{ textAlign: "center", marginTop: 64, padding: "48px 24px", background: "linear-gradient(135deg, #1a1714 0%, #2d2520 100%)", borderRadius: 20 }}>
-          <h2 style={{ fontSize: "1.75rem", fontWeight: 800, color: "#f4f0e6", letterSpacing: "-0.02em", marginBottom: 12 }}>지금 시작하세요</h2>
-          <p style={{ color: "rgba(244,240,230,0.6)", fontSize: "1rem", marginBottom: 28 }}>무료로 시작하고, 필요할 때 업그레이드하세요.</p>
+        {/* Bottom CTA */}
+        <div style={{ textAlign: "center", marginTop: 64, padding: "52px 24px", background: "linear-gradient(135deg, #1a1714 0%, #2d2520 100%)", borderRadius: 20 }}>
+          <h2 style={{ fontSize: "1.875rem", fontWeight: 800, color: "#f4f0e6", letterSpacing: "-0.02em", marginBottom: 10 }}>지금 시작하세요</h2>
+          <p style={{ color: "rgba(244,240,230,0.55)", fontSize: "1rem", marginBottom: 32 }}>무료로 시작하고, 필요할 때 업그레이드하세요.</p>
           <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-            <a href="/register" style={{ display: "inline-block", padding: "12px 28px", background: "#f4f0e6", color: "#1a1714", borderRadius: 10, fontWeight: 700, textDecoration: "none", fontSize: "0.9375rem" }}>
+            <a href="/register" style={{
+              display: "inline-flex", alignItems: "center", gap: 8,
+              padding: "13px 28px", background: "#f4f0e6", color: "#1a1714",
+              borderRadius: 10, fontWeight: 700, textDecoration: "none", fontSize: "0.9375rem",
+            }}>
               무료로 시작하기
             </a>
-            <a href="https://www.buymeacoffee.com/krlkr/membership" target="_blank" rel="noreferrer"
-              style={{ display: "inline-block", padding: "12px 28px", background: "transparent", color: "#f4f0e6", border: "2px solid rgba(244,240,230,0.3)", borderRadius: 10, fontWeight: 700, textDecoration: "none", fontSize: "0.9375rem" }}>
-              Pro 플랜 보기
+            <a href={BMC_MEMBERSHIP} target="_blank" rel="noreferrer" style={{
+              display: "inline-flex", alignItems: "center", gap: 8,
+              padding: "13px 28px", background: "#2563eb", color: "#fff",
+              borderRadius: 10, fontWeight: 700, textDecoration: "none", fontSize: "0.9375rem",
+            }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 12V7H5a2 2 0 010-4h14v4"/><path d="M3 5v14a2 2 0 002 2h16v-5"/><path d="M18 12a2 2 0 000 4h4v-4z"/>
+              </svg>
+              Pro/VIP 구독하기
             </a>
           </div>
         </div>

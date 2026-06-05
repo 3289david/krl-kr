@@ -163,6 +163,11 @@ export async function GET(request: NextRequest) {
           const siteId = String(hostingResult.rows[0].id);
           const siteDir = path.join(HOSTING_DIR, siteId);
           const originalUri = request.headers.get("x-original-uri") ?? "/";
+          // Count only HTML page visits (not assets)
+          const ext = originalUri.split("?")[0].split(".").pop()?.toLowerCase() ?? "";
+          if (!ext || ext === "html" || ext === "htm") {
+            pool.query("UPDATE hosting_sites SET visit_count = COALESCE(visit_count,0) + 1 WHERE id = $1", [siteId]).catch(() => {});
+          }
           return serveHostingFile(siteDir, originalUri);
         }
       } catch (e) {
