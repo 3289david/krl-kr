@@ -28,6 +28,7 @@ const DEFAULT_HEADER_CONFIG = {
       id: "website", label: "웹사이트", visible: true,
       items: [
         { id: "subdomain", href: "/dashboard/subdomains", label: "서브도메인", desc: "내이름.krl.kr 주소 만들기", icon: "M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z M2 12h20 M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z", visible: true },
+        { id: "hosting", href: "/dashboard/hosting", label: "웹 호스팅", desc: "HTML·React·Next.js 사이트 배포", icon: "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10", visible: true },
         { id: "bio", href: "/tools/bio", label: "Link-in-bio", desc: "krl.kr/@닉네임 프로필 페이지", icon: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z", visible: true },
       ],
     },
@@ -45,10 +46,12 @@ const DEFAULT_HEADER_CONFIG = {
   ],
   simpleLinks: [
     { id: "community", href: "/community", label: "커뮤니티", visible: true },
+    { id: "drive", href: "/dashboard/drive", label: "KRL Drive", visible: true },
     { id: "blog", href: "/blog", label: "블로그", visible: true },
     { id: "changelog", href: "/changelog", label: "변경 이력", visible: false },
     { id: "contact", href: "/contact", label: "문의", visible: false },
     { id: "ai-chat", href: "/chat", label: "AI 채팅", icon: "M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7H3a7 7 0 0 1 7-7h1V5.73A2 2 0 0 1 10 4a2 2 0 0 1 2-2z M5 14v7M19 14v7M9 14v7M15 14v7", visible: true },
+    { id: "pricing", href: "/pricing", label: "요금제", visible: true },
   ],
   rightButtons: {
     search: { visible: true, href: "/search" },

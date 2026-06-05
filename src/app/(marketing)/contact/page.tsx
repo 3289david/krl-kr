@@ -79,6 +79,7 @@ const FAQ = [
 export default function ContactPage() {
   return (
     <main style={{ minHeight: "100vh", background: "var(--color-canvas)" }}>
+      <style>{`.contact-card:hover{box-shadow:0 4px 20px rgba(0,0,0,0.08);transform:translateY(-2px)}`}</style>
       <div style={{ maxWidth: "860px", margin: "0 auto", padding: "60px 24px 100px" }}>
 
         {/* Header */}
@@ -103,16 +104,13 @@ export default function ContactPage() {
         {/* Contact cards */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px", marginBottom: "60px" }}>
           {CONTACT_ITEMS.map((item) => (
-            <a key={item.title} href={item.href} style={{
+            <a key={item.title} href={item.href} className="contact-card" style={{
               display: "block", padding: "24px",
               background: "var(--color-lifted)",
               border: "1px solid var(--color-hairline)",
               borderRadius: "16px", textDecoration: "none",
               transition: "box-shadow 0.15s ease, transform 0.1s ease",
-            }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = "0 4px 20px rgba(0,0,0,0.08)"; (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = "none"; (e.currentTarget as HTMLElement).style.transform = "none"; }}
-            >
+            }}>
               <div style={{
                 display: "inline-flex", alignItems: "center", justifyContent: "center",
                 width: "44px", height: "44px", borderRadius: "12px",

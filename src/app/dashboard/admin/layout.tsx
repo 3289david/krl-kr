@@ -14,6 +14,7 @@ const NAV = [
   { href: "/dashboard/admin/meetings", label: "관리자 회의", icon: "M17 20h5v-2a3 3 0 0 0-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 0 1 5.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 0 1 9.288 0M15 7a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" },
   { href: "/dashboard/admin/changelog", label: "변경 이력 관리", icon: "M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2 M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2 M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2 M12 12h3 M12 16h3 M9 12h.01 M9 16h.01" },
   { href: "/dashboard/admin/blog", label: "블로그 관리", icon: "M12 20h9 M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" },
+  { href: "/dashboard/admin/plans", label: "플랜 관리", icon: "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" },
   { href: "/dashboard/admin/header", label: "헤더 관리", icon: "M4 6h16M4 12h16M4 18h7", masterOnly: true },
   { href: "/dashboard/admin/admins", label: "관리자 설정", icon: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z", masterOnly: true },
   { href: "/dashboard/admin/log", label: "활동 로그", icon: "M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2 M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2 M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2 M9 12h6 M9 16h4" },

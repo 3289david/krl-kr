@@ -5,9 +5,86 @@
  * Called internally by middleware for *.krl.kr requests.
  * - redirect / github / vercel / api → 302 to target
  * - html → serve stored HTML (if target looks like a URL, redirects instead)
+ * - hosting → serve static files from disk
  */
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db/postgres";
+import path from "path";
+import fs from "fs";
+
+const HOSTING_DIR = "/var/www/krl-kr/hosting";
+
+const MIME_TYPES: Record<string, string> = {
+  html: "text/html; charset=utf-8", htm: "text/html; charset=utf-8",
+  css: "text/css", js: "application/javascript", mjs: "application/javascript",
+  json: "application/json", xml: "application/xml; charset=utf-8",
+  png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg",
+  gif: "image/gif", webp: "image/webp", svg: "image/svg+xml",
+  ico: "image/x-icon", avif: "image/avif",
+  woff: "font/woff", woff2: "font/woff2", ttf: "font/ttf", otf: "font/otf",
+  pdf: "application/pdf", txt: "text/plain; charset=utf-8",
+  mp4: "video/mp4", webm: "video/webm", ogg: "audio/ogg", mp3: "audio/mpeg",
+};
+
+function getMime(filePath: string): string {
+  const ext = filePath.split(".").pop()?.toLowerCase() ?? "";
+  return MIME_TYPES[ext] ?? "application/octet-stream";
+}
+
+function serveHostingFile(siteDir: string, requestPath: string): NextResponse {
+  // Normalize path, prevent traversal
+  const cleanPath = requestPath.split("?")[0];
+  const relative = cleanPath === "/" ? "index.html" : cleanPath.replace(/^\//, "");
+  const safePath = path.resolve(siteDir, relative);
+
+  if (!safePath.startsWith(siteDir)) {
+    return new NextResponse("Forbidden", { status: 403 });
+  }
+
+  // Try exact file
+  if (fs.existsSync(safePath) && fs.statSync(safePath).isFile()) {
+    const buffer = fs.readFileSync(safePath);
+    return new NextResponse(buffer, {
+      status: 200,
+      headers: {
+        "Content-Type": getMime(safePath),
+        "Cache-Control": "public, max-age=3600",
+      },
+    });
+  }
+
+  // Try appending .html
+  const withHtml = safePath + ".html";
+  if (fs.existsSync(withHtml)) {
+    const buffer = fs.readFileSync(withHtml);
+    return new NextResponse(buffer, {
+      status: 200,
+      headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=3600" },
+    });
+  }
+
+  // Try directory index.html
+  const indexPath = path.join(safePath, "index.html");
+  if (fs.existsSync(indexPath)) {
+    const buffer = fs.readFileSync(indexPath);
+    return new NextResponse(buffer, {
+      status: 200,
+      headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=3600" },
+    });
+  }
+
+  // SPA fallback: serve root index.html for client-side routing
+  const rootIndex = path.join(siteDir, "index.html");
+  if (fs.existsSync(rootIndex)) {
+    const buffer = fs.readFileSync(rootIndex);
+    return new NextResponse(buffer, {
+      status: 200,
+      headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache" },
+    });
+  }
+
+  return new NextResponse("Not Found", { status: 404 });
+}
 
 function normalizeUrl(url: string): string {
   const trimmed = url.trim();
@@ -73,7 +150,25 @@ export async function GET(request: NextRequest) {
       .bind(name)
       .first<{ target: string; type: string }>();
 
+    // Check hosting sites if not found in subdomains
     if (!row) {
+      try {
+        const { getPool } = await import("@/lib/db/postgres");
+        const pool = getPool();
+        const hostingResult = await pool.query(
+          "SELECT id FROM hosting_sites WHERE subdomain = $1 AND status = 'active' LIMIT 1",
+          [name]
+        );
+        if (hostingResult.rows[0]) {
+          const siteId = String(hostingResult.rows[0].id);
+          const siteDir = path.join(HOSTING_DIR, siteId);
+          const originalUri = request.headers.get("x-original-uri") ?? "/";
+          return serveHostingFile(siteDir, originalUri);
+        }
+      } catch (e) {
+        console.error("[sub] hosting lookup error:", e);
+      }
+
       return new NextResponse(NOT_FOUND_HTML(name), {
         status: 404,
         headers: { "Content-Type": "text/html; charset=utf-8" },

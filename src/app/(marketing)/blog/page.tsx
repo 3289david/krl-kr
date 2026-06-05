@@ -46,6 +46,7 @@ export default async function BlogPage() {
 
   return (
     <main style={{ minHeight: "100vh", background: "var(--color-canvas)" }}>
+      <style>{`.blog-card-link:hover article{box-shadow:0 4px 20px rgba(0,0,0,0.08);transform:translateY(-2px)}`}</style>
       <div style={{ maxWidth: "860px", margin: "0 auto", padding: "60px 24px 100px" }}>
 
         <div style={{ marginBottom: "48px" }}>
@@ -68,16 +69,13 @@ export default async function BlogPage() {
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
             {posts.map((post, i) => (
-              <Link key={post.id} href={`/blog/${post.slug}`} style={{ textDecoration: "none" }}>
+              <Link key={post.id} href={`/blog/${post.slug}`} className="blog-card-link" style={{ textDecoration: "none" }}>
                 <article style={{
                   display: "flex", gap: "24px",
                   background: "var(--color-lifted)", border: "1px solid var(--color-hairline)",
                   borderRadius: "16px", overflow: "hidden",
                   transition: "box-shadow 0.15s ease, transform 0.1s ease",
-                }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = "0 4px 20px rgba(0,0,0,0.08)"; (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = "none"; (e.currentTarget as HTMLElement).style.transform = "none"; }}
-                >
+                }}>
                   {post.cover_image && (
                     <div style={{ width: "200px", flexShrink: 0, overflow: "hidden" }}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}

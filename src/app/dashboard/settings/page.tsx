@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { CheckIcon, AlertCircleIcon, EyeIcon, EyeOffIcon } from "@/components/icons";
+import Link from "next/link";
 
 interface User {
   id: string;
@@ -31,6 +32,14 @@ export default function SettingsPage() {
   const [passwordSaved, setPasswordSaved] = useState(false);
   const [passwordError, setPasswordError] = useState("");
 
+  // Plan / BMC
+  const [planInfo, setPlanInfo] = useState<{ plan: string; bmc_email?: string } | null>(null);
+  const [bmcEmail, setBmcEmail] = useState("");
+  const [bmcOrderId, setBmcOrderId] = useState("");
+  const [savingBmc, setSavingBmc] = useState(false);
+  const [bmcSaved, setBmcSaved] = useState(false);
+  const [bmcError, setBmcError] = useState("");
+
   // Delete account
   const [deleteConfirm, setDeleteConfirm] = useState("");
   const [deleting, setDeleting] = useState(false);
@@ -47,7 +56,33 @@ export default function SettingsPage() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
+
+    fetch("/api/v1/plan")
+      .then(r => r.json())
+      .then(d => {
+        setPlanInfo({ plan: d.plan, bmc_email: d.row?.bmc_email });
+        if (d.row?.bmc_email) setBmcEmail(d.row.bmc_email);
+        if (d.row?.bmc_order_id) setBmcOrderId(d.row.bmc_order_id);
+      })
+      .catch(() => {});
   }, []);
+
+  async function handleBmcSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSavingBmc(true); setBmcError(""); setBmcSaved(false);
+    try {
+      const res = await fetch("/api/v1/plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bmc_email: bmcEmail, bmc_order_id: bmcOrderId || undefined }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setBmcError(data.error); return; }
+      setBmcSaved(true);
+      setTimeout(() => setBmcSaved(false), 3000);
+    } catch { setBmcError("저장 오류"); }
+    setSavingBmc(false);
+  }
 
   async function handleSaveProfile(e: React.FormEvent) {
     e.preventDefault();
@@ -198,6 +233,42 @@ export default function SettingsPage() {
         >
           {deleting ? "삭제 중..." : "계정 영구 삭제"}
         </button>
+      </div>
+
+      {/* BMC Plan Verification */}
+      <div style={{ background: "var(--color-surface)", border: "1px solid var(--color-hairline)", borderRadius: 16, padding: 24, marginTop: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+          </svg>
+          <h2 style={{ fontSize: "1.0625rem", fontWeight: 700, margin: 0 }}>요금제</h2>
+        </div>
+        <p style={{ fontSize: "0.875rem", color: "var(--color-muted)", marginBottom: 20 }}>
+          현재 플랜: <strong style={{ textTransform: "uppercase" }}>{planInfo?.plan ?? "free"}</strong>
+          {" · "}
+          <Link href="/pricing" style={{ color: "var(--color-ink)" }}>요금제 비교</Link>
+        </p>
+        {planInfo?.plan === "free" && (
+          <div style={{ padding: "12px 16px", background: "#eff6ff", borderRadius: 10, marginBottom: 20, fontSize: "0.875rem", color: "#1d4ed8" }}>
+            <a href="https://www.buymeacoffee.com/krlkr/membership" target="_blank" rel="noreferrer" style={{ fontWeight: 700, color: "#1d4ed8" }}>BuyMeACoffee 멤버십</a>에 가입하면 Drive 20GB+, 웹 호스팅, AI 이미지 생성 등을 이용할 수 있습니다.
+          </div>
+        )}
+        <form onSubmit={handleBmcSubmit}>
+          <div className="form-group">
+            <label className="form-label">BuyMeACoffee 가입 이메일</label>
+            <input className="input" value={bmcEmail} onChange={e => setBmcEmail(e.target.value)} placeholder="bmc@example.com" type="email" />
+            <p style={{ fontSize: "0.8125rem", color: "var(--color-muted)", marginTop: 6 }}>BMC에 등록한 이메일을 입력하면 관리자가 확인 후 플랜을 활성화합니다.</p>
+          </div>
+          <div className="form-group">
+            <label className="form-label">주문 ID (선택사항)</label>
+            <input className="input" value={bmcOrderId} onChange={e => setBmcOrderId(e.target.value)} placeholder="BMC 주문 확인 ID" />
+          </div>
+          {bmcError && <p style={{ color: "var(--color-danger)", fontSize: "0.875rem", marginBottom: 12 }}>{bmcError}</p>}
+          {bmcSaved && <p style={{ color: "#16a34a", fontSize: "0.875rem", marginBottom: 12 }}>저장되었습니다. 관리자 확인 후 업그레이드됩니다.</p>}
+          <button type="submit" className="btn btn-sm btn-pill" disabled={savingBmc || !bmcEmail}>
+            {savingBmc ? "저장 중..." : "인증 요청"}
+          </button>
+        </form>
       </div>
     </div>
   );

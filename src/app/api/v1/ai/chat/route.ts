@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { getSessionFromRequest } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
@@ -11,6 +12,114 @@ const SYSTEM_PROMPT = `당신은 krl.kr의 AI 어시스턴트입니다. 친절�
 - 한국어로 질문하면 한국어로, 영어로 질문하면 영어로 답변하세요.
 - 간결하고 명확하게 답변하세요.
 - 마크다운을 지원합니다.`;
+
+const PLAN_MODELS: Record<string, string> = {
+  free: "claude-haiku-4-5-20251001",
+  pro: "claude-sonnet-4-6",
+  vip: "claude-opus-4-7",
+};
+
+async function getUserPlan(request: NextRequest): Promise<string> {
+  try {
+    const session = await getSessionFromRequest(request);
+    if (!session) return "free";
+    const { getPool } = await import("@/lib/db/postgres");
+    const pool = getPool();
+    const result = await pool.query("SELECT plan FROM user_plans WHERE user_id = $1", [session.userId]);
+    return result.rows[0]?.plan ?? "free";
+  } catch {
+    return "free";
+  }
+}
+
+async function anthropicChat(messages: Message[], model: string, stream: boolean): Promise<Response> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) throw new Error("Anthropic API key not configured");
+
+  const userMessages = messages.filter(m => m.role !== "system");
+
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: 4096,
+      system: SYSTEM_PROMPT,
+      messages: userMessages.slice(-20),
+      stream,
+    }),
+    signal: AbortSignal.timeout(60000),
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`Anthropic API error ${response.status}: ${err}`);
+  }
+
+  if (stream) {
+    return new Response(response.body, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache, no-store",
+        "Connection": "keep-alive",
+        "X-Accel-Buffering": "no",
+        "X-AI-Model": model,
+      },
+    });
+  }
+
+  const data = await response.json() as { content: Array<{ text: string }> };
+  const text = data.content?.[0]?.text ?? "";
+  return new Response(JSON.stringify({ content: text, model }), {
+    headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+  });
+}
+
+async function pollinationsChat(messages: Message[], stream: boolean): Promise<Response> {
+  const payload = {
+    model: "openai",
+    messages: [
+      { role: "system", content: SYSTEM_PROMPT },
+      ...messages.slice(-20),
+    ],
+    stream,
+  };
+
+  const upstream = await fetch("https://text.pollinations.ai/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: stream ? "text/event-stream" : "application/json",
+      "User-Agent": "Mozilla/5.0 (compatible; KRL.KR/1.0)",
+      Origin: "https://krl.kr",
+      Referer: "https://krl.kr/",
+    },
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(30000),
+  });
+
+  if (!upstream.ok) throw new Error(`AI service error: ${upstream.status}`);
+
+  if (stream) {
+    return new Response(upstream.body, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache, no-store",
+        Connection: "keep-alive",
+        "X-Accel-Buffering": "no",
+      },
+    });
+  }
+
+  const text = await upstream.text();
+  return new Response(JSON.stringify({ content: text }), {
+    headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+  });
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,51 +134,17 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const payload = {
-      model: "openai",
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        ...messages.slice(-20), // keep last 20 turns
-      ],
-      stream,
-    };
+    const plan = await getUserPlan(request);
+    const model = PLAN_MODELS[plan] ?? PLAN_MODELS.free;
 
-    const upstream = await fetch("https://text.pollinations.ai/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: stream ? "text/event-stream" : "application/json",
-        "User-Agent": "Mozilla/5.0 (compatible; KRL.KR/1.0)",
-        Origin: "https://krl.kr",
-        Referer: "https://krl.kr/",
-      },
-      body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(30000),
-    });
-
-    if (!upstream.ok) {
-      throw new Error(`AI service error: ${upstream.status}`);
+    // Use Anthropic for authenticated users (pro/vip), or if API key configured for all
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (apiKey) {
+      return await anthropicChat(messages, model, stream);
     }
 
-    if (stream) {
-      // Pass through the SSE stream
-      return new Response(upstream.body, {
-        headers: {
-          "Content-Type": "text/event-stream",
-          "Cache-Control": "no-cache, no-store",
-          Connection: "keep-alive",
-          "X-Accel-Buffering": "no",
-        },
-      });
-    }
-
-    const text = await upstream.text();
-    return new Response(JSON.stringify({ content: text }), {
-      headers: {
-        "Content-Type": "application/json",
-        "Cache-Control": "no-store",
-      },
-    });
+    // Fallback: Pollinations for free tier / no API key
+    return await pollinationsChat(messages, stream);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "알 수 없는 오류";
     return new Response(JSON.stringify({ error: msg }), {

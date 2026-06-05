@@ -226,6 +226,21 @@ export default function DashboardPage() {
       {/* Quick actions */}
       <div className="dashboard-grid-2" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: "12px" }}>
         {[
+          { href: "/dashboard/drive", icon: (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+            </svg>
+          ), title: "KRL Drive", desc: "파일 저장 · 공유" },
+          { href: "/dashboard/hosting", icon: (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10" />
+            </svg>
+          ), title: "웹 호스팅", desc: "사이트 무료 배포" },
+          { href: "/dashboard/ai", icon: (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" />
+            </svg>
+          ), title: "AI 이미지", desc: "DALL-E 3 이미지 생성" },
           { href: "/dashboard/qr", icon: <QrCodeIcon size={20} />, title: "QR 코드", desc: "SVG/PNG 생성" },
           { href: "/dashboard/files", icon: <FileIcon size={20} />, title: "파일 공유", desc: "드래그앤드롭 업로드" },
           { href: "/dashboard/paste", icon: <CodeIcon size={20} />, title: "Pastebin", desc: "코드 공유" },
