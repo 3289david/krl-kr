@@ -79,7 +79,13 @@ export default function SettingsPage() {
       const data = await res.json();
       if (!res.ok) { setBmcError(data.error); return; }
       setBmcSaved(true);
-      setTimeout(() => setBmcSaved(false), 3000);
+      // If plan was auto-activated, refresh plan info
+      if (data.activated) {
+        fetch("/api/v1/plan").then(r => r.json()).then(d => {
+          setPlanInfo({ plan: d.plan, bmc_email: d.row?.bmc_email });
+        }).catch(() => {});
+      }
+      setTimeout(() => setBmcSaved(false), 4000);
     } catch { setBmcError("저장 오류"); }
     setSavingBmc(false);
   }
@@ -257,16 +263,16 @@ export default function SettingsPage() {
           <div className="form-group">
             <label className="form-label">BuyMeACoffee 가입 이메일</label>
             <input className="input" value={bmcEmail} onChange={e => setBmcEmail(e.target.value)} placeholder="bmc@example.com" type="email" />
-            <p style={{ fontSize: "0.8125rem", color: "var(--color-muted)", marginTop: 6 }}>BMC에 등록한 이메일을 입력하면 관리자가 확인 후 플랜을 활성화합니다.</p>
+            <p style={{ fontSize: "0.8125rem", color: "var(--color-muted)", marginTop: 6 }}>BuyMeACoffee에 가입할 때 사용한 이메일을 입력하면 자동으로 플랜이 활성화됩니다.</p>
           </div>
           <div className="form-group">
             <label className="form-label">주문 ID (선택사항)</label>
             <input className="input" value={bmcOrderId} onChange={e => setBmcOrderId(e.target.value)} placeholder="BMC 주문 확인 ID" />
           </div>
           {bmcError && <p style={{ color: "var(--color-danger)", fontSize: "0.875rem", marginBottom: 12 }}>{bmcError}</p>}
-          {bmcSaved && <p style={{ color: "#16a34a", fontSize: "0.875rem", marginBottom: 12 }}>저장되었습니다. 관리자 확인 후 업그레이드됩니다.</p>}
+          {bmcSaved && <p style={{ color: "#16a34a", fontSize: "0.875rem", marginBottom: 12 }}>✓ {planInfo?.plan !== "free" ? `플랜이 활성화되었습니다! (${planInfo?.plan?.toUpperCase()})` : "저장되었습니다. 결제 후 자동으로 업그레이드됩니다."}</p>}
           <button type="submit" className="btn btn-sm btn-pill" disabled={savingBmc || !bmcEmail}>
-            {savingBmc ? "저장 중..." : "인증 요청"}
+            {savingBmc ? "저장 중..." : "연결하기"}
           </button>
         </form>
       </div>

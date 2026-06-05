@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Submit BMC verification request
+// Link BMC email and auto-activate any pending plan
 export async function POST(request: NextRequest) {
   try {
     const db = getDB(request);
@@ -88,22 +88,55 @@ export async function POST(request: NextRequest) {
 
     if (!bmc_email) return NextResponse.json({ error: "BMC 이메일을 입력해주세요." }, { status: 400 });
 
+    const normalizedBmcEmail = bmc_email.toLowerCase().trim();
     const now = Date.now();
-    // Store verification request — admin manually verifies and upgrades
-    const existing = await pool.query("SELECT id FROM user_plans WHERE user_id = $1", [user.id]);
+
+    // Check if there is a pending plan for this BMC email
+    const pendingKey = `pending:${normalizedBmcEmail}`;
+    const pendingRow = await pool.query(
+      "SELECT plan, expires_at FROM user_plans WHERE user_id = $1 LIMIT 1",
+      [pendingKey]
+    );
+    const pending = pendingRow.rows[0];
+
+    // Upsert the user's plan row with their bmc_email
+    const existing = await pool.query("SELECT id, plan FROM user_plans WHERE user_id = $1", [user.id]);
+
+    if (pending) {
+      // Activate the pending plan
+      const activePlan = pending.plan;
+      const expiresAt = pending.expires_at;
+      if (existing.rows[0]) {
+        await pool.query(
+          "UPDATE user_plans SET bmc_email=$1, bmc_order_id=$2, plan=$3, verified_at=$4, expires_at=$5 WHERE user_id=$6",
+          [normalizedBmcEmail, bmc_order_id ?? null, activePlan, now, expiresAt, user.id]
+        );
+      } else {
+        await pool.query(
+          "INSERT INTO user_plans (user_id, plan, bmc_email, bmc_order_id, verified_at, expires_at, created_at) VALUES ($1,$2,$3,$4,$5,$6,$5)",
+          [user.id, activePlan, normalizedBmcEmail, bmc_order_id ?? null, now, expiresAt]
+        );
+      }
+      // Remove the pending placeholder
+      await pool.query("DELETE FROM user_plans WHERE user_id = $1", [pendingKey]);
+      console.log(`[plan] Activated pending ${activePlan} for ${user.id} via BMC email ${normalizedBmcEmail}`);
+      return NextResponse.json({ success: true, activated: true, plan: activePlan });
+    }
+
+    // No pending plan — just save the bmc_email for future webhook matching
     if (existing.rows[0]) {
       await pool.query(
-        "UPDATE user_plans SET bmc_email = $1, bmc_order_id = $2 WHERE user_id = $3",
-        [bmc_email, bmc_order_id ?? null, user.id]
+        "UPDATE user_plans SET bmc_email=$1, bmc_order_id=COALESCE($2, bmc_order_id) WHERE user_id=$3",
+        [normalizedBmcEmail, bmc_order_id ?? null, user.id]
       );
     } else {
       await pool.query(
-        "INSERT INTO user_plans (user_id, plan, bmc_email, bmc_order_id, created_at) VALUES ($1, 'free', $2, $3, $4)",
-        [user.id, bmc_email, bmc_order_id ?? null, now]
+        "INSERT INTO user_plans (user_id, plan, bmc_email, bmc_order_id, created_at) VALUES ($1,'free',$2,$3,$4)",
+        [user.id, normalizedBmcEmail, bmc_order_id ?? null, now]
       );
     }
 
-    return NextResponse.json({ success: true, message: "인증 요청이 제출되었습니다. 관리자 확인 후 업그레이드됩니다." });
+    return NextResponse.json({ success: true, activated: false, message: "BMC 이메일이 저장되었습니다. 결제 후 자동으로 업그레이드됩니다." });
   } catch (err) {
     console.error("[plan POST]", err);
     return NextResponse.json({ error: "서버 오류" }, { status: 500 });

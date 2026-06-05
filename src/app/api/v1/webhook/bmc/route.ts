@@ -11,13 +11,19 @@ import { createHmac } from "crypto";
 
 export const runtime = "nodejs";
 
-function resolvePlan(title: string, amount: number): "pro" | "vip" | null {
+function resolvePlan(title: string, amount: number, pspId?: string, durationType?: string): "pro" | "vip" | null {
+  // GIVE_AWAY / lifetime giveaway memberships are still valid — treat as pro
+  if (
+    pspId === "GIVE_AWAY" ||
+    String(durationType ?? "").toLowerCase().includes("giveaway") ||
+    String(durationType ?? "").toLowerCase().includes("lifetime")
+  ) return "pro";
+
   const t = (title ?? "").toLowerCase();
   if (t.includes("vip") || t.includes("ultra") || t.includes("premium")) return "vip";
   if (t.includes("pro") || t.includes("member") || t.includes("supporter")) return "pro";
-  // Amount-based fallback: any paid membership → at least pro
   if (amount >= 15) return "vip";
-  if (amount >= 1) return "pro";  // any positive payment = pro
+  if (amount >= 1) return "pro";
   return null;
 }
 
@@ -143,6 +149,8 @@ export async function POST(request: NextRequest) {
   const amountRaw = data.support_plan_amount ?? data.amount ?? data.price ?? data.supporter_membership_amount ?? 0;
   const amount = parseFloat(String(amountRaw)) || 0;
   const orderId = String(data.support_id ?? data.order_id ?? data.membership_id ?? "");
+  const pspId = String(data.psp_id ?? "");
+  const durationType = String(data.duration_type ?? "");
 
   const pool = await getPool();
 
@@ -157,17 +165,13 @@ export async function POST(request: NextRequest) {
   }
 
   if (isActive || type === "unknown") {
-    const plan = resolvePlan(planTitle, amount);
+    const plan = resolvePlan(planTitle, amount, pspId, durationType);
     if (plan) {
       await upsertUserPlan(pool, email, plan, orderId);
+      console.log(`[BMC] Upgraded ${email} → ${plan} (psp=${pspId} dur=${durationType})`);
       return NextResponse.json({ received: true, action: "upgraded", plan, email });
     } else if (type !== "unknown") {
-      console.warn(`[BMC] Cannot resolve plan — title="${planTitle}" amount=${amount}`);
-      // Still give pro if there's any payment (safety net)
-      if (amount > 0) {
-        await upsertUserPlan(pool, email, "pro", orderId);
-        return NextResponse.json({ received: true, action: "upgraded_fallback", plan: "pro", email });
-      }
+      console.warn(`[BMC] Cannot resolve plan — title="${planTitle}" amount=${amount} psp=${pspId}`);
     }
   }
 
