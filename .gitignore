@@ -42,3 +42,5 @@ drive/
 # Swap files
 *.swp
 *.swo
+ecosystem.local.js
+ecosystem.local.config.js
