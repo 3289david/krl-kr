@@ -21,7 +21,7 @@ async function ensureTable() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS drive_files (
       id SERIAL PRIMARY KEY,
-      user_id INTEGER NOT NULL,
+      user_id TEXT NOT NULL,
       parent_id INTEGER REFERENCES drive_files(id) ON DELETE CASCADE,
       name TEXT NOT NULL,
       type TEXT NOT NULL CHECK (type IN ('file', 'folder')),

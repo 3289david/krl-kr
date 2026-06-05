@@ -2,39 +2,29 @@
  * BuyMeACoffee Webhook Handler
  *
  * Setup:
- *   1. Go to https://www.buymeacoffee.com/dashboard/webhooks
- *   2. Add webhook URL: https://krl.kr/api/v1/webhook/bmc
- *   3. Copy the webhook secret → set BMC_WEBHOOK_SECRET env variable
- *
- * Events handled:
- *   - membership.started       → upgrade user plan
- *   - membership.updated       → update plan
- *   - membership.cancelled     → schedule downgrade on expiry
- *   - new_membership           → alias for started
- *   - membership_expired       → downgrade to free
+ *   1. https://www.buymeacoffee.com/dashboard/webhooks
+ *   2. Webhook URL: https://krl.kr/api/v1/webhook/bmc
+ *   3. Copy webhook secret → BMC_WEBHOOK_SECRET env variable
  */
 import { NextRequest, NextResponse } from "next/server";
 import { createHmac } from "crypto";
 
 export const runtime = "nodejs";
 
-// Map BMC plan titles/amounts to KRL plan names
-function resolvePlan(title: string, amount?: number): "pro" | "vip" | null {
+function resolvePlan(title: string, amount: number): "pro" | "vip" | null {
   const t = (title ?? "").toLowerCase();
-  if (t.includes("vip")) return "vip";
-  if (t.includes("pro")) return "pro";
-  // Fallback by price
-  if (amount !== undefined) {
-    if (amount >= 20) return "vip";
-    if (amount >= 5) return "pro";
-  }
+  if (t.includes("vip") || t.includes("ultra") || t.includes("premium")) return "vip";
+  if (t.includes("pro") || t.includes("member") || t.includes("supporter")) return "pro";
+  // Amount-based fallback: any paid membership → at least pro
+  if (amount >= 15) return "vip";
+  if (amount >= 1) return "pro";  // any positive payment = pro
   return null;
 }
 
 function verifySignature(rawBody: string, signature: string, secret: string): boolean {
+  if (!signature) return true; // no sig = skip check (for testing)
   try {
     const expected = createHmac("sha256", secret).update(rawBody).digest("hex");
-    // BMC may send with or without prefix "sha256="
     const clean = signature.replace(/^sha256=/i, "");
     return expected === clean || createHmac("sha256", secret).update(rawBody).digest("base64") === signature;
   } catch {
@@ -42,13 +32,32 @@ function verifySignature(rawBody: string, signature: string, secret: string): bo
   }
 }
 
+async function getPool() {
+  const { getPool: _getPool } = await import("@/lib/db/postgres");
+  const pool = _getPool();
+  // Ensure user_plans table with TEXT user_id
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS user_plans (
+      id SERIAL PRIMARY KEY,
+      user_id TEXT NOT NULL UNIQUE,
+      plan TEXT NOT NULL DEFAULT 'free',
+      bmc_email TEXT,
+      bmc_order_id TEXT,
+      verified_at BIGINT,
+      expires_at BIGINT,
+      created_at BIGINT NOT NULL
+    )
+  `);
+  return pool;
+}
+
 async function upsertUserPlan(
   pool: import("pg").Pool,
   email: string,
   plan: "pro" | "vip" | "free",
-  bmcData: Record<string, unknown>
+  orderId?: string
 ) {
-  // Find user by BMC email stored in user_plans, OR by user.email
+  // Find user by email
   const userResult = await pool.query(
     `SELECT u.id FROM users u
      LEFT JOIN user_plans up ON up.user_id = u.id
@@ -58,41 +67,51 @@ async function upsertUserPlan(
   );
 
   if (!userResult.rows[0]) {
-    console.log(`[BMC webhook] No user found for email: ${email}`);
+    console.log(`[BMC] No user found for ${email} — storing pending`);
+    // Store pending: create row with email only so it activates when they register
+    await pool.query(`
+      INSERT INTO user_plans (user_id, plan, bmc_email, verified_at, expires_at, created_at)
+      VALUES ($1, $2, $3, $4, $5, $4)
+      ON CONFLICT (user_id) DO UPDATE SET plan=$2, bmc_email=$3, verified_at=$4, expires_at=$5
+    `, [`pending:${email.toLowerCase()}`, plan, email.toLowerCase(), Date.now(),
+      plan !== "free" ? Date.now() + 33 * 24 * 60 * 60 * 1000 : null]);
     return null;
   }
 
   const userId = userResult.rows[0].id;
   const now = Date.now();
-
-  // Calculate expiry (1 month from now for active memberships, or immediate for cancelled)
-  const expiresAt = plan !== "free" ? now + 32 * 24 * 60 * 60 * 1000 : null; // +32 days buffer
+  const expiresAt = plan !== "free" ? now + 33 * 24 * 60 * 60 * 1000 : null;
 
   await pool.query(`
-    INSERT INTO user_plans (user_id, plan, bmc_email, verified_at, expires_at, created_at)
-    VALUES ($1, $2, $3, $4, $5, $4)
+    INSERT INTO user_plans (user_id, plan, bmc_email, bmc_order_id, verified_at, expires_at, created_at)
+    VALUES ($1, $2, $3, $4, $5, $6, $5)
     ON CONFLICT (user_id) DO UPDATE SET
       plan = $2,
       bmc_email = COALESCE($3, user_plans.bmc_email),
-      verified_at = $4,
-      expires_at = $5
-  `, [userId, plan, email, now, expiresAt]);
+      bmc_order_id = COALESCE($4, user_plans.bmc_order_id),
+      verified_at = $5,
+      expires_at = $6
+  `, [userId, plan, email.toLowerCase(), orderId ?? null, now, expiresAt]);
 
-  console.log(`[BMC webhook] User ${userId} (${email}) → plan: ${plan}`);
+  console.log(`[BMC] User ${userId} (${email}) → ${plan}, expires: ${expiresAt}`);
   return userId;
 }
 
 export async function POST(request: NextRequest) {
   const secret = process.env.BMC_WEBHOOK_SECRET;
-
-  // Read raw body
   const rawBody = await request.text();
 
-  // Verify signature if secret is set
+  // Log every incoming webhook for debugging
+  console.log(`[BMC webhook] headers: ${JSON.stringify({
+    sig: request.headers.get("x-bmc-signature") ?? request.headers.get("x-webhook-signature") ?? "none",
+    type: request.headers.get("content-type"),
+  })}`);
+  console.log(`[BMC webhook] body: ${rawBody.slice(0, 500)}`);
+
   if (secret) {
     const sig = request.headers.get("x-bmc-signature") ?? request.headers.get("x-webhook-signature") ?? "";
     if (sig && !verifySignature(rawBody, sig, secret)) {
-      console.warn("[BMC webhook] Signature mismatch");
+      console.warn("[BMC] Signature mismatch");
       return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
     }
   }
@@ -104,79 +123,59 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const type = (payload.type ?? payload.event ?? "") as string;
+  // BMC sends various formats — handle all
+  const type = String(payload.type ?? payload.event ?? "unknown").toLowerCase();
   const data = (payload.data ?? payload) as Record<string, unknown>;
 
-  const email = (
-    data.supporter_email ??
-    data.payer_email ??
-    data.email ??
-    payload.supporter_email
-  ) as string | undefined;
+  // Extract email from all possible fields
+  const email = String(
+    data.supporter_email ?? data.payer_email ?? data.email ??
+    payload.supporter_email ?? payload.email ?? ""
+  ).toLowerCase().trim();
 
-  if (!email) {
-    console.warn("[BMC webhook] No email in payload:", JSON.stringify(payload).slice(0, 300));
+  if (!email || !email.includes("@")) {
+    console.warn("[BMC] No valid email in payload");
     return NextResponse.json({ received: true, skipped: "no_email" });
   }
 
-  const planTitle = (data.support_plan_title ?? data.plan_title ?? data.tier_title ?? "") as string;
-  const amount = parseFloat(String(data.support_plan_amount ?? data.amount ?? 0)) || 0;
+  // Extract plan info
+  const planTitle = String(data.support_plan_title ?? data.plan_title ?? data.tier_title ?? data.membership_name ?? "");
+  const amountRaw = data.support_plan_amount ?? data.amount ?? data.price ?? data.supporter_membership_amount ?? 0;
+  const amount = parseFloat(String(amountRaw)) || 0;
+  const orderId = String(data.support_id ?? data.order_id ?? data.membership_id ?? "");
 
-  const { getPool } = await import("@/lib/db/postgres");
-  const pool = getPool();
+  const pool = await getPool();
 
-  // Ensure table exists
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS user_plans (
-      id SERIAL PRIMARY KEY,
-      user_id INTEGER NOT NULL UNIQUE,
-      plan TEXT NOT NULL DEFAULT 'free',
-      bmc_email TEXT,
-      bmc_order_id TEXT,
-      verified_at BIGINT,
-      expires_at BIGINT,
-      created_at BIGINT NOT NULL
-    )
-  `);
+  // Determine action based on event type
+  const isCancellation = type.includes("cancel") || type.includes("expired") || type.includes("fail") || type.includes("refund");
+  const isActive = type.includes("start") || type.includes("new") || type.includes("update") ||
+    type.includes("payment") || type.includes("active") || type.includes("renew") || type.includes("member");
 
-  const lowerType = type.toLowerCase();
-
-  if (
-    lowerType.includes("start") ||
-    lowerType.includes("new_membership") ||
-    lowerType.includes("update") ||
-    lowerType.includes("payment") ||
-    lowerType.includes("active")
-  ) {
-    // Membership started or renewed
-    const plan = resolvePlan(planTitle, amount);
-    if (plan) {
-      await upsertUserPlan(pool, email, plan, data);
-      return NextResponse.json({ received: true, action: "upgraded", plan, email });
-    } else {
-      console.warn(`[BMC webhook] Unknown plan title: ${planTitle}, amount: ${amount}`);
-      return NextResponse.json({ received: true, skipped: "unknown_plan" });
-    }
-  }
-
-  if (
-    lowerType.includes("cancel") ||
-    lowerType.includes("expired") ||
-    lowerType.includes("fail") ||
-    lowerType.includes("refund")
-  ) {
-    // Membership cancelled/expired → downgrade
-    await upsertUserPlan(pool, email, "free", data);
+  if (isCancellation) {
+    await upsertUserPlan(pool, email, "free", orderId);
     return NextResponse.json({ received: true, action: "downgraded", email });
   }
 
-  // One-time donations or other events — just log
-  console.log(`[BMC webhook] Unhandled event type: ${type}`);
+  if (isActive || type === "unknown") {
+    const plan = resolvePlan(planTitle, amount);
+    if (plan) {
+      await upsertUserPlan(pool, email, plan, orderId);
+      return NextResponse.json({ received: true, action: "upgraded", plan, email });
+    } else if (type !== "unknown") {
+      console.warn(`[BMC] Cannot resolve plan — title="${planTitle}" amount=${amount}`);
+      // Still give pro if there's any payment (safety net)
+      if (amount > 0) {
+        await upsertUserPlan(pool, email, "pro", orderId);
+        return NextResponse.json({ received: true, action: "upgraded_fallback", plan: "pro", email });
+      }
+    }
+  }
+
+  console.log(`[BMC] Unhandled event: type="${type}"`);
   return NextResponse.json({ received: true, skipped: type });
 }
 
-// Cron endpoint: check for expired memberships and downgrade
-// Call this daily via cron: curl -X DELETE https://krl.kr/api/v1/webhook/bmc -H "Authorization: Bearer $CRON_SECRET"
+// Cron: expire stale plans daily
 export async function DELETE(request: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
   if (cronSecret) {
@@ -186,8 +185,7 @@ export async function DELETE(request: NextRequest) {
     }
   }
 
-  const { getPool } = await import("@/lib/db/postgres");
-  const pool = getPool();
+  const pool = await getPool();
   const now = Date.now();
 
   const expired = await pool.query(`
@@ -196,6 +194,24 @@ export async function DELETE(request: NextRequest) {
     RETURNING user_id, bmc_email
   `, [now]);
 
-  console.log(`[BMC cron] Downgraded ${expired.rowCount} expired memberships`);
-  return NextResponse.json({ downgraded: expired.rows });
+  // Also activate pending plans for users who have since registered
+  const pending = await pool.query(`
+    SELECT up.user_id as pending_key, up.plan, up.bmc_email, up.expires_at, u.id as real_user_id
+    FROM user_plans up
+    JOIN users u ON LOWER(u.email) = LOWER(up.bmc_email)
+    WHERE up.user_id LIKE 'pending:%'
+  `);
+
+  for (const row of pending.rows) {
+    await pool.query(`
+      INSERT INTO user_plans (user_id, plan, bmc_email, verified_at, expires_at, created_at)
+      VALUES ($1, $2, $3, $4, $5, $4)
+      ON CONFLICT (user_id) DO UPDATE SET plan=$2, bmc_email=$3, expires_at=$5
+    `, [row.real_user_id, row.plan, row.bmc_email, Date.now(), row.expires_at]);
+    await pool.query(`DELETE FROM user_plans WHERE user_id = $1`, [row.pending_key]);
+    console.log(`[BMC cron] Activated pending plan for ${row.bmc_email} → ${row.plan}`);
+  }
+
+  console.log(`[BMC cron] Expired: ${expired.rowCount}, Activated pending: ${pending.rowCount}`);
+  return NextResponse.json({ downgraded: expired.rows, activated: pending.rows.length });
 }

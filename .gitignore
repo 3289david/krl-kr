@@ -34,10 +34,10 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Local file storage
-uploads/
-hosting/
-drive/
+# Local file storage (root-level only, not src/)
+/uploads/
+/hosting/
+/drive/
 
 # Swap files
 *.swp

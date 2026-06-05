@@ -4,20 +4,14 @@ import { getDB } from "@/lib/env";
 
 export const runtime = "nodejs";
 
-// Pollinations.ai image models (free, no key needed)
+const IMAGEROUTER_URL = "https://api.imagerouter.io/v1/openai/images/generations";
+const IMAGEROUTER_MODEL = "black-forest-labs/FLUX-2-klein-9b";
 const POLLINATIONS_IMAGE_URL = "https://image.pollinations.ai/prompt";
 
-// Daily limits per plan
 const DAILY_LIMITS: Record<string, number> = {
-  free: 5,
+  free: 0,
   pro: 50,
   vip: 200,
-};
-
-const PLAN_MODELS: Record<string, string> = {
-  free: "flux",        // free Pollinations model
-  pro: "flux",         // same model, higher limit
-  vip: "flux-pro",     // Pollinations flux-pro
 };
 
 async function ensureTable() {
@@ -26,7 +20,7 @@ async function ensureTable() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS ai_image_usage (
       id SERIAL PRIMARY KEY,
-      user_id INTEGER NOT NULL,
+      user_id TEXT NOT NULL,
       created_at BIGINT NOT NULL
     )
   `);
@@ -36,22 +30,66 @@ async function ensureTable() {
   return pool;
 }
 
+async function generateWithImageRouter(prompt: string, width: number, height: number): Promise<{ base64: string; mime_type: string; model: string } | null> {
+  const apiKey = process.env.IMAGEROUTER_API_KEY;
+  if (!apiKey) return null;
+
+  const res = await fetch(IMAGEROUTER_URL, {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ model: IMAGEROUTER_MODEL, prompt: prompt.trim(), n: 1, size: `${width}x${height}` }),
+    signal: AbortSignal.timeout(60000),
+  });
+
+  const data = await res.json() as { data?: Array<{ url?: string; b64_json?: string }>; error?: { message: string } };
+
+  if (!res.ok || data.error) {
+    console.error("[ai/image] imagerouter error:", data.error?.message ?? res.status);
+    return null;
+  }
+
+  const item = data.data?.[0];
+  if (!item) return null;
+
+  if (item.b64_json) return { base64: item.b64_json, mime_type: "image/png", model: IMAGEROUTER_MODEL };
+
+  if (item.url) {
+    const imgRes = await fetch(item.url, { signal: AbortSignal.timeout(30000) });
+    if (!imgRes.ok) return null;
+    const buf = Buffer.from(await imgRes.arrayBuffer());
+    return { base64: buf.toString("base64"), mime_type: "image/png", model: IMAGEROUTER_MODEL };
+  }
+
+  return null;
+}
+
+async function generateWithPollinations(prompt: string, width: number, height: number, plan: string): Promise<{ base64: string; mime_type: string; model: string }> {
+  const model = plan === "vip" ? "flux-pro" : "flux";
+  const params = new URLSearchParams({
+    model, width: String(width), height: String(height),
+    nologo: "true", seed: String(Math.floor(Math.random() * 2147483647)), enhance: "true",
+  });
+  const res = await fetch(`${POLLINATIONS_IMAGE_URL}/${encodeURIComponent(prompt.trim())}?${params}`, {
+    signal: AbortSignal.timeout(60000), headers: { "User-Agent": "KRL.KR/1.0" },
+  });
+  if (!res.ok) throw new Error(`Pollinations error: ${res.status}`);
+  const buf = Buffer.from(await res.arrayBuffer());
+  return { base64: buf.toString("base64"), mime_type: res.headers.get("content-type") ?? "image/jpeg", model };
+}
+
 export async function GET(request: NextRequest) {
-  // Return today's usage for the user
   try {
     const db = getDB(request);
     const { user, error } = await requireAuth(db, request);
     if (error) return error;
 
     const pool = await ensureTable();
-
     const planRow = await pool.query("SELECT plan FROM user_plans WHERE user_id = $1", [user.id]);
     const plan = planRow.rows[0]?.plan ?? "free";
-    const dailyLimit = plan === "free" ? 0 : (DAILY_LIMITS[plan] ?? DAILY_LIMITS.pro);
+    const dailyLimit = DAILY_LIMITS[plan] ?? 0;
 
     const dayStart = new Date();
     dayStart.setHours(0, 0, 0, 0);
-
     const usageRow = await pool.query(
       "SELECT COUNT(*) as count FROM ai_image_usage WHERE user_id = $1 AND created_at >= $2",
       [user.id, dayStart.getTime()]
@@ -72,7 +110,6 @@ export async function POST(request: NextRequest) {
     if (error) return error;
 
     const pool = await ensureTable();
-
     const planRow = await pool.query("SELECT plan FROM user_plans WHERE user_id = $1", [user.id]);
     const plan = planRow.rows[0]?.plan ?? "free";
 
@@ -83,9 +120,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const dailyLimit = DAILY_LIMITS[plan] ?? DAILY_LIMITS.pro;
-
-    // Check daily usage
+    const dailyLimit = DAILY_LIMITS[plan] ?? 0;
     const dayStart = new Date();
     dayStart.setHours(0, 0, 0, 0);
     const usageRow = await pool.query(
@@ -96,68 +131,28 @@ export async function POST(request: NextRequest) {
 
     if (usedToday >= dailyLimit) {
       return NextResponse.json(
-        {
-          error: `오늘 이미지 생성 한도(${dailyLimit}장)에 도달했습니다. 내일 다시 시도하거나 플랜을 업그레이드하세요.`,
-          limit_reached: true,
-          used: usedToday,
-          limit: dailyLimit,
-          plan,
-        },
+        { error: `오늘 이미지 생성 한도(${dailyLimit}장)에 도달했습니다.`, limit_reached: true, used: usedToday, limit: dailyLimit, plan },
         { status: 429 }
       );
     }
 
     const body = await request.json();
-    const { prompt, width = 1024, height = 1024, seed } = body;
-
+    const { prompt, width = 1024, height = 1024 } = body;
     if (!prompt?.trim()) return NextResponse.json({ error: "프롬프트를 입력해주세요." }, { status: 400 });
 
-    const model = PLAN_MODELS[plan] ?? "flux";
-    const randomSeed = seed ?? Math.floor(Math.random() * 2147483647);
+    const w = Math.min(1024, Math.max(256, width));
+    const h = Math.min(1024, Math.max(256, height));
 
-    const params = new URLSearchParams({
-      model,
-      width: String(Math.min(1024, Math.max(256, width))),
-      height: String(Math.min(1024, Math.max(256, height))),
-      nologo: "true",
-      seed: String(randomSeed),
-      enhance: plan !== "free" ? "true" : "false",
-    });
-
-    const imageUrl = `${POLLINATIONS_IMAGE_URL}/${encodeURIComponent(prompt.trim())}?${params}`;
-
-    // Fetch the image from Pollinations
-    const response = await fetch(imageUrl, {
-      signal: AbortSignal.timeout(60000),
-      headers: { "User-Agent": "KRL.KR/1.0" },
-    });
-
-    if (!response.ok) {
-      console.error("[ai/image] Pollinations error:", response.status, response.statusText);
-      return NextResponse.json({ error: "이미지 생성에 실패했습니다. 잠시 후 다시 시도해주세요." }, { status: 502 });
+    let result = await generateWithImageRouter(prompt, w, h).catch(() => null);
+    if (!result) {
+      result = await generateWithPollinations(prompt, w, h, plan);
     }
 
-    const contentType = response.headers.get("content-type") ?? "image/jpeg";
-    const buffer = Buffer.from(await response.arrayBuffer());
-    const base64 = buffer.toString("base64");
+    await pool.query("INSERT INTO ai_image_usage (user_id, created_at) VALUES ($1, $2)", [user.id, Date.now()]);
 
-    // Record usage
-    await pool.query(
-      "INSERT INTO ai_image_usage (user_id, created_at) VALUES ($1, $2)",
-      [user.id, Date.now()]
-    );
-
-    return NextResponse.json({
-      base64,
-      mime_type: contentType,
-      model,
-      seed: randomSeed,
-      used_today: usedToday + 1,
-      daily_limit: dailyLimit,
-      plan,
-    });
+    return NextResponse.json({ base64: result.base64, mime_type: result.mime_type, model: result.model, used_today: usedToday + 1, daily_limit: dailyLimit, plan });
   } catch (err) {
     console.error("[ai/image POST]", err);
-    return NextResponse.json({ error: "서버 오류가 발생했습니다." }, { status: 500 });
+    return NextResponse.json({ error: "이미지 생성에 실패했습니다. 잠시 후 다시 시도해주세요." }, { status: 500 });
   }
 }

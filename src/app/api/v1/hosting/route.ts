@@ -21,7 +21,7 @@ async function ensureTables() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS hosting_sites (
       id SERIAL PRIMARY KEY,
-      user_id INTEGER NOT NULL,
+      user_id TEXT NOT NULL,
       name TEXT NOT NULL,
       subdomain TEXT NOT NULL UNIQUE,
       framework TEXT DEFAULT 'static',
@@ -38,7 +38,7 @@ async function ensureTables() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS user_plans (
       id SERIAL PRIMARY KEY,
-      user_id INTEGER NOT NULL UNIQUE,
+      user_id TEXT NOT NULL UNIQUE,
       plan TEXT NOT NULL DEFAULT 'free',
       bmc_email TEXT,
       bmc_order_id TEXT,

@@ -44,7 +44,7 @@ async function ensureTable() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS user_plans (
       id SERIAL PRIMARY KEY,
-      user_id INTEGER NOT NULL UNIQUE,
+      user_id TEXT NOT NULL UNIQUE,
       plan TEXT NOT NULL DEFAULT 'free',
       bmc_email TEXT,
       bmc_order_id TEXT,
