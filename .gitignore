@@ -34,7 +34,11 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Local file storage (uploads)
+# Local file storage
 uploads/
-let
-.github/
+hosting/
+drive/
+
+# Swap files
+*.swp
+*.swo
