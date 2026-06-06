@@ -66,6 +66,7 @@ const DEFAULT_CONFIG: HeaderConfig = {
         { id: "vault", href: "/dashboard/vault", label: "KRL Vault", desc: "비밀번호 보관함", icon: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z", visible: true },
         { id: "box", href: "/dashboard/box", label: "KRL Box", desc: "디지털 보관함", icon: "M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z", visible: true },
         { id: "space", href: "/dashboard/space", label: "KRL Space", desc: "웹사이트 빌더", icon: "M12 2L2 7l10 5 10-5-10-5z M2 17l10 5 10-5 M2 12l10 5 10-5", visible: true },
+        { id: "codes", href: "/dashboard/codes", label: "KRL Codes", desc: "초대·쿠폰·라이선스·OTP·URL 단축", icon: "M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z", visible: true },
       ],
     },
     {

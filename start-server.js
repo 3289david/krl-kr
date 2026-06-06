@@ -18,4 +18,18 @@ if (fs.existsSync(envFile)) {
   }
 }
 
+// Sync static assets to standalone dir (required for Next.js standalone mode)
+const { execSync } = require('child_process');
+const standaloneNext = path.join(__dirname, '.next', 'standalone', '.next');
+const staticSrc = path.join(__dirname, '.next', 'static');
+const staticDest = path.join(standaloneNext, 'static');
+const buildIdSrc = path.join(__dirname, '.next', 'BUILD_ID');
+const buildIdDest = path.join(standaloneNext, 'BUILD_ID');
+if (fs.existsSync(staticSrc) && !fs.existsSync(staticDest)) {
+  execSync(`cp -r "${staticSrc}" "${staticDest}"`);
+}
+if (fs.existsSync(buildIdSrc) && !fs.existsSync(buildIdDest)) {
+  fs.copyFileSync(buildIdSrc, buildIdDest);
+}
+
 require('./.next/standalone/server.js');
