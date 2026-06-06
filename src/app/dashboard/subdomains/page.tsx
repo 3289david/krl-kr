@@ -14,6 +14,8 @@ interface Subdomain {
   created_at: number;
   cname_target?: string;
   cf_configured?: boolean;
+  _source?: "subdomain" | "blog" | "hosting";
+  _href?: string;
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -25,10 +27,14 @@ const TYPE_LABELS: Record<string, string> = {
   a: "A 레코드",
   aaaa: "AAAA 레코드",
   cname: "CNAME",
+  blog: "KRL Blog",
+  hosting: "KRL 호스팅",
 };
 
 const TYPE_TABS = [
   { key: "all", label: "전체" },
+  { key: "blog", label: "블로그" },
+  { key: "hosting", label: "호스팅" },
   { key: "redirect", label: "리다이렉트" },
   { key: "github", label: "GitHub" },
   { key: "vercel", label: "Vercel" },
@@ -120,11 +126,36 @@ function SubdomainsPageInner() {
 
   useEffect(() => {
     setLoading(true);
-    fetch("/api/v1/subdomains")
-      .then((r) => r.json())
-      .then((d) => setSubdomains(d.subdomains ?? []))
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    Promise.all([
+      fetch("/api/v1/subdomains").then(r => r.json()).catch(() => ({ subdomains: [] })),
+      fetch("/api/v1/blog").then(r => r.json()).catch(() => ({ blogs: [] })),
+      fetch("/api/v1/hosting").then(r => r.json()).catch(() => ({ sites: [] })),
+    ]).then(([subData, blogData, hostData]) => {
+      const subs: Subdomain[] = (subData.subdomains ?? []).map((s: Subdomain) => ({ ...s, _source: "subdomain" as const }));
+      const blogs: Subdomain[] = (blogData.blogs ?? []).map((b: { id: number; slug: string; title: string; is_public: boolean; created_at: number }) => ({
+        id: `blog-${b.id}`,
+        subdomain: b.slug,
+        type: "blog",
+        target: b.title,
+        is_active: b.is_public ? 1 : 0,
+        created_at: b.created_at,
+        cname_target: "*.krl.kr (와일드카드)",
+        _source: "blog" as const,
+        _href: `/dashboard/blog/${b.id}`,
+      }));
+      const hosting: Subdomain[] = (hostData.sites ?? []).map((s: { id: number; subdomain: string; name: string; status: string; created_at: number }) => ({
+        id: `hosting-${s.id}`,
+        subdomain: s.subdomain,
+        type: "hosting",
+        target: s.name,
+        is_active: s.status === "active" ? 1 : 0,
+        created_at: s.created_at,
+        cname_target: "*.krl.kr (와일드카드)",
+        _source: "hosting" as const,
+        _href: `/dashboard/hosting`,
+      }));
+      setSubdomains([...subs, ...blogs, ...hosting]);
+    }).finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
@@ -357,7 +388,7 @@ function SubdomainsPageInner() {
                     </td>
                     <td>{getTypeBadge(s.type)}</td>
                     <td style={{ maxWidth: "180px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      <span style={{ fontSize: "0.8125rem", color: "var(--color-muted)", fontFamily: "var(--font-mono)" }}>{s.target}</span>
+                      <span style={{ fontSize: "0.8125rem", color: "var(--color-muted)", fontFamily: s._source === "subdomain" ? "var(--font-mono)" : "inherit" }}>{s.target}</span>
                     </td>
                     <td>
                       <span style={{ fontSize: "0.75rem", fontFamily: "var(--font-mono)", color: "var(--color-ink)", background: "var(--color-surface-card)", padding: "2px 8px", borderRadius: "var(--radius-sm)" }}>
@@ -374,24 +405,25 @@ function SubdomainsPageInner() {
                         {s.is_active ? "활성" : "비활성"}
                       </span>
                     </td>
-                    <td style={{ fontSize: "0.875rem", color: "var(--color-muted)" }}>{formatDate(s.created_at)}</td>
+                    <td style={{ fontSize: "0.875rem", color: "var(--color-muted)" }}>{formatDate(Number(s.created_at))}</td>
                     <td>
                       <div style={{ display: "flex", gap: "4px", justifyContent: "flex-end" }}>
-                        <button
-                          onClick={() => handleSyncDns(s)}
-                          disabled={syncingId === s.id}
-                          title="DNS 동기화"
-                          className="btn btn-ghost btn-sm"
-                          style={{ fontSize: "0.75rem", padding: "4px 8px", color: "var(--color-info)" }}
-                        >
-                          {syncingId === s.id ? "⏳" : "DNS동기화"}
-                        </button>
-                        <button onClick={() => openEdit(s)} className="btn btn-ghost btn-sm btn-icon" title="편집">
-                          <EditIcon size={14} />
-                        </button>
-                        <button onClick={() => setDeleteConfirm(s.id)} className="btn btn-ghost btn-sm btn-icon" style={{ color: "var(--color-danger)" }} title="삭제">
-                          <TrashIcon size={14} />
-                        </button>
+                        {s._source === "subdomain" ? (
+                          <>
+                            <button onClick={() => handleSyncDns(s)} disabled={syncingId === s.id} title="DNS 동기화"
+                              className="btn btn-ghost btn-sm" style={{ fontSize: "0.75rem", padding: "4px 8px", color: "var(--color-info)" }}>
+                              {syncingId === s.id ? "⏳" : "DNS동기화"}
+                            </button>
+                            <button onClick={() => openEdit(s)} className="btn btn-ghost btn-sm btn-icon" title="편집">
+                              <EditIcon size={14} />
+                            </button>
+                            <button onClick={() => setDeleteConfirm(s.id)} className="btn btn-ghost btn-sm btn-icon" style={{ color: "var(--color-danger)" }} title="삭제">
+                              <TrashIcon size={14} />
+                            </button>
+                          </>
+                        ) : (
+                          <a href={s._href} className="btn btn-ghost btn-sm" style={{ fontSize: "0.75rem" }}>관리</a>
+                        )}
                       </div>
                     </td>
                   </tr>

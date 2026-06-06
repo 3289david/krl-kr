@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
 import { getDB } from "@/lib/env";
-import { ensureBlogTables } from "../route";
+import { ensureBlogTables, deleteBlogDnsRecord } from "../route";
 
 export const runtime = "nodejs";
 
@@ -74,6 +74,11 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
     const { getPool } = await import("@/lib/db/postgres");
     const pool = getPool();
+
+    const blogRow = await pool.query("SELECT cf_dns_record_id FROM blogs WHERE id = $1 AND user_id = $2", [id, user.id]);
+    if (blogRow.rows[0]?.cf_dns_record_id) {
+      await deleteBlogDnsRecord(blogRow.rows[0].cf_dns_record_id);
+    }
 
     await pool.query("DELETE FROM blogs WHERE id = $1 AND user_id = $2", [id, user.id]);
     return NextResponse.json({ success: true });

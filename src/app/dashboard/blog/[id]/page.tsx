@@ -100,7 +100,7 @@ export default function BlogPostsPage({ params }: { params: Promise<{ id: string
                 <div style={{ fontWeight: 600, fontSize: "0.9375rem", marginBottom: 4 }}>{post.title}</div>
                 <div style={{ fontSize: "0.8125rem", color: "var(--color-muted)", display: "flex", gap: 10, alignItems: "center" }}>
                   <span style={{ color: STATUS_COLOR[post.status] ?? "#6b7280", fontWeight: 600, fontSize: "0.75rem" }}>● {STATUS_LABEL[post.status] ?? post.status}</span>
-                  <span>{new Date(post.published_at ?? post.created_at).toLocaleDateString("ko-KR")}</span>
+                  <span>{new Date(Number(post.published_at ?? post.created_at)).toLocaleDateString("ko-KR")}</span>
                   <span>조회 {post.view_count}</span>
                 </div>
                 {post.tags?.length > 0 && (

@@ -2,6 +2,8 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 
+const BMC_STORAGE_URL = "https://buymeacoffee.com/rukkitofficial/e/545645";
+
 interface Blog {
   id: number;
   slug: string;
@@ -142,6 +144,18 @@ export default function BlogListPage() {
           블로그를 더 만들려면 <Link href="/pricing" style={{ fontWeight: 600 }}>플랜을 업그레이드</Link>하세요. (Free: 1개 / Pro: 5개 / VIP: 무제한)
         </div>
       )}
+
+      {/* Extra storage purchase banner */}
+      <div style={{ marginTop: 20, padding: "16px 20px", background: "linear-gradient(135deg, #fefce8, #fef9c3)", borderRadius: 12, border: "1px solid #fde68a", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+        <div>
+          <div style={{ fontWeight: 700, fontSize: "0.9375rem", color: "#92400e" }}>블로그 이미지 저장공간이 부족한가요?</div>
+          <div style={{ fontSize: "0.8125rem", color: "#b45309", marginTop: 2 }}>10GB 추가 저장공간 — ₩2,900/월 · Drive + Blog 통합 적용</div>
+        </div>
+        <a href={BMC_STORAGE_URL} target="_blank" rel="noreferrer"
+          style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 18px", borderRadius: 8, background: "#FFDD00", color: "#1a1714", fontSize: "0.875rem", fontWeight: 700, textDecoration: "none", whiteSpace: "nowrap" }}>
+          ☕ 저장공간 10GB 추가 구매
+        </a>
+      </div>
     </div>
   );
 }

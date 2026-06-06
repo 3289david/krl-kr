@@ -2,6 +2,42 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
 import { getDB } from "@/lib/env";
 
+const CF_TOKEN = process.env.CLOUDFLARE_API_TOKEN ?? "";
+const CF_ZONE = process.env.CLOUDFLARE_ZONE_ID ?? "";
+const SERVER_IP = "194.163.184.59";
+
+async function createBlogDnsRecord(slug: string): Promise<string | null> {
+  if (!CF_TOKEN || !CF_ZONE) return null;
+  try {
+    const res = await fetch(`https://api.cloudflare.com/client/v4/zones/${CF_ZONE}/dns_records`, {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${CF_TOKEN}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "A", name: `${slug}.krl.kr`, content: SERVER_IP, proxied: true, ttl: 1 }),
+    });
+    const data = await res.json() as { success: boolean; result?: { id: string } };
+    if (data.success && data.result?.id) {
+      console.log(`[blog] Created DNS A record for ${slug}.krl.kr → ${data.result.id}`);
+      return data.result.id;
+    }
+  } catch (e) {
+    console.error("[blog] DNS record creation failed:", e);
+  }
+  return null;
+}
+
+export async function deleteBlogDnsRecord(cfRecordId: string): Promise<void> {
+  if (!CF_TOKEN || !CF_ZONE || !cfRecordId) return;
+  try {
+    await fetch(`https://api.cloudflare.com/client/v4/zones/${CF_ZONE}/dns_records/${cfRecordId}`, {
+      method: "DELETE",
+      headers: { "Authorization": `Bearer ${CF_TOKEN}` },
+    });
+    console.log(`[blog] Deleted DNS record ${cfRecordId}`);
+  } catch (e) {
+    console.error("[blog] DNS record deletion failed:", e);
+  }
+}
+
 export const runtime = "nodejs";
 
 const RESERVED = new Set(["www","api","mail","app","admin","blog","shop","store","dev","staging",
@@ -121,10 +157,12 @@ export async function POST(request: NextRequest) {
     if (cleanSlug.length < 2) return NextResponse.json({ error: "슬러그는 2자 이상이어야 합니다." }, { status: 400 });
     if (RESERVED.has(cleanSlug)) return NextResponse.json({ error: "예약된 슬러그입니다." }, { status: 400 });
 
+    const cfRecordId = await createBlogDnsRecord(cleanSlug);
+
     const result = await pool.query(
-      `INSERT INTO blogs (user_id, slug, title, description, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $5) RETURNING *`,
-      [user.id, cleanSlug, title.trim(), description?.trim() ?? null, Date.now()]
+      `INSERT INTO blogs (user_id, slug, title, description, cf_dns_record_id, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $6) RETURNING *`,
+      [user.id, cleanSlug, title.trim(), description?.trim() ?? null, cfRecordId, Date.now()]
     );
 
     return NextResponse.json({ blog: result.rows[0] }, { status: 201 });

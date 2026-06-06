@@ -354,8 +354,29 @@ export default function PricingPage() {
 
         {/* Storage footnote */}
         <p style={{ textAlign: "center", fontSize: "0.8125rem", color: "var(--color-muted)", marginTop: 12 }}>
-          ¹ 통합 저장공간은 KRL Drive + KRL Blog 이미지 합산 기준. 웹 호스팅·파일 공유는 별도. 추가 저장공간은 Pro/VIP에서 10GB 단위로 구매 가능 (₩2,900/10GB/월).
+          ¹ 통합 저장공간은 KRL Drive + KRL Blog 이미지 합산 기준. 웹 호스팅·파일 공유는 별도.
         </p>
+
+        {/* Extra storage purchase banner */}
+        <div style={{ marginTop: 40, maxWidth: 600, margin: "40px auto 0", padding: "24px 28px", background: "linear-gradient(135deg, #fefce8 0%, #fef3c7 100%)", borderRadius: 16, border: "2px solid #fde68a", textAlign: "center" }}>
+          <div style={{ fontSize: "1.5rem", marginBottom: 8 }}>☕</div>
+          <h3 style={{ fontWeight: 800, fontSize: "1.125rem", marginBottom: 6, color: "#92400e" }}>저장공간이 더 필요하신가요?</h3>
+          <p style={{ fontSize: "0.9375rem", color: "#b45309", marginBottom: 16, lineHeight: 1.5 }}>
+            10GB 추가 저장공간 — <strong>₩2,900/월</strong><br />
+            Drive + Blog 통합 적용 · 결제 즉시 자동 반영
+          </p>
+          <a
+            href="https://buymeacoffee.com/rukkitofficial/e/545645"
+            target="_blank"
+            rel="noreferrer"
+            style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 28px", borderRadius: 10, background: "#FFDD00", color: "#1a1714", fontSize: "1rem", fontWeight: 800, textDecoration: "none", boxShadow: "0 2px 8px rgba(0,0,0,0.12)" }}
+          >
+            ☕ BuyMeACoffee에서 10GB 추가 구매
+          </a>
+          <p style={{ fontSize: "0.8125rem", color: "#92400e", marginTop: 12, opacity: 0.8 }}>
+            BMC 결제 이메일 = KRL.KR 가입 이메일 이어야 자동 반영됩니다
+          </p>
+        </div>
 
         {/* FAQ */}
         <div style={{ marginTop: 72, maxWidth: 680, margin: "72px auto 0" }}>
@@ -391,7 +412,7 @@ export default function PricingPage() {
             },
             {
               q: "추가 저장공간은 어떻게 구매하나요?",
-              a: "Pro/VIP 사용자는 10GB 단위로 추가 저장공간을 구매할 수 있습니다 (₩2,900/10GB/월). 추가 공간은 Drive와 Blog에 통합 적용됩니다. (준비 중)",
+              a: "누구나 10GB 단위로 추가 저장공간을 구매할 수 있습니다 (₩2,900/10GB/월). 아래 버튼 또는 buymeacoffee.com/rukkitofficial/e/545645 에서 구매 후 자동으로 Drive + Blog 통합 저장공간에 추가됩니다. BMC 결제 이메일과 KRL.KR 가입 이메일이 동일해야 합니다.",
             },
           ].map((faq, i) => (
             <div key={i} className="faq-item">

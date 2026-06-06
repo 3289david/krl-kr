@@ -14,7 +14,9 @@ interface DriveFile {
   created_at: number;
 }
 
-interface StorageInfo { used: number; max: number; plan: string; }
+const BMC_STORAGE_URL = "https://buymeacoffee.com/rukkitofficial/e/545645";
+
+interface StorageInfo { used: number; max: number; plan: string; extra_bytes?: number; }
 
 function getFileIcon(file: DriveFile) {
   if (file.type === "folder") {
@@ -403,6 +405,18 @@ export default function DrivePage() {
             background: storagePercent > 90 ? "#dc2626" : storagePercent > 70 ? "#f59e0b" : "var(--color-ink)",
             transition: "width 0.5s",
           }} />
+        </div>
+
+        {/* Extra storage purchase banner */}
+        <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--color-hairline)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+          <div>
+            <span style={{ fontSize: "0.8125rem", fontWeight: 600 }}>저장공간이 부족한가요?</span>
+            <span style={{ fontSize: "0.8125rem", color: "var(--color-muted)", marginLeft: 6 }}>10GB 추가 — ₩2,900/월</span>
+          </div>
+          <a href={BMC_STORAGE_URL} target="_blank" rel="noreferrer"
+            style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 14px", borderRadius: 8, background: "#FFDD00", color: "#1a1714", fontSize: "0.8125rem", fontWeight: 700, textDecoration: "none", whiteSpace: "nowrap" }}>
+            ☕ 저장공간 10GB 추가
+          </a>
         </div>
       </div>
     </div>
