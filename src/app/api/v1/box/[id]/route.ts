@@ -12,13 +12,21 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (error) return error;
 
     const body = await request.json();
-    const { notes } = body;
     const { getPool } = await import("@/lib/db/postgres");
     const pool = getPool();
 
+    const fields: string[] = [];
+    const values: unknown[] = [];
+    let idx = 1;
+    for (const key of ["notes", "original_name"]) {
+      if (key in body) { fields.push(`${key} = $${idx++}`); values.push(body[key]); }
+    }
+    if (!fields.length) return NextResponse.json({ error: "변경할 항목이 없습니다." }, { status: 400 });
+    values.push(id); values.push(user.id);
+
     const result = await pool.query(
-      "UPDATE box_items SET notes = $1 WHERE id = $2 AND user_id = $3 RETURNING *",
-      [notes, id, user.id]
+      `UPDATE box_items SET ${fields.join(", ")} WHERE id = $${idx++} AND user_id = $${idx} RETURNING *`,
+      values
     );
     if (!result.rows[0]) return NextResponse.json({ error: "Not found" }, { status: 404 });
     return NextResponse.json({ item: result.rows[0] });

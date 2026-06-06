@@ -20,6 +20,7 @@ export default function NotesPage() {
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
   const [saving, setSaving] = useState(false);
+  const [creating, setCreating] = useState(false);
   const [showNewFolder, setShowNewFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
 
@@ -44,6 +45,8 @@ export default function NotesPage() {
   useEffect(() => { loadNotes(); }, [loadNotes]);
 
   async function createNote() {
+    if (creating) return;
+    setCreating(true);
     const r = await fetch("/api/v1/notes", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -54,6 +57,7 @@ export default function NotesPage() {
       setNotes(prev => [d.note, ...prev]);
       selectNote(d.note);
     }
+    setCreating(false);
   }
 
   function selectNote(note: Note) {
@@ -148,7 +152,7 @@ export default function NotesPage() {
             placeholder="검색..."
             style={{ flex: 1, padding: "6px 10px", border: "1px solid var(--color-hairline)", borderRadius: "6px", fontSize: "0.875rem", background: "var(--color-surface)", color: "var(--color-ink)" }}
           />
-          <button onClick={createNote} style={{ padding: "6px 12px", background: "var(--color-accent)", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "0.875rem", whiteSpace: "nowrap" }}>+ 새 메모</button>
+          <button onClick={createNote} disabled={creating} style={{ padding: "6px 12px", background: "var(--color-accent)", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "0.875rem", whiteSpace: "nowrap", opacity: creating ? 0.7 : 1 }}>{creating ? "만드는 중..." : "+ 새 메모"}</button>
         </div>
         {loading ? (
           <div style={{ padding: "24px", color: "var(--color-muted)", fontSize: "0.875rem" }}>로딩 중...</div>

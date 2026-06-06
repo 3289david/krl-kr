@@ -1,7 +1,8 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import { ShareButton } from "@/components/share-button";
 
-interface BoxItem { id: string; original_name: string; file_size: number; mime_type: string; notes: string; archived_at: number; file_key: string; }
+interface BoxItem { id: string; original_name: string; file_size: number; mime_type: string; notes: string; archived_at: string | number; file_key: string; is_public?: boolean; share_token?: string | null; }
 
 function fmtDate(ts: number | string | null | undefined): string {
   if (!ts) return "";
@@ -14,16 +15,32 @@ function formatSize(bytes: number) {
   return (bytes / 1024 / 1024).toFixed(1) + " MB";
 }
 
+function getMimeIcon(mime: string) {
+  if (mime.startsWith("image/")) return "🖼";
+  if (mime.startsWith("video/")) return "🎬";
+  if (mime.startsWith("audio/")) return "🎵";
+  if (mime.includes("pdf")) return "📄";
+  if (mime.includes("zip") || mime.includes("tar") || mime.includes("gz")) return "📦";
+  if (mime.includes("word") || mime.includes("document")) return "📝";
+  if (mime.includes("sheet") || mime.includes("excel")) return "📊";
+  return "📁";
+}
+
 export default function BoxPage() {
   const [items, setItems] = useState<BoxItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [editNotes, setEditNotes] = useState<Record<string, string>>({});
+  const [renaming, setRenaming] = useState<Record<string, string>>({});
+  const [totalSize, setTotalSize] = useState(0);
   const fileInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetch("/api/v1/box").then(r => r.json()).then(d => {
-      if (d.items) setItems(d.items);
+      if (d.items) {
+        setItems(d.items);
+        setTotalSize(d.items.reduce((s: number, i: BoxItem) => s + (i.file_size || 0), 0));
+      }
       setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
@@ -37,10 +54,15 @@ export default function BoxPage() {
       fd.append("file", file);
       const r = await fetch("/api/v1/box/upload", { method: "POST", body: fd });
       const d = await r.json();
-      if (d.item) setItems(prev => [d.item, ...prev]);
-      else alert(d.error ?? "업로드 실패");
+      if (d.item) {
+        setItems(prev => [d.item, ...prev]);
+        setTotalSize(prev => prev + (d.item.file_size || 0));
+      } else {
+        alert(d.error ?? "업로드 실패");
+      }
     } catch (err) {
       console.error("Upload error:", err);
+      alert("업로드 중 오류가 발생했습니다.");
     } finally {
       setUploading(false);
       if (fileInput.current) fileInput.current.value = "";
@@ -59,19 +81,31 @@ export default function BoxPage() {
     setEditNotes(prev => { const n = { ...prev }; delete n[id]; return n; });
   }
 
-  async function deleteItem(id: string) {
-    if (!confirm("삭제하시겠습니까?")) return;
-    await fetch(`/api/v1/box/${id}`, { method: "DELETE" });
-    setItems(prev => prev.filter(i => i.id !== id));
+  async function renameItem(id: string) {
+    const name = renaming[id]?.trim();
+    if (!name) { setRenaming(prev => { const n = { ...prev }; delete n[id]; return n; }); return; }
+    const r = await fetch(`/api/v1/box/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ original_name: name }),
+    });
+    const d = await r.json();
+    if (d.item) setItems(prev => prev.map(i => i.id === id ? d.item : i));
+    setRenaming(prev => { const n = { ...prev }; delete n[id]; return n; });
   }
 
-  function getMimeIcon(mime: string) {
-    if (mime.startsWith("image/")) return "🖼";
-    if (mime.startsWith("video/")) return "🎬";
-    if (mime.startsWith("audio/")) return "🎵";
-    if (mime.includes("pdf")) return "📄";
-    if (mime.includes("zip") || mime.includes("tar")) return "📦";
-    return "📁";
+  async function deleteItem(id: string) {
+    if (!confirm("삭제하시겠습니까?")) return;
+    const item = items.find(i => i.id === id);
+    await fetch(`/api/v1/box/${id}`, { method: "DELETE" });
+    setItems(prev => prev.filter(i => i.id !== id));
+    if (item) setTotalSize(prev => prev - (item.file_size || 0));
+  }
+
+  async function copyLink(id: string) {
+    const url = `${window.location.origin}/api/v1/box/${id}/download`;
+    await navigator.clipboard.writeText(url).catch(() => {});
+    alert("다운로드 링크가 복사되었습니다.");
   }
 
   return (
@@ -79,41 +113,88 @@ export default function BoxPage() {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
         <div>
           <h1 style={{ fontSize: "1.5rem", fontWeight: 700, marginBottom: "4px" }}>KRL Box</h1>
-          <p style={{ color: "var(--color-muted)", fontSize: "0.9375rem" }}>디지털 보관함</p>
+          <p style={{ color: "var(--color-muted)", fontSize: "0.875rem" }}>
+            디지털 보관함 · {items.length}개 파일 · {formatSize(totalSize)}
+          </p>
         </div>
         <div style={{ display: "flex", gap: "8px" }}>
           <input ref={fileInput} type="file" style={{ display: "none" }} onChange={handleUpload} />
-          <button onClick={() => fileInput.current?.click()} disabled={uploading} style={{ padding: "8px 20px", background: "var(--color-accent)", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "0.9375rem", fontWeight: 600 }}>
+          <button
+            onClick={() => fileInput.current?.click()}
+            disabled={uploading}
+            style={{ padding: "8px 20px", background: "var(--color-accent)", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "0.9375rem", fontWeight: 600 }}
+          >
             {uploading ? "업로드 중..." : "파일 보관하기"}
           </button>
         </div>
       </div>
 
-      {loading ? <div style={{ color: "var(--color-muted)" }}>로딩 중...</div> : items.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "48px", color: "var(--color-muted)" }}>
+      {loading ? (
+        <div style={{ color: "var(--color-muted)" }}>로딩 중...</div>
+      ) : items.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "64px 32px", color: "var(--color-muted)", border: "2px dashed var(--color-hairline)", borderRadius: "16px" }}>
           <div style={{ fontSize: "48px", marginBottom: "12px" }}>📦</div>
-          <p>보관된 파일이 없습니다.</p>
+          <p style={{ marginBottom: "4px", fontWeight: 600 }}>보관된 파일이 없습니다.</p>
+          <p style={{ fontSize: "0.875rem" }}>파일을 업로드해서 보관하세요.</p>
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
           {items.map(item => (
             <div key={item.id} style={{ background: "var(--color-lifted)", border: "1px solid var(--color-hairline)", borderRadius: "12px", padding: "14px 16px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <span style={{ fontSize: "24px" }}>{getMimeIcon(item.mime_type)}</span>
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontWeight: 600, color: "var(--color-ink)", marginBottom: "2px" }}>{item.original_name}</p>
+                <span style={{ fontSize: "24px", flexShrink: 0 }}>{getMimeIcon(item.mime_type)}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  {item.id in renaming ? (
+                    <input
+                      value={renaming[item.id] ?? item.original_name}
+                      onChange={e => setRenaming(prev => ({ ...prev, [item.id]: e.target.value }))}
+                      onKeyDown={e => { if (e.key === "Enter") renameItem(item.id); if (e.key === "Escape") setRenaming(prev => { const n = { ...prev }; delete n[item.id]; return n; }); }}
+                      autoFocus
+                      style={{ width: "100%", padding: "2px 6px", border: "1px solid var(--color-accent)", borderRadius: "4px", fontSize: "0.9375rem", fontWeight: 600, background: "var(--color-surface)", color: "var(--color-ink)" }}
+                    />
+                  ) : (
+                    <p
+                      style={{ fontWeight: 600, color: "var(--color-ink)", marginBottom: "2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: "pointer" }}
+                      onDoubleClick={() => setRenaming(prev => ({ ...prev, [item.id]: item.original_name }))}
+                      title="더블클릭으로 이름 변경"
+                    >
+                      {item.original_name}
+                    </p>
+                  )}
                   <p style={{ fontSize: "0.8125rem", color: "var(--color-muted)" }}>
                     {formatSize(item.file_size)} · {fmtDate(item.archived_at)}
                   </p>
                 </div>
-                <button onClick={() => deleteItem(item.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-muted)", padding: "4px" }}>✕</button>
+                {/* Action buttons */}
+                <div style={{ display: "flex", gap: "4px", flexShrink: 0 }}>
+                  <a
+                    href={`/api/v1/box/${item.id}/download`}
+                    download={item.original_name}
+                    style={{ padding: "5px 10px", border: "1px solid var(--color-hairline)", borderRadius: "6px", background: "var(--color-accent)", color: "white", textDecoration: "none", fontSize: "0.8125rem", fontWeight: 600, display: "flex", alignItems: "center", gap: "4px" }}
+                    title="다운로드"
+                  >
+                    ↓ 다운로드
+                  </a>
+                  <button
+                    onClick={() => setRenaming(prev => ({ ...prev, [item.id]: item.original_name }))}
+                    style={{ padding: "5px 8px", border: "1px solid var(--color-hairline)", borderRadius: "6px", background: "transparent", cursor: "pointer", fontSize: "0.8125rem", color: "var(--color-muted)" }}
+                    title="이름 변경"
+                  >
+                    ✏
+                  </button>
+                  <button onClick={() => deleteItem(item.id)} style={{ padding: "5px 8px", border: "1px solid var(--color-hairline)", borderRadius: "6px", background: "transparent", cursor: "pointer", color: "#ef4444", fontSize: "0.875rem" }} title="삭제">✕</button>
+                </div>
               </div>
-              {/* Notes */}
-              <div style={{ marginTop: "8px", display: "flex", gap: "6px" }}>
+              {/* Share + Notes */}
+              <div style={{ marginTop: "8px" }} onClick={e => e.stopPropagation()}>
+                <ShareButton type="box" id={Number(item.id)} initialPublic={item.is_public} initialToken={item.share_token} />
+              </div>
+              <div style={{ marginTop: "10px", display: "flex", gap: "6px" }}>
                 <input
                   value={editNotes[item.id] ?? item.notes ?? ""}
                   onChange={e => setEditNotes(prev => ({ ...prev, [item.id]: e.target.value }))}
-                  placeholder="메모 추가..."
+                  placeholder="메모 추가... (Enter로 저장)"
+                  onKeyDown={e => e.key === "Enter" && updateNotes(item.id)}
                   style={{ flex: 1, padding: "4px 8px", border: "1px solid var(--color-hairline)", borderRadius: "6px", fontSize: "0.8125rem", background: "var(--color-surface)", color: "var(--color-ink)" }}
                 />
                 {item.id in editNotes && (

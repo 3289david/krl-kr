@@ -10,6 +10,7 @@ export default function SpacePage() {
   const [showNew, setShowNew] = useState(false);
   const [newSite, setNewSite] = useState({ slug: "", name: "", description: "", theme: "default", primary_color: "#6366f1" });
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     fetch("/api/v1/space").then(r => r.json()).then(d => {
@@ -19,15 +20,18 @@ export default function SpacePage() {
   }, []);
 
   async function createSite() {
+    if (submitting) return;
     setError("");
+    setSubmitting(true);
     const r = await fetch("/api/v1/space", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(newSite),
     });
     const d = await r.json();
-    if (!r.ok) { setError(d.error ?? "오류"); return; }
+    if (!r.ok) { setError(d.error ?? "오류"); setSubmitting(false); return; }
     if (d.site) { window.location.href = `/dashboard/space/${d.site.id}`; }
+    setSubmitting(false);
   }
 
   async function deleteSite(id: string, e: React.MouseEvent) {
@@ -72,7 +76,7 @@ export default function SpacePage() {
               <input type="color" value={newSite.primary_color} onChange={e => setNewSite(p => ({ ...p, primary_color: e.target.value }))} style={{ width: "40px", height: "32px", border: "none", cursor: "pointer", borderRadius: "4px", padding: 0 }} />
             </div>
             <div style={{ display: "flex", gap: "8px" }}>
-              <button onClick={createSite} style={{ padding: "8px 16px", background: "var(--color-accent)", color: "white", border: "none", borderRadius: "8px", cursor: "pointer" }}>만들기</button>
+              <button onClick={createSite} disabled={submitting} style={{ padding: "8px 16px", background: "var(--color-accent)", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", opacity: submitting ? 0.7 : 1 }}>{submitting ? "만드는 중..." : "만들기"}</button>
               <button onClick={() => setShowNew(false)} style={{ padding: "8px 12px", border: "1px solid var(--color-hairline)", borderRadius: "8px", background: "var(--color-surface)", cursor: "pointer" }}>취소</button>
             </div>
           </div>

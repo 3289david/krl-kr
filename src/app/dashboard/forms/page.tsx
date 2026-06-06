@@ -12,6 +12,7 @@ function fmtDate(ts: number | string | null | undefined): string {
 export default function FormsPage() {
   const [forms, setForms] = useState<Form[]>([]);
   const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     fetch("/api/v1/forms").then(r => r.json()).then(d => {
@@ -21,6 +22,8 @@ export default function FormsPage() {
   }, []);
 
   async function createForm() {
+    if (creating) return;
+    setCreating(true);
     const r = await fetch("/api/v1/forms", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -28,6 +31,7 @@ export default function FormsPage() {
     });
     const d = await r.json();
     if (d.form) window.location.href = `/dashboard/forms/${d.form.id}`;
+    setCreating(false);
   }
 
   async function deleteForm(id: string, e: React.MouseEvent) {
@@ -44,7 +48,7 @@ export default function FormsPage() {
           <h1 style={{ fontSize: "1.5rem", fontWeight: 700, marginBottom: "4px" }}>KRL Forms</h1>
           <p style={{ color: "var(--color-muted)", fontSize: "0.9375rem" }}>설문 폼 제작</p>
         </div>
-        <button onClick={createForm} style={{ padding: "8px 20px", background: "var(--color-accent)", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "0.9375rem", fontWeight: 600 }}>+ 새 설문</button>
+        <button onClick={createForm} disabled={creating} style={{ padding: "8px 20px", background: "var(--color-accent)", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "0.9375rem", fontWeight: 600, opacity: creating ? 0.7 : 1 }}>{creating ? "만드는 중..." : "+ 새 설문"}</button>
       </div>
 
       {loading ? <div style={{ color: "var(--color-muted)" }}>로딩 중...</div> : forms.length === 0 ? (

@@ -11,6 +11,7 @@ export default function WikiPage() {
   const [showNew, setShowNew] = useState(false);
   const [newWiki, setNewWiki] = useState({ slug: "", name: "", description: "", is_public: false });
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     fetch("/api/v1/wiki").then(r => r.json()).then(d => {
@@ -20,15 +21,18 @@ export default function WikiPage() {
   }, []);
 
   async function createWiki() {
+    if (submitting) return;
     setError("");
+    setSubmitting(true);
     const r = await fetch("/api/v1/wiki", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(newWiki),
     });
     const d = await r.json();
-    if (!r.ok) { setError(d.error ?? "오류"); return; }
+    if (!r.ok) { setError(d.error ?? "오류"); setSubmitting(false); return; }
     if (d.wiki) { setWikis(prev => [d.wiki, ...prev]); setShowNew(false); setNewWiki({ slug: "", name: "", description: "", is_public: false }); }
+    setSubmitting(false);
   }
 
   async function deleteWiki(id: string, e: React.MouseEvent) {
@@ -60,7 +64,7 @@ export default function WikiPage() {
               공개
             </label>
             <div style={{ display: "flex", gap: "8px" }}>
-              <button onClick={createWiki} style={{ padding: "8px 16px", background: "var(--color-accent)", color: "white", border: "none", borderRadius: "8px", cursor: "pointer" }}>만들기</button>
+              <button onClick={createWiki} disabled={submitting} style={{ padding: "8px 16px", background: "var(--color-accent)", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", opacity: submitting ? 0.7 : 1 }}>{submitting ? "만드는 중..." : "만들기"}</button>
               <button onClick={() => setShowNew(false)} style={{ padding: "8px 12px", border: "1px solid var(--color-hairline)", borderRadius: "8px", background: "var(--color-surface)", cursor: "pointer" }}>취소</button>
             </div>
           </div>

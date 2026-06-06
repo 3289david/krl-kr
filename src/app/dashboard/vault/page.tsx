@@ -42,13 +42,10 @@ export default function VaultPage() {
   const [newItem, setNewItem] = useState({ type: "password", name: "", username: "", password: "", url: "", notes: "" });
   const [error, setError] = useState("");
   const [userId, setUserId] = useState("");
+  const [adding, setAdding] = useState(false);
 
   useEffect(() => {
-    // Get user ID for salt
     fetch("/api/auth/me").then(r => r.json()).then(d => { if (d.user) setUserId(d.user.id); });
-    // Check session storage for master key indicator
-    const hasMaster = sessionStorage.getItem("vault_master_set");
-    if (hasMaster) { setMasterSet(true); }
   }, []);
 
   async function unlockVault() {
@@ -58,7 +55,6 @@ export default function VaultPage() {
       const key = await deriveKey(masterPassword, salt);
       setCryptoKey(key);
       setMasterSet(true);
-      sessionStorage.setItem("vault_master_set", "1");
       loadItems();
     } catch { setError("마스터 비밀번호 처리 오류"); }
   }
@@ -82,8 +78,10 @@ export default function VaultPage() {
   }
 
   async function addItem() {
-    if (!cryptoKey) { setError("마스터 비밀번호가 필요합니다."); return; }
+    if (!cryptoKey) { setError("마스터 비밀번호가 필요합니다. 잠금 해제 후 시도하세요."); return; }
     if (!newItem.name || !newItem.password) return;
+    if (adding) return;
+    setAdding(true);
     const { encrypted_data, iv } = await encryptData(cryptoKey, newItem.password);
     const r = await fetch("/api/v1/vault", {
       method: "POST",
@@ -92,6 +90,7 @@ export default function VaultPage() {
     });
     const d = await r.json();
     if (d.item) { setItems(prev => [...prev, d.item]); setShowAdd(false); setNewItem({ type: "password", name: "", username: "", password: "", url: "", notes: "" }); }
+    setAdding(false);
   }
 
   async function deleteItem(id: string) {
@@ -124,7 +123,7 @@ export default function VaultPage() {
           <p style={{ color: "var(--color-muted)", fontSize: "0.875rem" }}>클라이언트 측 AES-256 암호화</p>
         </div>
         <div style={{ display: "flex", gap: "8px" }}>
-          <button onClick={() => { setCryptoKey(null); setMasterSet(false); sessionStorage.removeItem("vault_master_set"); }} style={{ padding: "6px 12px", border: "1px solid var(--color-hairline)", borderRadius: "6px", background: "transparent", cursor: "pointer", fontSize: "0.875rem" }}>잠금</button>
+          <button onClick={() => { setCryptoKey(null); setMasterSet(false); setItems([]); }} style={{ padding: "6px 12px", border: "1px solid var(--color-hairline)", borderRadius: "6px", background: "transparent", cursor: "pointer", fontSize: "0.875rem" }}>잠금</button>
           <button onClick={() => setShowAdd(true)} style={{ padding: "8px 16px", background: "var(--color-accent)", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "0.9375rem", fontWeight: 600 }}>+ 추가</button>
         </div>
       </div>
@@ -144,7 +143,7 @@ export default function VaultPage() {
             <input type="password" value={newItem.password} onChange={e => setNewItem(p => ({ ...p, password: e.target.value }))} placeholder="비밀번호 / 비밀 내용" style={{ padding: "6px 10px", border: "1px solid var(--color-hairline)", borderRadius: "6px", fontSize: "0.875rem", background: "var(--color-surface)", color: "var(--color-ink)" }} />
             <input value={newItem.url} onChange={e => setNewItem(p => ({ ...p, url: e.target.value }))} placeholder="URL (선택)" style={{ padding: "6px 10px", border: "1px solid var(--color-hairline)", borderRadius: "6px", fontSize: "0.875rem", background: "var(--color-surface)", color: "var(--color-ink)" }} />
             <div style={{ display: "flex", gap: "8px" }}>
-              <button onClick={addItem} style={{ padding: "8px 16px", background: "var(--color-accent)", color: "white", border: "none", borderRadius: "8px", cursor: "pointer" }}>추가</button>
+              <button onClick={addItem} disabled={adding} style={{ padding: "8px 16px", background: "var(--color-accent)", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", opacity: adding ? 0.7 : 1 }}>{adding ? "추가 중..." : "추가"}</button>
               <button onClick={() => setShowAdd(false)} style={{ padding: "8px 12px", border: "1px solid var(--color-hairline)", borderRadius: "8px", background: "transparent", cursor: "pointer" }}>취소</button>
             </div>
           </div>
@@ -172,6 +171,9 @@ export default function VaultPage() {
             )}
           </div>
           {item.url && <a href={item.url} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ fontSize: "0.75rem", color: "var(--color-accent)", textDecoration: "none" }}>방문</a>}
+          {revealed[item.id] && (
+            <button onClick={() => { navigator.clipboard.writeText(revealed[item.id]); }} style={{ padding: "4px 8px", border: "1px solid var(--color-hairline)", borderRadius: "6px", background: "transparent", cursor: "pointer", fontSize: "0.8125rem", color: "var(--color-muted)" }} title="복사">📋</button>
+          )}
           <button onClick={() => revealed[item.id] ? setRevealed(p => { const r = { ...p }; delete r[item.id]; return r; }) : reveal(item)} style={{ padding: "4px 10px", border: "1px solid var(--color-hairline)", borderRadius: "6px", background: "transparent", cursor: "pointer", fontSize: "0.8125rem", color: "var(--color-body)" }}>
             {revealed[item.id] ? "숨기기" : "보기"}
           </button>

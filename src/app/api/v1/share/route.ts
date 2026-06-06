@@ -10,12 +10,12 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://krl.kr";
 // Map type → { table, ownership column }
 const TYPE_MAP: Record<string, { table: string; ownerCol: string }> = {
   note:        { table: "notes",          ownerCol: "user_id" },
-  doc:         { table: "docs",           ownerCol: "user_id" },
+  doc:         { table: "krl_docs",       ownerCol: "user_id" },
   wiki:        { table: "wikis",          ownerCol: "user_id" },
   whiteboard:  { table: "whiteboards",    ownerCol: "user_id" },
   git:         { table: "git_repos",      ownerCol: "user_id" },
-  form:        { table: "forms",           ownerCol: "user_id" },
-  project:     { table: "task_projects",  ownerCol: "user_id" },
+  form:        { table: "krl_forms",      ownerCol: "user_id" },
+  project:     { table: "tasks_projects", ownerCol: "user_id" },
   calendar:    { table: "calendars",      ownerCol: "user_id" },
   study_goal:  { table: "study_goals",    ownerCol: "user_id" },
   box:         { table: "box_items",      ownerCol: "user_id" },

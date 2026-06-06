@@ -25,6 +25,7 @@ export default function StudyPage() {
   // Goal form
   const [showGoalForm, setShowGoalForm] = useState(false);
   const [newGoal, setNewGoal] = useState({ title: "", subject: "", target_minutes: 60 });
+  const [submittingGoal, setSubmittingGoal] = useState(false);
 
   useEffect(() => {
     fetch("/api/v1/study/sessions").then(r => r.json()).then(d => { if (d.sessions) setSessions(d.sessions); });
@@ -83,6 +84,8 @@ export default function StudyPage() {
   }
 
   async function createGoal() {
+    if (submittingGoal) return;
+    setSubmittingGoal(true);
     const r = await fetch("/api/v1/study/goals", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -90,6 +93,7 @@ export default function StudyPage() {
     });
     const d = await r.json();
     if (d.goal) { setGoals(prev => [d.goal, ...prev]); setShowGoalForm(false); setNewGoal({ title: "", subject: "", target_minutes: 60 }); }
+    setSubmittingGoal(false);
   }
 
   async function deleteGoal(id: string) {
@@ -157,7 +161,7 @@ export default function StudyPage() {
                 <span style={{ fontSize: "0.8125rem", color: "var(--color-muted)" }}>분</span>
               </div>
               <div style={{ display: "flex", gap: "6px" }}>
-                <button onClick={createGoal} style={{ padding: "6px 12px", background: "var(--color-accent)", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "0.8125rem" }}>추가</button>
+                <button onClick={createGoal} disabled={submittingGoal} style={{ padding: "6px 12px", background: "var(--color-accent)", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "0.8125rem", opacity: submittingGoal ? 0.7 : 1 }}>{submittingGoal ? "추가 중..." : "추가"}</button>
                 <button onClick={() => setShowGoalForm(false)} style={{ padding: "6px 10px", border: "1px solid var(--color-hairline)", borderRadius: "6px", background: "transparent", cursor: "pointer", fontSize: "0.8125rem" }}>취소</button>
               </div>
             </div>

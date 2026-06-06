@@ -31,6 +31,7 @@ export default function TasksPage() {
   const [showNewProject, setShowNewProject] = useState(false);
   const [newTask, setNewTask] = useState({ title: "", priority: "medium", due_date: "" });
   const [newProjectName, setNewProjectName] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const loadProjects = useCallback(async () => {
     const r = await fetch("/api/v1/tasks/projects");
@@ -52,7 +53,8 @@ export default function TasksPage() {
   useEffect(() => { loadTasks(); }, [loadTasks]);
 
   async function createTask() {
-    if (!newTask.title.trim()) return;
+    if (!newTask.title.trim() || submitting) return;
+    setSubmitting(true);
     const r = await fetch("/api/v1/tasks", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -66,6 +68,7 @@ export default function TasksPage() {
     } else {
       alert(d.error || "오류가 발생했습니다");
     }
+    setSubmitting(false);
   }
 
   async function updateStatus(task: Task, status: string) {
@@ -132,7 +135,7 @@ export default function TasksPage() {
                   {Object.entries(PRIORITIES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                 </select>
                 <input type="date" value={newTask.due_date} onChange={e => setNewTask(p => ({ ...p, due_date: e.target.value }))} style={{ padding: "6px 10px", border: "1px solid var(--color-hairline)", borderRadius: "6px", fontSize: "0.875rem", background: "var(--color-surface)", color: "var(--color-ink)" }} />
-                <button onClick={createTask} style={{ padding: "6px 16px", background: "var(--color-accent)", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "0.875rem" }}>추가</button>
+                <button onClick={createTask} disabled={submitting} style={{ padding: "6px 16px", background: "var(--color-accent)", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "0.875rem", opacity: submitting ? 0.7 : 1 }}>{submitting ? "추가 중..." : "추가"}</button>
                 <button onClick={() => setShowNewTask(false)} style={{ padding: "6px 12px", background: "var(--color-surface)", border: "1px solid var(--color-hairline)", borderRadius: "6px", cursor: "pointer", fontSize: "0.875rem" }}>취소</button>
               </div>
             </div>

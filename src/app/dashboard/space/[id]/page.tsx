@@ -186,8 +186,17 @@ export default function SpaceEditorPage() {
         )}
         {pages.map(page => (
           <div key={page.id} onClick={() => selectPage(page)} style={{ padding: "8px 12px", cursor: "pointer", fontSize: "0.875rem", background: selectedPage?.id === page.id ? "var(--color-surface-card)" : "transparent", color: "var(--color-ink)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span>{page.title}</span>
-            {!page.is_published && <span style={{ fontSize: "0.7rem", color: "var(--color-muted)" }}>비공개</span>}
+            <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{page.title}</span>
+            <button
+              onClick={async e => {
+                e.stopPropagation();
+                if (!confirm("페이지를 삭제하시겠습니까?")) return;
+                await fetch(`/api/v1/space/${id}/pages/${page.id}`, { method: "DELETE" });
+                setPages(prev => prev.filter(p => p.id !== page.id));
+                if (selectedPage?.id === page.id) { setSelectedPage(null); setBlocks([]); }
+              }}
+              style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-muted)", padding: "2px", fontSize: "0.75rem", flexShrink: 0 }}
+            >✕</button>
           </div>
         ))}
       </div>

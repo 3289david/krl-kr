@@ -83,11 +83,12 @@ export async function POST(request: NextRequest) {
     };
 
     const originalName = file.name.replace(/\.[^.]+$/, "");
+    const safeFilename = encodeURIComponent(`${originalName}.${target_format}`);
     return new NextResponse(outputBuffer, {
       status: 200,
       headers: {
         "Content-Type": mimeMap[fmt] ?? "application/octet-stream",
-        "Content-Disposition": `attachment; filename="${originalName}.${target_format}"`,
+        "Content-Disposition": `attachment; filename*=UTF-8''${safeFilename}`,
         "Content-Length": String(outputBuffer.length),
       },
     });

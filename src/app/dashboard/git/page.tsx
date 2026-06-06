@@ -15,6 +15,7 @@ export default function GitPage() {
   const [loading, setLoading] = useState(true);
   const [showNew, setShowNew] = useState(false);
   const [newRepo, setNewRepo] = useState({ name: "", description: "", is_public: false });
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     fetch("/api/v1/git").then(r => r.json()).then(d => {
@@ -24,7 +25,8 @@ export default function GitPage() {
   }, []);
 
   async function createRepo() {
-    if (!newRepo.name.trim()) return;
+    if (!newRepo.name.trim() || submitting) return;
+    setSubmitting(true);
     const r = await fetch("/api/v1/git", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -32,6 +34,7 @@ export default function GitPage() {
     });
     const d = await r.json();
     if (d.repo) { setRepos(prev => [d.repo, ...prev]); setShowNew(false); setNewRepo({ name: "", description: "", is_public: false }); }
+    setSubmitting(false);
   }
 
   async function deleteRepo(id: string, e: React.MouseEvent) {
@@ -61,7 +64,7 @@ export default function GitPage() {
               공개 저장소
             </label>
             <div style={{ display: "flex", gap: "8px" }}>
-              <button onClick={createRepo} style={{ padding: "8px 16px", background: "var(--color-accent)", color: "white", border: "none", borderRadius: "8px", cursor: "pointer" }}>만들기</button>
+              <button onClick={createRepo} disabled={submitting} style={{ padding: "8px 16px", background: "var(--color-accent)", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", opacity: submitting ? 0.7 : 1 }}>{submitting ? "만드는 중..." : "만들기"}</button>
               <button onClick={() => setShowNew(false)} style={{ padding: "8px 12px", border: "1px solid var(--color-hairline)", borderRadius: "8px", background: "var(--color-surface)", cursor: "pointer" }}>취소</button>
             </div>
           </div>
