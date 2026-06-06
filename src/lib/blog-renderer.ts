@@ -8,9 +8,9 @@ function e(s: string | null | undefined): string {
   return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-function formatDate(ts: number | null): string {
+function formatDate(ts: number | string | null): string {
   if (!ts) return "";
-  return new Date(ts).toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" });
+  return new Date(Number(ts)).toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" });
 }
 
 function renderMarkdown(content: string): string {
@@ -335,7 +335,7 @@ export function renderRSS(blog: Blog, posts: Post[], baseUrl: string): string {
     <item>
       <title><![CDATA[${p.title}]]></title>
       <link>${baseUrl}/posts/${p.slug}</link>
-      <pubDate>${new Date(p.published_at ?? p.created_at).toUTCString()}</pubDate>
+      <pubDate>${new Date(Number(p.published_at ?? p.created_at)).toUTCString()}</pubDate>
       <description><![CDATA[${p.excerpt ?? p.content.slice(0, 300)}]]></description>
     </item>`).join("");
 

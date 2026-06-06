@@ -230,7 +230,7 @@ export default function AdminPlansPage() {
                 <div style={{ display: "flex", gap: 10, marginTop: 3, flexWrap: "wrap" }}>
                   {row.expires_at && (
                     <span style={{ fontSize: "0.75rem", color: "var(--color-muted)" }}>
-                      만료: {new Date(row.expires_at).toLocaleDateString("ko-KR")}
+                      만료: {new Date(Number(row.expires_at)).toLocaleDateString("ko-KR")}
                     </span>
                   )}
                   {(row.extra_storage_bytes ?? 0) > 0 && (

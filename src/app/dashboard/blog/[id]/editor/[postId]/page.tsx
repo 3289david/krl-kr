@@ -144,7 +144,7 @@ export default function EditorPage({ params }: { params: Promise<Params> }) {
       const data = await res.json();
       token = data.token;
     }
-    const url = `/api/v1/drive/share/${token}?preview=1`;
+    const url = `https://krl.kr/api/v1/drive/share/${token}?preview=1`;
     const md = `![${file.name}](${url})`;
     update("content", post.content + "\n" + md);
     setShowDrive(false);
