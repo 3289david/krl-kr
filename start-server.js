@@ -18,17 +18,17 @@ if (fs.existsSync(envFile)) {
   }
 }
 
-// Sync static assets to standalone dir (required for Next.js standalone mode)
+// Sync static assets into standalone dir on every start so chunk hashes always match
 const { execSync } = require('child_process');
 const standaloneNext = path.join(__dirname, '.next', 'standalone', '.next');
 const staticSrc = path.join(__dirname, '.next', 'static');
 const staticDest = path.join(standaloneNext, 'static');
 const buildIdSrc = path.join(__dirname, '.next', 'BUILD_ID');
 const buildIdDest = path.join(standaloneNext, 'BUILD_ID');
-if (fs.existsSync(staticSrc) && !fs.existsSync(staticDest)) {
-  execSync(`cp -r "${staticSrc}" "${staticDest}"`);
+if (fs.existsSync(staticSrc)) {
+  execSync(`rm -rf "${staticDest}" && cp -r "${staticSrc}" "${staticDest}"`);
 }
-if (fs.existsSync(buildIdSrc) && !fs.existsSync(buildIdDest)) {
+if (fs.existsSync(buildIdSrc)) {
   fs.copyFileSync(buildIdSrc, buildIdDest);
 }
 
