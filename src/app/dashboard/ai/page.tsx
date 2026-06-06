@@ -9,6 +9,7 @@ interface GeneratedImage {
   prompt: string;
   timestamp: number;
   seed?: number;
+  drive_file_id?: number | null;
 }
 
 const PLAN_LABEL: Record<string, string> = { free: "Free", pro: "Pro", vip: "VIP" };
@@ -260,12 +261,20 @@ export default function AIImagePage() {
                     <span style={{ fontSize: "0.7rem", color: "var(--color-muted)", background: "var(--color-canvas)", padding: "2px 8px", borderRadius: 99, border: "1px solid var(--color-hairline)" }}>
                       {img.model ?? "flux"}
                     </span>
-                    <button onClick={() => downloadImage(img)} className="btn btn-sm btn-ghost" style={{ fontSize: "0.75rem", marginLeft: "auto" }}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
-                      </svg>
-                      저장
-                    </button>
+                    <div style={{ display: "flex", gap: 6, marginLeft: "auto", alignItems: "center" }}>
+                      {img.drive_file_id && (
+                        <Link href="/dashboard/drive" style={{ fontSize: "0.7rem", color: "#2563eb", textDecoration: "none", display: "flex", alignItems: "center", gap: 3 }}>
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M16 6l-4-4-4 4M12 2v13"/></svg>
+                          Drive 저장됨
+                        </Link>
+                      )}
+                      <button onClick={() => downloadImage(img)} className="btn btn-sm btn-ghost" style={{ fontSize: "0.75rem" }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                        </svg>
+                        다운로드
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

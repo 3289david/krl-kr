@@ -157,12 +157,12 @@ export default function DrivePage() {
   async function handleShare(file: DriveFile) {
     setShareFile(file);
     if (file.share_token) {
-      setShareUrl(`${window.location.origin}/api/v1/drive/share/${file.share_token}?preview=1`);
+      setShareUrl(`${window.location.origin}/drive/share/${file.share_token}`);
     } else {
       const res = await fetch(`/api/v1/drive/${file.id}/share`, { method: "POST" });
       const data = await res.json();
       if (res.ok) {
-        setShareUrl(data.share_url + "?preview=1");
+        setShareUrl(`${window.location.origin}/drive/share/${data.token}`);
         setFiles(prev => prev.map(f => f.id === file.id ? { ...f, share_token: data.token, is_shared: true } : f));
       }
     }
@@ -328,9 +328,11 @@ export default function DrivePage() {
                           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4 M7 10l5 5 5-5 M12 15V3" /></svg>
                         </a>
                       )}
-                      <button onClick={() => handleShare(file)} className="btn btn-ghost" style={{ padding: "4px 8px", height: "auto", fontSize: "0.75rem" }} title="공유">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><path d="M8.59 13.51l6.83 3.98 M15.41 6.51l-6.82 3.98" /></svg>
-                      </button>
+                      {file.type === "file" && (
+                        <button onClick={() => handleShare(file)} className="btn btn-ghost" style={{ padding: "4px 8px", height: "auto", fontSize: "0.75rem" }} title="공유">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><path d="M8.59 13.51l6.83 3.98 M15.41 6.51l-6.82 3.98" /></svg>
+                        </button>
+                      )}
                       <button onClick={() => { setRenameId(file.id); setRenameName(file.name); }} className="btn btn-ghost" style={{ padding: "4px 8px", height: "auto" }} title="이름 변경">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7 M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
                       </button>

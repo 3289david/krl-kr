@@ -24,7 +24,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const appUrl = process.env.APP_URL ?? "https://krl.kr";
     return NextResponse.json({
-      share_url: `${appUrl}/api/v1/drive/share/${token}`,
+      share_url: `${appUrl}/drive/share/${token}`,
       token,
     });
   } catch (err) {
