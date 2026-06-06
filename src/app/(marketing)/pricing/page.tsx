@@ -232,7 +232,7 @@ export default function PricingPage() {
 
               {plan.id !== "free" && (
                 <p style={{ textAlign: "center", fontSize: "0.75rem", color: "var(--color-muted)", marginTop: 10, lineHeight: 1.5 }}>
-                  결제 후 웹훅으로 <strong>즉시 자동 활성화</strong>
+                  결제 시 가입한 이메일로 자동 활성화
                 </p>
               )}
             </div>
@@ -256,13 +256,13 @@ export default function PricingPage() {
                 num: "2",
                 color: "#16a34a",
                 title: "자동 감지",
-                desc: "BMC 웹훅이 결제를 즉시 감지하여 KRL.KR 계정을 자동으로 업그레이드합니다.",
+                desc: "결제 완료 즉시 KRL.KR에 웹훅이 전달되어 계정이 자동으로 업그레이드됩니다.",
               },
               {
                 num: "3",
                 color: "#7c3aed",
                 title: "즉시 사용",
-                desc: "새로운 기능이 바로 활성화됩니다. 별도 이메일 인증 없이 모든 플랜 혜택을 즉시 이용하세요.",
+                desc: "새로운 기능이 바로 활성화됩니다. KRL.KR 가입 이메일과 BMC 결제 이메일이 동일해야 합니다.",
               },
             ].map((s) => (
               <div key={s.num} style={{ display: "flex", gap: 14 }}>
@@ -275,12 +275,9 @@ export default function PricingPage() {
             ))}
           </div>
           <div style={{ textAlign: "center", marginTop: 28, paddingTop: 24, borderTop: "1px solid var(--color-hairline)" }}>
-            <p style={{ color: "var(--color-muted)", fontSize: "0.875rem", marginBottom: 16 }}>
-              BMC 이메일과 KRL.KR 이메일이 다를 경우, 설정에서 BMC 이메일을 등록해주세요.
+            <p style={{ color: "var(--color-muted)", fontSize: "0.875rem" }}>
+              BuyMeACoffee 결제 시 <strong>KRL.KR 가입 이메일과 동일한 이메일</strong>을 사용해야 자동 활성화됩니다.
             </p>
-            <Link href="/dashboard/settings" style={{ color: "#2563eb", fontWeight: 600, fontSize: "0.875rem", textDecoration: "none" }}>
-              설정 페이지에서 BMC 이메일 등록 →
-            </Link>
           </div>
         </div>
 
@@ -363,7 +360,7 @@ export default function PricingPage() {
             },
             {
               q: "결제 후 언제 활성화되나요?",
-              a: "BuyMeACoffee 웹훅을 통해 결제 즉시 자동으로 플랜이 활성화됩니다. BMC와 KRL.KR의 이메일이 다를 경우 설정 페이지에서 BMC 이메일을 등록하면 됩니다.",
+              a: "BuyMeACoffee 결제 즉시 웹훅으로 자동 활성화됩니다. 단, BMC 결제에 사용한 이메일과 KRL.KR 가입 이메일이 동일해야 합니다.",
             },
             {
               q: "언제든 취소할 수 있나요?",

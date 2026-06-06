@@ -63,12 +63,9 @@ async function upsertUserPlan(
   plan: "pro" | "vip" | "free",
   orderId?: string
 ) {
-  // Find user by email
+  // Find user by their registered email only
   const userResult = await pool.query(
-    `SELECT u.id FROM users u
-     LEFT JOIN user_plans up ON up.user_id = u.id
-     WHERE LOWER(u.email) = LOWER($1) OR LOWER(up.bmc_email) = LOWER($1)
-     LIMIT 1`,
+    `SELECT id FROM users WHERE LOWER(email) = LOWER($1) LIMIT 1`,
     [email]
   );
 
