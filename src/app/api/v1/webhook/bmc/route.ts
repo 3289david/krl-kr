@@ -5,14 +5,19 @@
  *   1. https://www.buymeacoffee.com/dashboard/webhooks
  *   2. Webhook URL: https://krl.kr/api/v1/webhook/bmc
  *   3. Copy webhook secret → BMC_WEBHOOK_SECRET env variable
+ *
+ * Extra storage product: https://buymeacoffee.com/rukkitofficial/e/545645
+ * → Adds 10GB per purchase to user's extra_storage_bytes
  */
 import { NextRequest, NextResponse } from "next/server";
 import { createHmac } from "crypto";
 
 export const runtime = "nodejs";
 
+const EXTRA_STORAGE_PRODUCT_ID = "545645";
+const EXTRA_STORAGE_BYTES = 10 * 1024 * 1024 * 1024; // 10GB
+
 function resolvePlan(title: string, amount: number, pspId?: string, durationType?: string): "pro" | "vip" | null {
-  // GIVE_AWAY / lifetime giveaway memberships are still valid — treat as pro
   if (
     pspId === "GIVE_AWAY" ||
     String(durationType ?? "").toLowerCase().includes("giveaway") ||
@@ -28,7 +33,7 @@ function resolvePlan(title: string, amount: number, pspId?: string, durationType
 }
 
 function verifySignature(rawBody: string, signature: string, secret: string): boolean {
-  if (!signature) return true; // no sig = skip check (for testing)
+  if (!signature) return true;
   try {
     const expected = createHmac("sha256", secret).update(rawBody).digest("hex");
     const clean = signature.replace(/^sha256=/i, "");
@@ -41,7 +46,6 @@ function verifySignature(rawBody: string, signature: string, secret: string): bo
 async function getPool() {
   const { getPool: _getPool } = await import("@/lib/db/postgres");
   const pool = _getPool();
-  // Ensure user_plans table with TEXT user_id
   await pool.query(`
     CREATE TABLE IF NOT EXISTS user_plans (
       id SERIAL PRIMARY KEY,
@@ -51,9 +55,14 @@ async function getPool() {
       bmc_order_id TEXT,
       verified_at BIGINT,
       expires_at BIGINT,
+      extra_storage_bytes BIGINT NOT NULL DEFAULT 0,
+      storage_override_bytes BIGINT,
       created_at BIGINT NOT NULL
     )
   `);
+  // Ensure columns exist for older installations
+  await pool.query(`ALTER TABLE user_plans ADD COLUMN IF NOT EXISTS extra_storage_bytes BIGINT NOT NULL DEFAULT 0`).catch(() => {});
+  await pool.query(`ALTER TABLE user_plans ADD COLUMN IF NOT EXISTS storage_override_bytes BIGINT`).catch(() => {});
   return pool;
 }
 
@@ -63,7 +72,6 @@ async function upsertUserPlan(
   plan: "pro" | "vip" | "free",
   orderId?: string
 ) {
-  // Find user by their registered email only
   const userResult = await pool.query(
     `SELECT id FROM users WHERE LOWER(email) = LOWER($1) LIMIT 1`,
     [email]
@@ -71,7 +79,6 @@ async function upsertUserPlan(
 
   if (!userResult.rows[0]) {
     console.log(`[BMC] No user found for ${email} — storing pending`);
-    // Store pending: create row with email only so it activates when they register
     await pool.query(`
       INSERT INTO user_plans (user_id, plan, bmc_email, verified_at, expires_at, created_at)
       VALUES ($1, $2, $3, $4, $5, $4)
@@ -100,11 +107,50 @@ async function upsertUserPlan(
   return userId;
 }
 
+async function addExtraStorage(pool: import("pg").Pool, email: string, bytes: number, orderId?: string) {
+  const userResult = await pool.query(
+    `SELECT id FROM users WHERE LOWER(email) = LOWER($1) LIMIT 1`,
+    [email]
+  );
+
+  if (!userResult.rows[0]) {
+    console.log(`[BMC] Extra storage: no user found for ${email}`);
+    return null;
+  }
+
+  const userId = userResult.rows[0].id;
+  const now = Date.now();
+
+  await pool.query(`
+    INSERT INTO user_plans (user_id, plan, extra_storage_bytes, created_at)
+    VALUES ($1, 'free', $2, $3)
+    ON CONFLICT (user_id) DO UPDATE SET
+      extra_storage_bytes = user_plans.extra_storage_bytes + $2,
+      bmc_order_id = COALESCE($4, user_plans.bmc_order_id)
+  `, [userId, bytes, now, orderId ?? null]);
+
+  const gb = Math.round(bytes / (1024 * 1024 * 1024));
+  console.log(`[BMC] Extra storage +${gb}GB for ${userId} (${email})`);
+  return userId;
+}
+
+function isExtraStorageProduct(data: Record<string, unknown>): boolean {
+  const extraId = String(data.extra_id ?? data.product_id ?? data.item_id ?? "");
+  if (extraId === EXTRA_STORAGE_PRODUCT_ID) return true;
+
+  const title = String(data.extra_title ?? data.product_title ?? data.item_title ?? "").toLowerCase();
+  if (title.includes("저장") || title.includes("storage") || title.includes("10gb")) return true;
+
+  const url = String(data.extra_url ?? data.product_url ?? "");
+  if (url.includes(EXTRA_STORAGE_PRODUCT_ID)) return true;
+
+  return false;
+}
+
 export async function POST(request: NextRequest) {
   const secret = process.env.BMC_WEBHOOK_SECRET;
   const rawBody = await request.text();
 
-  // Log every incoming webhook for debugging
   console.log(`[BMC webhook] headers: ${JSON.stringify({
     sig: request.headers.get("x-bmc-signature") ?? request.headers.get("x-webhook-signature") ?? "none",
     type: request.headers.get("content-type"),
@@ -126,11 +172,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  // BMC sends various formats — handle all
   const type = String(payload.type ?? payload.event ?? "unknown").toLowerCase();
   const data = (payload.data ?? payload) as Record<string, unknown>;
 
-  // Extract email from all possible fields
   const email = String(
     data.supporter_email ?? data.payer_email ?? data.email ??
     payload.supporter_email ?? payload.email ?? ""
@@ -141,7 +185,22 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ received: true, skipped: "no_email" });
   }
 
-  // Extract plan info
+  const pool = await getPool();
+
+  // Handle extra (one-time product) purchases — e.g. 추가 저장공간
+  const isExtraPurchase = type.includes("extra") || type.includes("one_time") ||
+    type.includes("support.new") || type.includes("support_new");
+
+  if (isExtraPurchase || (type === "unknown" && data.extra_id)) {
+    if (isExtraStorageProduct(data)) {
+      const orderId = String(data.support_id ?? data.order_id ?? data.extra_id ?? "");
+      await addExtraStorage(pool, email, EXTRA_STORAGE_BYTES, orderId);
+      return NextResponse.json({ received: true, action: "extra_storage_added", gb: 10, email });
+    }
+    // Non-storage extra — fall through to plan logic
+  }
+
+  // Handle membership events
   const planTitle = String(data.support_plan_title ?? data.plan_title ?? data.tier_title ?? data.membership_name ?? "");
   const amountRaw = data.support_plan_amount ?? data.amount ?? data.price ?? data.supporter_membership_amount ?? 0;
   const amount = parseFloat(String(amountRaw)) || 0;
@@ -149,9 +208,6 @@ export async function POST(request: NextRequest) {
   const pspId = String(data.psp_id ?? "");
   const durationType = String(data.duration_type ?? "");
 
-  const pool = await getPool();
-
-  // Determine action based on event type
   const isCancellation = type.includes("cancel") || type.includes("expired") || type.includes("fail") || type.includes("refund");
   const isActive = type.includes("start") || type.includes("new") || type.includes("update") ||
     type.includes("payment") || type.includes("active") || type.includes("renew") || type.includes("member");
@@ -195,7 +251,6 @@ export async function DELETE(request: NextRequest) {
     RETURNING user_id, bmc_email
   `, [now]);
 
-  // Also activate pending plans for users who have since registered
   const pending = await pool.query(`
     SELECT up.user_id as pending_key, up.plan, up.bmc_email, up.expires_at, u.id as real_user_id
     FROM user_plans up

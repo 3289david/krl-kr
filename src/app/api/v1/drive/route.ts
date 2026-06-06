@@ -85,14 +85,21 @@ export async function GET(request: NextRequest) {
 
     const result = await pool.query(query, queryParams);
 
-    const planRow = await pool.query("SELECT plan FROM user_plans WHERE user_id = $1", [user.id]);
+    const planRow = await pool.query(
+      "SELECT plan, extra_storage_bytes, storage_override_bytes FROM user_plans WHERE user_id = $1",
+      [user.id]
+    );
     const plan = planRow.rows[0]?.plan ?? "free";
-    const maxStorage = PLAN_STORAGE[plan] ?? PLAN_STORAGE.free;
+    const extraBytes = Number(planRow.rows[0]?.extra_storage_bytes ?? 0);
+    const overrideBytes = planRow.rows[0]?.storage_override_bytes != null
+      ? Number(planRow.rows[0].storage_override_bytes) : null;
+    const planMax = PLAN_STORAGE[plan] ?? PLAN_STORAGE.free;
+    const maxStorage = overrideBytes != null ? overrideBytes : planMax + extraBytes;
     const usedStorage = getUserTotalStorage(user.id);
 
     return NextResponse.json({
       files: result.rows,
-      storage: { used: usedStorage, max: maxStorage, plan },
+      storage: { used: usedStorage, max: maxStorage, plan, extra_bytes: extraBytes },
     });
   } catch (err) {
     console.error("[drive GET]", err);
@@ -126,9 +133,16 @@ export async function POST(request: NextRequest) {
 
     // Upload file
     if (contentType.includes("multipart/form-data")) {
-      const planRow = await pool.query("SELECT plan FROM user_plans WHERE user_id = $1", [user.id]);
+      const planRow = await pool.query(
+        "SELECT plan, extra_storage_bytes, storage_override_bytes FROM user_plans WHERE user_id = $1",
+        [user.id]
+      );
       const plan = planRow.rows[0]?.plan ?? "free";
-      const maxStorage = PLAN_STORAGE[plan] ?? PLAN_STORAGE.free;
+      const extraBytes = Number(planRow.rows[0]?.extra_storage_bytes ?? 0);
+      const overrideBytes = planRow.rows[0]?.storage_override_bytes != null
+        ? Number(planRow.rows[0].storage_override_bytes) : null;
+      const planMax = PLAN_STORAGE[plan] ?? PLAN_STORAGE.free;
+      const maxStorage = overrideBytes != null ? overrideBytes : planMax + extraBytes;
       const usedStorage = getUserTotalStorage(user.id);
 
       const formData = await request.formData();
