@@ -37,8 +37,9 @@ async function ensureTable() {
   return pool;
 }
 
-function getUserDriveSize(userId: string | number): number {
-  const dir = path.join(DRIVE_DIR, String(userId));
+const BLOG_MEDIA_DIR = "/var/www/krl-kr/blog-media";
+
+function getDirSize(dir: string): number {
   if (!fs.existsSync(dir)) return 0;
   let total = 0;
   function walk(d: string) {
@@ -50,6 +51,11 @@ function getUserDriveSize(userId: string | number): number {
   }
   walk(dir);
   return total;
+}
+
+function getUserTotalStorage(userId: string | number): number {
+  const id = String(userId);
+  return getDirSize(path.join(DRIVE_DIR, id)) + getDirSize(path.join(BLOG_MEDIA_DIR, id));
 }
 
 export async function GET(request: NextRequest) {
@@ -82,7 +88,7 @@ export async function GET(request: NextRequest) {
     const planRow = await pool.query("SELECT plan FROM user_plans WHERE user_id = $1", [user.id]);
     const plan = planRow.rows[0]?.plan ?? "free";
     const maxStorage = PLAN_STORAGE[plan] ?? PLAN_STORAGE.free;
-    const usedStorage = getUserDriveSize(user.id);
+    const usedStorage = getUserTotalStorage(user.id);
 
     return NextResponse.json({
       files: result.rows,
@@ -123,7 +129,7 @@ export async function POST(request: NextRequest) {
       const planRow = await pool.query("SELECT plan FROM user_plans WHERE user_id = $1", [user.id]);
       const plan = planRow.rows[0]?.plan ?? "free";
       const maxStorage = PLAN_STORAGE[plan] ?? PLAN_STORAGE.free;
-      const usedStorage = getUserDriveSize(user.id);
+      const usedStorage = getUserTotalStorage(user.id);
 
       const formData = await request.formData();
       const file = formData.get("file") as File | null;

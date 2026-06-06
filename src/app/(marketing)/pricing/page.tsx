@@ -25,10 +25,10 @@ const PLANS = [
       { text: "서브도메인 (4자 이상)" },
       { text: "파일 공유 (100MB/파일)" },
       { text: "이메일 수신함 1개" },
-      { text: "KRL Drive 5GB" },
+      { text: "통합 저장공간 5GB (Drive + Blog)" },
+      { text: "KRL Blog 1개 · 기본 테마 5종" },
       { text: "웹 호스팅 1개 사이트 (500MB)" },
-      { text: "AI 채팅 (Pollinations AI)" },
-      { text: "AI 이미지 생성 5장/일" },
+      { text: "AI 채팅 20회/일" },
       { text: "Link-in-Bio 프로필" },
       { text: "커뮤니티 참여" },
     ],
@@ -49,13 +49,15 @@ const PLANS = [
     accentBg: "#eff6ff",
     features: [
       { text: "Free 플랜의 모든 기능" },
-      { text: "KRL Drive 20GB" },
-      { text: "웹 호스팅 5개 사이트 (사이트당 3GB)" },
-      { text: "AI 채팅 — GPT-5", bold: true },
+      { text: "통합 저장공간 20GB (Drive + Blog)", bold: true },
+      { text: "KRL Blog 5개 · 프리미엄 테마 · 예약 발행", bold: true },
+      { text: "블로그 AI (제목·태그·SEO·맞춤법)", bold: true },
+      { text: "웹 호스팅 5개 사이트 (3GB/사이트)" },
+      { text: "AI 채팅 500회/일", bold: true },
       { text: "AI 이미지 생성 50장/일", bold: true },
       { text: "서브도메인 제한 없음 (1자~)" },
       { text: "파일 공유 (500MB/파일)" },
-      { text: "웹훅 자동 플랜 활성화" },
+      { text: "추가 저장공간 구매 가능 (10GB/₩2,900)" },
       { text: "우선 지원" },
     ],
     cta: "Pro 구독하기",
@@ -75,12 +77,14 @@ const PLANS = [
     accentBg: "#f5f3ff",
     features: [
       { text: "Pro 플랜의 모든 기능" },
-      { text: "KRL Drive 100GB" },
-      { text: "웹 호스팅 무제한 사이트 (10GB/사이트)" },
-      { text: "AI 채팅 — GPT-5 Pro", bold: true },
+      { text: "통합 저장공간 100GB (Drive + Blog)", bold: true },
+      { text: "KRL Blog 무제한 · 커스텀 CSS · 팀 블로그", bold: true },
+      { text: "정적 사이트 내보내기 → KRL Hosting 배포", bold: true },
+      { text: "웹 호스팅 무제한 (10GB/사이트)" },
+      { text: "AI 채팅 무제한", bold: true },
       { text: "AI 이미지 생성 200장/일 (고화질)", bold: true },
+      { text: "추가 저장공간 구매 가능 (10GB/₩2,900)" },
       { text: "우선 지원 (빠른 응답)" },
-      { text: "커스텀 기능 요청" },
       { text: "베타 기능 조기 접근" },
     ],
     cta: "VIP 구독하기",
@@ -95,12 +99,14 @@ const COMPARE_ROWS = [
   { label: "URL 단축", free: "무제한", pro: "무제한", vip: "무제한" },
   { label: "QR 코드", free: "무제한", pro: "무제한", vip: "무제한" },
   { label: "서브도메인", free: "4자 이상", pro: "제한 없음", vip: "제한 없음" },
-  { label: "KRL Drive", free: "5GB", pro: "20GB", vip: "100GB" },
-  { label: "웹 호스팅 사이트", free: "1개 (500MB)", pro: "5개 (3GB/사이트)", vip: "무제한 (10GB/사이트)" },
-  { label: "AI 채팅 모델", free: "Pollinations AI", pro: "GPT-5", vip: "GPT-5 Pro" },
-  { label: "AI 이미지 생성", free: "5장/일", pro: "50장/일", vip: "200장/일 (고화질)" },
+  { label: "통합 저장공간¹", free: "5GB", pro: "20GB", vip: "100GB" },
+  { label: "KRL Blog", free: "1개 · 기본테마", pro: "5개 · 프리미엄테마", vip: "무제한 · 커스텀CSS" },
+  { label: "블로그 AI", free: "—", pro: "제목·태그·SEO·맞춤법", vip: "무제한" },
+  { label: "웹 호스팅", free: "1개 (500MB)", pro: "5개 (3GB/사이트)", vip: "무제한 (10GB/사이트)" },
+  { label: "AI 채팅", free: "20회/일", pro: "500회/일", vip: "무제한" },
+  { label: "AI 이미지 생성", free: "불가", pro: "50장/일", vip: "200장/일 (고화질)" },
   { label: "파일 공유 용량", free: "100MB/파일", pro: "500MB/파일", vip: "500MB/파일" },
-  { label: "플랜 활성화", free: "—", pro: "웹훅 자동", vip: "웹훅 자동" },
+  { label: "추가 저장공간", free: "—", pro: "10GB/₩2,900", vip: "10GB/₩2,900" },
   { label: "지원", free: "커뮤니티", pro: "우선 지원", vip: "우선 + 빠른 응답" },
 ];
 
@@ -346,6 +352,11 @@ export default function PricingPage() {
           </div>
         </div>
 
+        {/* Storage footnote */}
+        <p style={{ textAlign: "center", fontSize: "0.8125rem", color: "var(--color-muted)", marginTop: 12 }}>
+          ¹ 통합 저장공간은 KRL Drive + KRL Blog 이미지 합산 기준. 웹 호스팅·파일 공유는 별도. 추가 저장공간은 Pro/VIP에서 10GB 단위로 구매 가능 (₩2,900/10GB/월).
+        </p>
+
         {/* FAQ */}
         <div style={{ marginTop: 72, maxWidth: 680, margin: "72px auto 0" }}>
           <h2 style={{ fontSize: "1.625rem", fontWeight: 800, letterSpacing: "-0.02em", marginBottom: 24, textAlign: "center" }}>자주 묻는 질문</h2>
@@ -373,6 +384,14 @@ export default function PricingPage() {
             {
               q: "AI 모델은 어떻게 다른가요?",
               a: "Free는 Pollinations AI를 사용합니다. Pro는 OpenAI GPT-5, VIP는 GPT-5 Pro를 사용하여 더 정확하고 빠른 응답을 제공합니다. 이미지 생성도 VIP는 고화질(flux-pro) 모델이 적용됩니다.",
+            },
+            {
+              q: "KRL Blog는 어떤 서비스인가요?",
+              a: "slug.krl.kr 형태의 개인 블로그를 만들 수 있는 서비스입니다. Markdown 에디터, 코드 블록, 댓글, RSS, Open Graph 자동 생성을 지원합니다. Pro 이상에서는 예약 발행, AI 글쓰기 도우미(제목 추천·태그·SEO·맞춤법 교정), 프리미엄 테마를 사용할 수 있습니다.",
+            },
+            {
+              q: "추가 저장공간은 어떻게 구매하나요?",
+              a: "Pro/VIP 사용자는 10GB 단위로 추가 저장공간을 구매할 수 있습니다 (₩2,900/10GB/월). 추가 공간은 Drive와 Blog에 통합 적용됩니다. (준비 중)",
             },
           ].map((faq, i) => (
             <div key={i} className="faq-item">

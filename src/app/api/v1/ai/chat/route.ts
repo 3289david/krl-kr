@@ -1,6 +1,32 @@
 import { NextRequest } from "next/server";
 import { getSessionFromRequest } from "@/lib/auth";
 
+// Daily rate limits per plan
+const CHAT_LIMITS: Record<string, number> = { free: 20, pro: 500, vip: 9999 };
+
+async function checkRateLimit(userId: string, plan: string): Promise<{ ok: boolean; used: number; limit: number }> {
+  const { getPool } = await import("@/lib/db/postgres");
+  const pool = getPool();
+  await pool.query(`CREATE TABLE IF NOT EXISTS ai_chat_usage (
+    id SERIAL PRIMARY KEY, user_id TEXT NOT NULL, created_at BIGINT NOT NULL
+  )`).catch(() => {});
+  const dayStart = new Date();
+  dayStart.setHours(0, 0, 0, 0);
+  const row = await pool.query(
+    "SELECT COUNT(*) as c FROM ai_chat_usage WHERE user_id = $1 AND created_at >= $2",
+    [userId, dayStart.getTime()]
+  );
+  const used = parseInt(row.rows[0]?.c ?? "0");
+  const limit = CHAT_LIMITS[plan] ?? CHAT_LIMITS.free;
+  return { ok: used < limit, used, limit };
+}
+
+async function recordUsage(userId: string) {
+  const { getPool } = await import("@/lib/db/postgres");
+  const pool = getPool();
+  await pool.query("INSERT INTO ai_chat_usage (user_id, created_at) VALUES ($1, $2)", [userId, Date.now()]).catch(() => {});
+}
+
 export const runtime = "nodejs";
 
 interface Message {
@@ -120,6 +146,14 @@ async function chatWithOpenAI(messages: Message[], plan: string, stream: boolean
 
 export async function POST(request: NextRequest) {
   try {
+    // Require authentication for AI chat — not a public API
+    const session = await getSessionFromRequest(request);
+    if (!session) {
+      return new Response(JSON.stringify({ error: "로그인이 필요합니다." }), {
+        status: 401, headers: { "Content-Type": "application/json" },
+      });
+    }
+
     const body = await request.json();
     const messages: Message[] = body.messages ?? [];
     const stream: boolean = body.stream ?? false;
@@ -133,11 +167,22 @@ export async function POST(request: NextRequest) {
 
     const plan = await getUserPlan(request);
 
+    // Rate limit check
+    const rl = await checkRateLimit(session.userId, plan);
+    if (!rl.ok) {
+      return new Response(JSON.stringify({ error: `오늘 AI 채팅 한도(${rl.limit}회)에 도달했습니다. 내일 다시 시도하거나 플랜을 업그레이드하세요.`, limit_reached: true, used: rl.used, limit: rl.limit }), {
+        status: 429, headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    // Record usage (fire and forget)
+    recordUsage(session.userId);
+
     // 1. Try Pollinations first (free, no API key needed)
     if (!stream) {
       const pollinationsReply = await chatWithPollinations(messages, plan);
       if (pollinationsReply) {
-        return new Response(JSON.stringify({ content: pollinationsReply, model: "pollinations" }), {
+        return new Response(JSON.stringify({ content: pollinationsReply, model: "pollinations", used: rl.used + 1, limit: rl.limit }), {
           headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
         });
       }

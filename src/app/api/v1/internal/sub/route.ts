@@ -6,11 +6,13 @@
  * - redirect / github / vercel / api → 302 to target
  * - html → serve stored HTML (if target looks like a URL, redirects instead)
  * - hosting → serve static files from disk
+ * - blog → serve blog pages (home, posts, tags, RSS)
  */
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db/postgres";
 import path from "path";
 import fs from "fs";
+import { renderBlogHome, renderBlogPost, renderTagPage, renderRSS, renderNotFound } from "@/lib/blog-renderer";
 
 const HOSTING_DIR = "/var/www/krl-kr/hosting";
 
@@ -137,6 +139,81 @@ a:hover{opacity:.8}
 </div></body></html>`;
 };
 
+async function serveBlog(
+  pool: import("pg").Pool,
+  blog: Record<string, unknown>,
+  request: NextRequest,
+  name: string
+): Promise<NextResponse> {
+  const baseUrl = `https://${name}.krl.kr`;
+  const originalUri = (request.headers.get("x-original-uri") ?? "/").split("?")[0];
+  const segments = originalUri.replace(/^\//, "").split("/").filter(Boolean);
+
+  // Track view (async, don't await)
+  pool.query("UPDATE blogs SET updated_at = updated_at WHERE id = $1", [blog.id]).catch(() => {});
+
+  // RSS feed
+  if (segments[0] === "rss.xml" || segments[0] === "feed") {
+    const posts = await pool.query(
+      "SELECT * FROM blog_posts WHERE blog_id = $1 AND status = 'published' ORDER BY published_at DESC LIMIT 50",
+      [blog.id]
+    );
+    const rss = renderRSS(blog as Parameters<typeof renderRSS>[0], posts.rows, baseUrl);
+    return new NextResponse(rss, { headers: { "Content-Type": "application/rss+xml; charset=utf-8" } });
+  }
+
+  // Single post: /posts/{slug}
+  if (segments[0] === "posts" && segments[1]) {
+    const postSlug = segments[1];
+    const postResult = await pool.query(
+      "SELECT * FROM blog_posts WHERE blog_id = $1 AND slug = $2 AND status = 'published' LIMIT 1",
+      [blog.id, postSlug]
+    );
+    const post = postResult.rows[0];
+    if (!post) {
+      return new NextResponse(renderNotFound(blog as Parameters<typeof renderNotFound>[0], baseUrl), {
+        status: 404, headers: { "Content-Type": "text/html; charset=utf-8" },
+      });
+    }
+
+    // Increment view count
+    pool.query("UPDATE blog_posts SET view_count = view_count + 1 WHERE id = $1", [post.id]).catch(() => {});
+
+    // Load approved comments
+    const comments = await pool.query(
+      "SELECT author_name, content, created_at FROM blog_comments WHERE post_id = $1 AND status = 'approved' ORDER BY created_at ASC",
+      [post.id]
+    );
+
+    const html = renderBlogPost(
+      blog as Parameters<typeof renderBlogPost>[0],
+      post,
+      comments.rows,
+      baseUrl
+    );
+    return new NextResponse(html, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=60" } });
+  }
+
+  // Tag page: /tag/{tagname}
+  if (segments[0] === "tag" && segments[1]) {
+    const tag = decodeURIComponent(segments[1]);
+    const tagged = await pool.query(
+      "SELECT * FROM blog_posts WHERE blog_id = $1 AND status = 'published' AND $2 = ANY(tags) ORDER BY published_at DESC",
+      [blog.id, tag]
+    );
+    const html = renderTagPage(blog as Parameters<typeof renderTagPage>[0], tag, tagged.rows, baseUrl);
+    return new NextResponse(html, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=60" } });
+  }
+
+  // Homepage: /
+  const posts = await pool.query(
+    "SELECT * FROM blog_posts WHERE blog_id = $1 AND status = 'published' ORDER BY published_at DESC LIMIT 50",
+    [blog.id]
+  );
+  const html = renderBlogHome(blog as Parameters<typeof renderBlogHome>[0], posts.rows, baseUrl);
+  return new NextResponse(html, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=30" } });
+}
+
 export async function GET(request: NextRequest) {
   const name = request.nextUrl.searchParams.get("name");
 
@@ -150,11 +227,13 @@ export async function GET(request: NextRequest) {
       .bind(name)
       .first<{ target: string; type: string }>();
 
-    // Check hosting sites if not found in subdomains
+    // Check hosting sites and blogs if not found in subdomains
     if (!row) {
       try {
         const { getPool } = await import("@/lib/db/postgres");
         const pool = getPool();
+
+        // Check hosting
         const hostingResult = await pool.query(
           "SELECT id FROM hosting_sites WHERE subdomain = $1 AND status = 'active' LIMIT 1",
           [name]
@@ -163,15 +242,23 @@ export async function GET(request: NextRequest) {
           const siteId = String(hostingResult.rows[0].id);
           const siteDir = path.join(HOSTING_DIR, siteId);
           const originalUri = request.headers.get("x-original-uri") ?? "/";
-          // Count only HTML page visits (not assets)
           const ext = originalUri.split("?")[0].split(".").pop()?.toLowerCase() ?? "";
           if (!ext || ext === "html" || ext === "htm") {
             pool.query("UPDATE hosting_sites SET visit_count = COALESCE(visit_count,0) + 1 WHERE id = $1", [siteId]).catch(() => {});
           }
           return serveHostingFile(siteDir, originalUri);
         }
+
+        // Check blogs
+        const blogResult = await pool.query(
+          "SELECT * FROM blogs WHERE slug = $1 AND is_public = TRUE LIMIT 1",
+          [name]
+        );
+        if (blogResult.rows[0]) {
+          return await serveBlog(pool, blogResult.rows[0], request, name);
+        }
       } catch (e) {
-        console.error("[sub] hosting lookup error:", e);
+        console.error("[sub] lookup error:", e);
       }
 
       return new NextResponse(NOT_FOUND_HTML(name), {
