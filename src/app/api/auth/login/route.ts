@@ -3,6 +3,7 @@ import { getDB } from "@/lib/env";
 import { z } from "zod";
 import { verifyPassword, createToken, getSessionCookieOptions, checkRateLimit } from "@/lib/auth";
 import { verifyAltcha } from "@/lib/altcha";
+import { SignJWT } from "jose";
 
 const LoginSchema = z.object({
   email: z.string().email("유효한 이메일을 입력해주세요."),
@@ -67,6 +68,8 @@ export async function POST(request: NextRequest) {
         name: string | null;
         password_hash: string | null;
         plan: string;
+        totp_enabled: boolean | null;
+        totp_secret: string | null;
       }>();
 
     // Timing-safe: always run verify even if user not found
@@ -81,6 +84,21 @@ export async function POST(request: NextRequest) {
         { error: "이메일 또는 비밀번호가 올바르지 않습니다.", code: "INVALID_CREDENTIALS" },
         { status: 401 }
       );
+    }
+
+    // 2FA check
+    if (user.totp_enabled && user.totp_secret) {
+      const JWT_SECRET = new TextEncoder().encode(
+        process.env.JWT_SECRET ?? "krl-kr-dev-secret-change-in-production"
+      );
+      const tempToken = await new SignJWT({ userId: user.id })
+        .setProtectedHeader({ alg: "HS256" })
+        .setIssuedAt()
+        .setExpirationTime("5m")
+        .setIssuer("krl.kr")
+        .setAudience("krl.kr")
+        .sign(JWT_SECRET);
+      return NextResponse.json({ requires2fa: true, tempToken });
     }
 
     // Create session token

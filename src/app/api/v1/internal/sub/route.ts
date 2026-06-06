@@ -139,13 +139,12 @@ a:hover{opacity:.8}
 </div></body></html>`;
 };
 
-async function serveBlog(
+export async function serveBlog(
   pool: import("pg").Pool,
   blog: Record<string, unknown>,
   request: NextRequest,
-  name: string
+  baseUrl: string
 ): Promise<NextResponse> {
-  const baseUrl = `https://${name}.krl.kr`;
   const originalUri = (request.headers.get("x-original-uri") ?? "/").split("?")[0];
   const segments = originalUri.replace(/^\//, "").split("/").filter(Boolean);
 
@@ -179,17 +178,28 @@ async function serveBlog(
     // Increment view count
     pool.query("UPDATE blog_posts SET view_count = view_count + 1 WHERE id = $1", [post.id]).catch(() => {});
 
-    // Load approved comments
-    const comments = await pool.query(
-      "SELECT author_name, content, created_at FROM blog_comments WHERE post_id = $1 AND status = 'approved' ORDER BY created_at ASC",
-      [post.id]
-    );
+    // Load approved comments + prev/next posts
+    const [comments, prevRes, nextRes] = await Promise.all([
+      pool.query(
+        "SELECT author_name, content, created_at FROM blog_comments WHERE post_id = $1 AND status = 'approved' ORDER BY created_at ASC",
+        [post.id]
+      ),
+      pool.query(
+        "SELECT title, slug FROM blog_posts WHERE blog_id = $1 AND status = 'published' AND id < $2 ORDER BY id DESC LIMIT 1",
+        [blog.id, post.id]
+      ),
+      pool.query(
+        "SELECT title, slug FROM blog_posts WHERE blog_id = $1 AND status = 'published' AND id > $2 ORDER BY id ASC LIMIT 1",
+        [blog.id, post.id]
+      ),
+    ]);
 
     const html = renderBlogPost(
       blog as Parameters<typeof renderBlogPost>[0],
       post,
       comments.rows,
-      baseUrl
+      baseUrl,
+      { prev: prevRes.rows[0] ?? null, next: nextRes.rows[0] ?? null }
     );
     return new NextResponse(html, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=60" } });
   }
@@ -255,7 +265,9 @@ export async function GET(request: NextRequest) {
           [name]
         );
         if (blogResult.rows[0]) {
-          return await serveBlog(pool, blogResult.rows[0], request, name);
+          const customDomain = blogResult.rows[0].custom_domain as string | null;
+          const bUrl = customDomain ? `https://${customDomain}` : `https://${name}.krl.kr`;
+          return await serveBlog(pool, blogResult.rows[0], request, bUrl);
         }
       } catch (e) {
         console.error("[sub] lookup error:", e);

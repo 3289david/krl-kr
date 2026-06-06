@@ -6,7 +6,7 @@ import Link from "next/link";
 interface Blog {
   id: number; slug: string; title: string; description: string;
   theme: string; primary_color: string; font: string; custom_css: string;
-  is_public: boolean; footer_text: string;
+  is_public: boolean; footer_text: string; custom_domain: string;
 }
 
 const THEMES = [
@@ -50,6 +50,7 @@ export default function BlogSettingsPage({ params }: { params: Promise<{ id: str
         title: blog.title, description: blog.description, theme: blog.theme,
         primary_color: blog.primary_color, font: blog.font, custom_css: blog.custom_css,
         is_public: blog.is_public, footer_text: blog.footer_text,
+        custom_domain: blog.custom_domain || null,
       }),
     });
     const data = await res.json();
@@ -138,6 +139,28 @@ export default function BlogSettingsPage({ params }: { params: Promise<{ id: str
               <label style={{ display: "block", fontSize: "0.8125rem", fontWeight: 500, marginBottom: 5 }}>커스텀 CSS (VIP)</label>
               <textarea className="input" value={blog.custom_css ?? ""} onChange={e => upd("custom_css", e.target.value)} rows={5} style={{ fontFamily: "monospace", fontSize: "0.875rem", resize: "vertical" }} placeholder="/* 추가 CSS */" />
             </div>
+          </div>
+        </section>
+
+        {/* Custom domain */}
+        <section style={{ background: "var(--color-surface)", border: "1px solid var(--color-hairline)", borderRadius: 12, padding: "20px 24px" }}>
+          <h3 style={{ fontWeight: 600, fontSize: "0.9375rem", marginBottom: 4 }}>커스텀 도메인</h3>
+          <p style={{ fontSize: "0.8125rem", color: "var(--color-muted)", marginBottom: 16, lineHeight: 1.6 }}>
+            자신의 도메인을 블로그에 연결하세요. DNS A 레코드를 <strong>194.163.184.59</strong>로 설정하세요.
+          </p>
+          <div>
+            <label style={{ display: "block", fontSize: "0.8125rem", fontWeight: 500, marginBottom: 5 }}>도메인 (예: blog.example.com)</label>
+            <input className="input" value={blog.custom_domain ?? ""} onChange={e => upd("custom_domain", e.target.value)}
+              placeholder="blog.example.com" style={{ maxWidth: 340 }} />
+          </div>
+          <div style={{ marginTop: 12, padding: "12px 16px", background: "var(--color-canvas)", borderRadius: 8, border: "1px solid var(--color-hairline)" }}>
+            <p style={{ fontSize: "0.8125rem", fontWeight: 600, marginBottom: 8 }}>DNS 설정 방법:</p>
+            <ol style={{ fontSize: "0.8125rem", color: "var(--color-muted)", paddingLeft: 18, lineHeight: 2 }}>
+              <li>DNS 제공자에서 A 레코드를 추가하세요</li>
+              <li>이름: <code style={{ background: "var(--color-surface)", padding: "1px 6px", borderRadius: 4 }}>@</code> 또는 서브도메인</li>
+              <li>값: <code style={{ background: "var(--color-surface)", padding: "1px 6px", borderRadius: 4 }}>194.163.184.59</code></li>
+              <li>저장 후 위에 도메인 입력 → 설정 저장</li>
+            </ol>
           </div>
         </section>
 

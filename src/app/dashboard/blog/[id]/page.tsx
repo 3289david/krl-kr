@@ -69,6 +69,7 @@ export default function BlogPostsPage({ params }: { params: Promise<{ id: string
           <a href={`https://${blog?.slug}.krl.kr`} target="_blank" rel="noreferrer" style={{ fontSize: "0.8125rem", color: "var(--color-muted)" }}>{blog?.slug}.krl.kr</a>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
+          <Link href={`/dashboard/blog/${id}/comments`} className="btn btn-sm btn-ghost">댓글 관리</Link>
           <Link href={`/dashboard/blog/${id}/settings`} className="btn btn-sm btn-ghost">설정</Link>
           <Link href={`/dashboard/blog/${id}/editor`} className="btn btn-sm btn-primary">+ 새 글</Link>
         </div>

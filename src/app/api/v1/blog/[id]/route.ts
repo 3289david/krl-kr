@@ -40,7 +40,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     await ensureBlogTables(pool);
 
     const body = await request.json();
-    const { title, description, theme, primary_color, font, custom_css, is_public, footer_text } = body;
+    const { title, description, theme, primary_color, font, custom_css, is_public, footer_text, custom_domain } = body;
+
+    // Normalize custom_domain: strip protocol, lowercase, null if empty
+    let cleanDomain: string | null = null;
+    if (custom_domain && typeof custom_domain === "string" && custom_domain.trim()) {
+      cleanDomain = custom_domain.trim().replace(/^https?:\/\//i, "").replace(/\/.*$/, "").toLowerCase();
+    }
 
     const result = await pool.query(
       `UPDATE blogs SET
@@ -52,9 +58,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         custom_css = COALESCE($6, custom_css),
         is_public = COALESCE($7, is_public),
         footer_text = COALESCE($8, footer_text),
-        updated_at = $9
-       WHERE id = $10 AND user_id = $11 RETURNING *`,
-      [title, description, theme, primary_color, font, custom_css, is_public, footer_text, Date.now(), id, user.id]
+        custom_domain = $9,
+        updated_at = $10
+       WHERE id = $11 AND user_id = $12 RETURNING *`,
+      [title, description, theme, primary_color, font, custom_css, is_public, footer_text, cleanDomain, Date.now(), id, user.id]
     );
     if (!result.rows[0]) return NextResponse.json({ error: "블로그를 찾을 수 없습니다." }, { status: 404 });
 

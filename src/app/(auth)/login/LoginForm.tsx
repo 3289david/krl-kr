@@ -1,7 +1,7 @@
 "use client";
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 
 const ERROR_MESSAGES: Record<string, string> = {
   oauth_not_configured: "OAuth가 아직 설정되지 않았습니다. 관리자에게 문의하세요.",
@@ -30,12 +30,61 @@ function GitHubIcon() {
   );
 }
 
+function TwoFAStep({ tempToken, redirectTo }: { tempToken: string; redirectTo: string }) {
+  const [token, setToken] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  async function verify() {
+    if (token.length !== 6) return;
+    setLoading(true);
+    setError("");
+    const r = await fetch("/api/v1/auth/2fa/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, tempToken }),
+    });
+    const d = await r.json();
+    if (r.ok && d.success) {
+      router.push(redirectTo);
+    } else {
+      setError(d.error ?? "인증에 실패했습니다.");
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--color-canvas)", padding: "24px", fontFamily: "var(--font-sans)" }}>
+      <div style={{ width: "100%", maxWidth: "400px" }}>
+        <div style={{ textAlign: "center", marginBottom: "36px" }}>
+          <Link href="/" style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: "1.25rem", letterSpacing: "0.04em", color: "var(--color-ink)", textDecoration: "none" }}>KRL.KR</Link>
+        </div>
+        <div style={{ background: "var(--color-lifted)", border: "1px solid var(--color-hairline-strong)", borderRadius: "var(--radius-xl)", padding: "40px" }}>
+          <h1 style={{ fontSize: "1.375rem", fontWeight: 700, letterSpacing: "-0.02em", marginBottom: "8px", color: "var(--color-ink)" }}>2단계 인증</h1>
+          <p style={{ fontSize: "0.9375rem", color: "var(--color-muted)", marginBottom: "24px" }}>인증 앱에서 6자리 코드를 입력하세요.</p>
+          {error && <div style={{ padding: "10px 14px", background: "#FFF1F2", border: "1px solid #FECDD3", borderRadius: "10px", marginBottom: "16px", color: "#9B1C1C", fontSize: "0.875rem" }}>{error}</div>}
+          <input
+            type="text" inputMode="numeric" maxLength={6} autoFocus
+            value={token} onChange={e => setToken(e.target.value.replace(/\D/g, ""))}
+            onKeyDown={e => e.key === "Enter" && verify()}
+            placeholder="000000"
+            style={{ width: "100%", padding: "14px", border: "1.5px solid var(--color-hairline-strong)", borderRadius: "10px", fontSize: "1.5rem", textAlign: "center", letterSpacing: "0.3em", fontFamily: "var(--font-mono)", background: "var(--color-canvas)", color: "var(--color-ink)", marginBottom: "16px" }}
+          />
+          <button onClick={verify} disabled={loading || token.length !== 6} style={{ width: "100%", padding: "13px", background: "var(--color-ink)", color: "var(--color-canvas)", border: "none", borderRadius: "10px", fontSize: "1rem", fontWeight: 700, cursor: "pointer" }}>
+            {loading ? "확인 중..." : "인증 완료"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function LoginFormInner() {
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect") ?? "/dashboard";
   const errorCode = searchParams.get("error") ?? "";
   const errorMsg = ERROR_MESSAGES[errorCode] ?? (errorCode ? "로그인에 실패했습니다. 다시 시도해주세요." : "");
-
   const googleHref = `/api/auth/google${redirectTo !== "/dashboard" ? `?redirect=${encodeURIComponent(redirectTo)}` : ""}`;
   const githubHref = `/api/auth/github${redirectTo !== "/dashboard" ? `?redirect=${encodeURIComponent(redirectTo)}` : ""}`;
 

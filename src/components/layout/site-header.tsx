@@ -51,6 +51,24 @@ const DEFAULT_CONFIG: HeaderConfig = {
   logo: { text: "KRL.KR", href: "/" },
   navMenus: [
     {
+      id: "krl-services", label: "KRL 서비스", visible: true,
+      items: [
+        { id: "notes", href: "/dashboard/notes", label: "KRL Notes", desc: "클라우드 메모 서비스", icon: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M16 13H8 M16 17H8 M10 9H8", visible: true },
+        { id: "tasks", href: "/dashboard/tasks", label: "KRL Tasks", desc: "할 일 관리", icon: "M9 11l3 3L22 4 M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11", visible: true },
+        { id: "calendar", href: "/dashboard/calendar", label: "KRL Calendar", desc: "일정 관리", icon: "M8 2v4 M16 2v4 M3 10h18 M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z", visible: true },
+        { id: "docs", href: "/dashboard/docs", label: "KRL Docs", desc: "문서 작성 · 공동편집", icon: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6", visible: true },
+        { id: "whiteboard", href: "/dashboard/whiteboard", label: "KRL Whiteboard", desc: "온라인 화이트보드", icon: "M12 20h9 M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z", visible: true },
+        { id: "git", href: "/dashboard/git", label: "KRL Git", desc: "코드 저장소", icon: "M18 3a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3H6a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3V6a3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3h12a3 3 0 0 0 3-3 3 3 0 0 0-3-3z", visible: true },
+        { id: "forms", href: "/dashboard/forms", label: "KRL Forms", desc: "설문 폼 제작", icon: "M9 11l3 3 8-8 M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11", visible: true },
+        { id: "convert", href: "/dashboard/convert", label: "KRL Convert", desc: "파일 변환 서비스", icon: "M7 16V4m0 0L3 8m4-4l4 4 M17 8v12m0 0l4-4m-4 4l-4-4", visible: true },
+        { id: "study", href: "/dashboard/study", label: "KRL Study", desc: "공부 타이머 · 목표", icon: "M12 20h9 M12 4v16 M4 4h8 M4 12h8 M4 20h8", visible: true },
+        { id: "wiki", href: "/dashboard/wiki", label: "KRL Wiki", desc: "위키 만들기", icon: "M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 0 1 3h9z", visible: true },
+        { id: "vault", href: "/dashboard/vault", label: "KRL Vault", desc: "비밀번호 보관함", icon: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z", visible: true },
+        { id: "box", href: "/dashboard/box", label: "KRL Box", desc: "디지털 보관함", icon: "M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z", visible: true },
+        { id: "space", href: "/dashboard/space", label: "KRL Space", desc: "웹사이트 빌더", icon: "M12 2L2 7l10 5 10-5-10-5z M2 17l10 5 10-5 M2 12l10 5 10-5", visible: true },
+      ],
+    },
+    {
       id: "links-qr", label: "링크 · QR", visible: true,
       items: [
         { id: "url-shortener", href: "/", label: "URL 단축기", desc: "krl.kr/abc 형태의 짧은 주소", icon: "M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71", icon2: "M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71", visible: true },

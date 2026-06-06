@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { CheckIcon, AlertCircleIcon, EyeIcon, EyeOffIcon } from "@/components/icons";
+import Image from "next/image";
 
 interface User {
   id: string;
@@ -35,6 +36,16 @@ export default function SettingsPage() {
   const [deleteConfirm, setDeleteConfirm] = useState("");
   const [deleting, setDeleting] = useState(false);
 
+  // 2FA state
+  const [totpEnabled, setTotpEnabled] = useState(false);
+  const [totpSection, setTotpSection] = useState<"idle" | "setup" | "disable">("idle");
+  const [totpSecret, setTotpSecret] = useState("");
+  const [totpQR, setTotpQR] = useState("");
+  const [totpToken, setTotpToken] = useState("");
+  const [totpLoading, setTotpLoading] = useState(false);
+  const [totpError, setTotpError] = useState("");
+  const [totpSuccess, setTotpSuccess] = useState("");
+
   useEffect(() => {
     fetch("/api/auth/me")
       .then((r) => r.json())
@@ -43,6 +54,7 @@ export default function SettingsPage() {
           setUser(d.user);
           setName(d.user.name ?? "");
           setAvatarUrl(d.user.avatar_url ?? "");
+          setTotpEnabled(!!d.user.totp_enabled);
         }
       })
       .catch(() => {})
@@ -98,6 +110,60 @@ export default function SettingsPage() {
       }
     } catch { setPasswordError("네트워크 오류가 발생했습니다."); }
     finally { setSavingPassword(false); }
+  }
+
+  async function handleStart2FASetup() {
+    setTotpLoading(true);
+    setTotpError("");
+    try {
+      const res = await fetch("/api/v1/auth/2fa/setup");
+      const d = await res.json();
+      if (!res.ok) { setTotpError(d.error ?? "오류가 발생했습니다."); return; }
+      setTotpSecret(d.secret);
+      setTotpQR(d.qr_data_url);
+      setTotpSection("setup");
+    } catch { setTotpError("네트워크 오류"); }
+    finally { setTotpLoading(false); }
+  }
+
+  async function handleVerify2FA() {
+    setTotpLoading(true);
+    setTotpError("");
+    try {
+      const res = await fetch("/api/v1/auth/2fa/setup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: totpToken }),
+      });
+      const d = await res.json();
+      if (!res.ok) { setTotpError(d.error ?? "오류"); return; }
+      setTotpEnabled(true);
+      setTotpSection("idle");
+      setTotpToken("");
+      setTotpSuccess("2단계 인증이 활성화되었습니다.");
+      setTimeout(() => setTotpSuccess(""), 3000);
+    } catch { setTotpError("네트워크 오류"); }
+    finally { setTotpLoading(false); }
+  }
+
+  async function handleDisable2FA() {
+    setTotpLoading(true);
+    setTotpError("");
+    try {
+      const res = await fetch("/api/v1/auth/2fa/disable", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: totpToken }),
+      });
+      const d = await res.json();
+      if (!res.ok) { setTotpError(d.error ?? "오류"); return; }
+      setTotpEnabled(false);
+      setTotpSection("idle");
+      setTotpToken("");
+      setTotpSuccess("2단계 인증이 비활성화되었습니다.");
+      setTimeout(() => setTotpSuccess(""), 3000);
+    } catch { setTotpError("네트워크 오류"); }
+    finally { setTotpLoading(false); }
   }
 
   async function handleDeleteAccount() {
@@ -174,6 +240,86 @@ export default function SettingsPage() {
             {passwordSaved ? <><CheckIcon size={14} />변경됨</> : savingPassword ? "변경 중..." : "비밀번호 변경"}
           </button>
         </form>
+      </div>
+
+      {/* 2FA */}
+      <div style={{ background: "var(--color-lifted)", border: "1px solid var(--color-hairline)", borderRadius: "var(--radius-xl)", padding: "24px", marginBottom: "20px" }}>
+        <h3 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "8px" }}>2단계 인증 (2FA)</h3>
+        <p style={{ fontSize: "0.875rem", color: "var(--color-muted)", marginBottom: "16px" }}>
+          {totpEnabled ? "2단계 인증이 활성화되어 있습니다. 로그인 시 OTP 앱에서 코드를 입력해야 합니다." : "2단계 인증을 활성화하면 보안이 강화됩니다."}
+        </p>
+        {totpError && (
+          <div style={{ padding: "10px 14px", background: "#FFF1F2", border: "1px solid #FECDD3", borderRadius: "8px", marginBottom: "12px", color: "#9B1C1C", fontSize: "0.875rem" }}>
+            {totpError}
+          </div>
+        )}
+        {totpSuccess && (
+          <div style={{ padding: "10px 14px", background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: "8px", marginBottom: "12px", color: "#14532D", fontSize: "0.875rem" }}>
+            {totpSuccess}
+          </div>
+        )}
+        {totpSection === "idle" && (
+          <button
+            onClick={() => { setTotpError(""); totpEnabled ? setTotpSection("disable") : handleStart2FASetup(); }}
+            disabled={totpLoading}
+            className="btn btn-sm btn-pill"
+            style={{ background: totpEnabled ? "var(--color-danger)" : "var(--color-accent)", color: "white", border: "none" }}
+          >
+            {totpLoading ? "처리 중..." : totpEnabled ? "비활성화" : "활성화"}
+          </button>
+        )}
+        {totpSection === "setup" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            {totpQR && (
+              <div>
+                <p style={{ fontSize: "0.875rem", marginBottom: "8px", fontWeight: 500 }}>QR 코드를 스캔하세요</p>
+                <Image src={totpQR} alt="TOTP QR Code" width={200} height={200} style={{ borderRadius: "8px" }} unoptimized />
+              </div>
+            )}
+            {!totpQR && totpSecret && (
+              <div>
+                <p style={{ fontSize: "0.875rem", marginBottom: "4px" }}>비밀 키 (수동 입력):</p>
+                <code style={{ fontSize: "0.875rem", background: "var(--color-surface)", padding: "8px 12px", borderRadius: "6px", display: "block" }}>{totpSecret}</code>
+              </div>
+            )}
+            <div>
+              <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 500, marginBottom: "6px" }}>앱에서 생성된 6자리 코드 입력</label>
+              <input
+                type="text" inputMode="numeric" maxLength={6}
+                value={totpToken} onChange={(e) => setTotpToken(e.target.value.replace(/\D/g, ""))}
+                placeholder="000000" className="input" style={{ maxWidth: "180px", letterSpacing: "0.2em", textAlign: "center" }}
+              />
+            </div>
+            <div style={{ display: "flex", gap: "8px" }}>
+              <button onClick={handleVerify2FA} disabled={totpLoading || totpToken.length !== 6} className="btn btn-primary btn-sm btn-pill">
+                {totpLoading ? "확인 중..." : "인증 완료"}
+              </button>
+              <button onClick={() => { setTotpSection("idle"); setTotpToken(""); setTotpError(""); }} className="btn btn-sm btn-pill" style={{ background: "var(--color-surface)", border: "1px solid var(--color-hairline)" }}>
+                취소
+              </button>
+            </div>
+          </div>
+        )}
+        {totpSection === "disable" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            <div>
+              <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 500, marginBottom: "6px" }}>현재 OTP 코드를 입력하세요</label>
+              <input
+                type="text" inputMode="numeric" maxLength={6}
+                value={totpToken} onChange={(e) => setTotpToken(e.target.value.replace(/\D/g, ""))}
+                placeholder="000000" className="input" style={{ maxWidth: "180px", letterSpacing: "0.2em", textAlign: "center" }}
+              />
+            </div>
+            <div style={{ display: "flex", gap: "8px" }}>
+              <button onClick={handleDisable2FA} disabled={totpLoading || totpToken.length !== 6} className="btn btn-sm btn-pill" style={{ background: "var(--color-danger)", color: "white", border: "none" }}>
+                {totpLoading ? "처리 중..." : "비활성화 확인"}
+              </button>
+              <button onClick={() => { setTotpSection("idle"); setTotpToken(""); setTotpError(""); }} className="btn btn-sm btn-pill" style={{ background: "var(--color-surface)", border: "1px solid var(--color-hairline)" }}>
+                취소
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Danger zone */}
