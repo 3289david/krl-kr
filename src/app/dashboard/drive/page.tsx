@@ -387,7 +387,30 @@ export default function DrivePage() {
         .drv-row:hover .drv-actions { display:flex; }
         .drv-row.sel .drv-size { display:none; }
         .drv-row.sel .drv-actions { display:flex; }
-        @media(max-width:640px){ .drv-nav{ display:none } }
+        /* 모바일 */
+        .drv-mobile-nav { display:none; position:fixed; bottom:0; left:0; right:0; height:56px; background:var(--color-surface); border-top:1px solid var(--color-hairline); z-index:100; }
+        .drv-mobile-tab { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; border:none; background:none; cursor:pointer; font-size:.6875rem; color:var(--color-muted); padding:6px 0; transition:color .15s; }
+        .drv-mobile-tab.active { color:#3b82f6; }
+        .drv-mobile-tab svg { transition:transform .15s; }
+        .drv-mobile-tab.active svg { transform:scale(1.1); }
+        .drv-fab { display:none; position:fixed; bottom:70px; right:18px; width:52px; height:52px; border-radius:50%; background:#3b82f6; color:#fff; border:none; cursor:pointer; box-shadow:0 4px 16px rgba(59,130,246,.5); font-size:1.5rem; align-items:center; justify-content:center; z-index:101; transition:transform .15s,box-shadow .15s; }
+        .drv-fab:hover { transform:scale(1.05); box-shadow:0 6px 20px rgba(59,130,246,.6); }
+        .drv-fab:active { transform:scale(.96); }
+        @media(max-width:640px){
+          .drv-nav { display:none; }
+          .drv-mobile-nav { display:flex; }
+          .drv-fab { display:flex; }
+          /* 모바일에서 항상 액션 표시 */
+          .drv-row .drv-size { display:none !important; }
+          .drv-row .drv-actions { display:flex !important; }
+          .drv-scroll { padding-bottom:72px; }
+          .drv-toolbar { padding:8px 10px; gap:6px; min-height:46px; }
+          .drv-row { padding:10px 8px; gap:8px; min-height:48px; }
+          .drv-card { padding:14px 8px 10px; }
+          .hide-mobile { display:none; }
+          /* 모바일 액션 버튼 터치 영역 확대 */
+          .drv-act { padding:6px 8px; }
+        }
       `}</style>
 
       {/* ── 사이드바 ── */}
@@ -449,7 +472,7 @@ export default function DrivePage() {
           {view === "my" && (
             <button onClick={() => { setNewFolder(true); setNewFolderName(""); }} className="btn btn-ghost btn-sm" style={{ flexShrink: 0, gap: 4, whiteSpace: "nowrap" }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2zM12 11v6M9 14h6"/></svg>
-              새 폴더
+              <span className="hide-mobile">새 폴더</span>
             </button>
           )}
           {view === "trash" && files.length > 0 && (
@@ -579,22 +602,37 @@ export default function DrivePage() {
                           {file.type === "file" ? formatBytes(file.size) : "폴더"}
                         </span>
                       </div>
-                      {/* 액션 버튼 — 호버 시 표시 */}
+                      {/* 액션 버튼 — 데스크톱:호버 / 모바일:항상 */}
                       <div className="drv-actions" style={{ flexShrink: 0 }} onClick={e => e.stopPropagation()}>
                         {view === "trash" ? (
                           <>
-                            <button className="drv-act" title="복원" onClick={() => restore(file.id)}>↩ 복원</button>
-                            <button className="drv-act danger" title="영구삭제" onClick={() => deletePerm(file.id)}>🗑</button>
+                            <button className="drv-act" title="복원" onClick={() => restore(file.id)} style={{ fontSize: ".75rem", padding: "4px 8px" }}>↩ 복원</button>
+                            <button className="drv-act danger" title="영구삭제" onClick={() => deletePerm(file.id)}>
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                            </button>
                           </>
                         ) : (
                           <>
-                            {file.type === "file" && <button className="drv-act" title="열기" onClick={() => setPreviewFile(file)}>⊙</button>}
-                            <a className="drv-act" title="다운로드" href={`/api/v1/drive/${file.id}/download`}>↓</a>
-                            <button className="drv-act" title="공유" onClick={() => setShareFile(file)}>⬡</button>
-                            <button className="drv-act" title={file.is_starred ? "별표 해제" : "별표"} onClick={() => star(file.id)}
-                              style={{ color: file.is_starred ? "#f59e0b" : undefined }}>★</button>
-                            <button className="drv-act" title="이름 변경" onClick={() => { setRenameId(file.id); setRenameName(file.name); }}>✏</button>
-                            <button className="drv-act danger" title="삭제" onClick={() => trash([file.id])}>🗑</button>
+                            {file.type === "file" && (
+                              <button className="drv-act" title="열기" onClick={() => setPreviewFile(file)}>
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                              </button>
+                            )}
+                            <a className="drv-act" title="다운로드" href={`/api/v1/drive/${file.id}/download`}>
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                            </a>
+                            <button className="drv-act" title="공유" onClick={() => setShareFile(file)}>
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98"/></svg>
+                            </button>
+                            <button className="drv-act" title={file.is_starred ? "별표 해제" : "별표"} onClick={() => star(file.id)} style={{ color: file.is_starred ? "#f59e0b" : undefined }}>
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill={file.is_starred ? "#f59e0b" : "none"} stroke={file.is_starred ? "#f59e0b" : "currentColor"} strokeWidth={2}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                            </button>
+                            <button className="drv-act" title="이름 변경" onClick={() => { setRenameId(file.id); setRenameName(file.name); }}>
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            </button>
+                            <button className="drv-act danger" title="삭제" onClick={() => trash([file.id])}>
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6M9 6V4h6v2"/></svg>
+                            </button>
                           </>
                         )}
                       </div>
@@ -657,6 +695,28 @@ export default function DrivePage() {
 
       {/* ── 미리보기 모달 ── */}
       {previewFile && <PreviewModal file={previewFile} onClose={() => setPreviewFile(null)} />}
+
+      {/* ── 모바일 FAB 업로드 ── */}
+      <button className="drv-fab" onClick={() => fileRef.current?.click()} title="업로드">
+        {uploading
+          ? <span style={{ fontSize: ".75rem", fontWeight: 700 }}>{uploadPct}%</span>
+          : <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>}
+      </button>
+
+      {/* ── 모바일 하단 탭바 ── */}
+      <nav className="drv-mobile-nav">
+        {[
+          { id: "my" as ViewMode, label: "드라이브", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill={view==="my"?"#3b82f6":"none"} stroke={view==="my"?"#3b82f6":"currentColor"} strokeWidth={1.8}><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> },
+          { id: "recent" as ViewMode, label: "최근", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> },
+          { id: "starred" as ViewMode, label: "별표", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill={view==="starred"?"#f59e0b":"none"} stroke={view==="starred"?"#f59e0b":"currentColor"} strokeWidth={1.8}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> },
+          { id: "trash" as ViewMode, label: "휴지통", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6M9 6V4h6v2"/></svg> },
+        ].map(t => (
+          <button key={t.id} className={`drv-mobile-tab${view===t.id?" active":""}`} onClick={() => switchView(t.id)}>
+            {t.icon}
+            <span>{t.label}</span>
+          </button>
+        ))}
+      </nav>
     </div>
   );
 }
