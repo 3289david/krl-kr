@@ -7,7 +7,7 @@ import crypto from "crypto";
 
 export const runtime = "nodejs";
 
-const UPLOAD_BASE = join(process.cwd(), "uploads", "cdn");
+const UPLOAD_BASE = "/var/www/krl-kr/uploads/cdn";
 const MAX_SIZE_FREE = 200 * 1024 * 1024; // 200 MB
 
 const CHARS = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";

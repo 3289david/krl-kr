@@ -6,7 +6,7 @@ import { join } from "path";
 
 export const runtime = "nodejs";
 
-const UPLOAD_BASE = join(process.cwd(), "uploads", "cdn");
+const UPLOAD_BASE = "/var/www/krl-kr/uploads/cdn";
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
