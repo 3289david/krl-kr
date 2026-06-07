@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
       if (!c) return NextResponse.json({ success: false, error: "유효하지 않은 쿠폰" }, { status: 404 });
       if (c.max_uses !== null && c.uses >= c.max_uses) return NextResponse.json({ success: false, error: "사용 횟수 초과" }, { status: 400 });
       await pool.query("UPDATE coupons SET uses = uses + 1 WHERE id = $1", [c.id]);
-      await pool.query("INSERT INTO coupon_redemptions (coupon_id, user_id, redeemed_at) VALUES ($1, $2, $3)", [c.id, user.id, Date.now()]);
+      await pool.query("INSERT INTO coupon_redemptions (coupon_id, redeemed_by, redeemed_at) VALUES ($1, $2, $3)", [c.id, user.id, Date.now()]);
       return NextResponse.json({ success: true, discount_type: c.discount_type, discount_value: c.discount_value });
     }
 

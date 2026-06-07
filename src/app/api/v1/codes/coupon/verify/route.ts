@@ -47,8 +47,8 @@ export async function POST(request: NextRequest) {
     await pool.query("BEGIN");
     await pool.query("UPDATE coupons SET uses = uses + 1 WHERE id = $1", [c.id]);
     await pool.query(
-      "INSERT INTO coupon_redemptions (coupon_id, user_id, email, order_amount, redeemed_at) VALUES ($1, $2, $3, $4, $5)",
-      [c.id, user_id ?? null, email ?? "", order_amount ?? null, Date.now()]
+      "INSERT INTO coupon_redemptions (coupon_id, redeemed_by, redeemed_at) VALUES ($1, $2, $3)",
+      [c.id, user_id ?? email ?? "", Date.now()]
     );
     await pool.query("COMMIT");
 
