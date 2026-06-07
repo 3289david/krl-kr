@@ -67,11 +67,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     if (!file.storage_path || !fs.existsSync(file.storage_path)) {
       return NextResponse.json({ error: "파일이 존재하지 않습니다." }, { status: 404 });
     }
+    const { searchParams } = new URL(request.url);
+    const preview = searchParams.get("preview") === "1";
     const buffer = fs.readFileSync(file.storage_path);
     return new NextResponse(buffer, {
       headers: {
         "Content-Type": file.mime_type ?? "application/octet-stream",
-        "Content-Disposition": `attachment; filename="${encodeURIComponent(file.name)}"`,
+        "Content-Disposition": preview ? "inline" : `attachment; filename="${encodeURIComponent(file.name)}"`,
         "Content-Length": String(buffer.length),
       },
     });

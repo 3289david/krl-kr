@@ -26,7 +26,8 @@ const staticDest = path.join(standaloneNext, 'static');
 const buildIdSrc = path.join(__dirname, '.next', 'BUILD_ID');
 const buildIdDest = path.join(standaloneNext, 'BUILD_ID');
 if (fs.existsSync(staticSrc)) {
-  execSync(`rm -rf "${staticDest}" && cp -r "${staticSrc}" "${staticDest}"`);
+  const tmpDest = staticDest + '_tmp_' + Date.now();
+  execSync(`cp -r "${staticSrc}" "${tmpDest}" && rm -rf "${staticDest}" && mv "${tmpDest}" "${staticDest}"`);
 }
 if (fs.existsSync(buildIdSrc)) {
   fs.copyFileSync(buildIdSrc, buildIdDest);

@@ -17,173 +17,139 @@ interface DriveFile {
   created_at: number;
   updated_at: number;
 }
-
-interface StorageInfo { used: number; max: number; plan: string; extra_bytes?: number; }
-
+interface StorageInfo { used: number; max: number; plan: string; }
 type ViewMode = "my" | "recent" | "starred" | "trash";
 type SortKey = "name" | "size" | "updated_at" | "created_at";
-type LayoutMode = "list" | "grid";
+type Layout = "list" | "grid";
 
-const BMC_STORAGE_URL = "https://buymeacoffee.com/rukkitofficial/e/545645";
+const BMC_URL = "https://buymeacoffee.com/rukkitofficial/e/545645";
 
-function FileIcon({ file, size = 20 }: { file: DriveFile; size?: number }) {
-  if (file.type === "folder") return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="#f59e0b" stroke="#d97706" strokeWidth={1.5}>
-      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-    </svg>
-  );
-  const mime = file.mime_type ?? "";
-  if (mime.startsWith("image/")) return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth={1.5}>
-      <rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" />
-      <path d="M21 15l-5-5L5 21" />
-    </svg>
-  );
-  if (mime.startsWith("video/")) return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth={1.5}>
-      <rect x="2" y="2" width="20" height="20" rx="2" /><path d="M10 8l6 4-6 4V8z" />
-    </svg>
-  );
-  if (mime.startsWith("audio/")) return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#ec4899" strokeWidth={1.5}>
-      <path d="M9 18V5l12-2v13M6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM18 19a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
-    </svg>
-  );
-  if (mime === "application/pdf") return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth={1.5}>
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M9 13h6M9 17h6M9 9h1" />
-    </svg>
-  );
-  if (mime.includes("zip") || mime.includes("archive") || mime.includes("compressed")) return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth={1.5}>
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M10 12h4M10 16h4M10 8h1" />
-    </svg>
-  );
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="var(--color-muted)" strokeWidth={1.5}>
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6" />
-    </svg>
-  );
+/* ─── 파일 아이콘 ─────────────────────────────────────────── */
+function FileIcon({ file, size = 18 }: { file: DriveFile; size?: number }) {
+  const s = { width: size, height: size, viewBox: "0 0 24 24", fill: "none", strokeWidth: 1.5 } as const;
+  if (file.type === "folder") return <svg {...s} fill="#f59e0b" stroke="#d97706"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>;
+  const m = file.mime_type ?? "";
+  if (m.startsWith("image/")) return <svg {...s} stroke="#3b82f6"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>;
+  if (m.startsWith("video/")) return <svg {...s} stroke="#8b5cf6"><rect x="2" y="2" width="20" height="20" rx="2"/><path d="M10 8l6 4-6 4V8z"/></svg>;
+  if (m.startsWith("audio/")) return <svg {...s} stroke="#ec4899"><path d="M9 18V5l12-2v13M6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM18 19a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>;
+  if (m === "application/pdf") return <svg {...s} stroke="#ef4444"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M9 13h6M9 17h6"/></svg>;
+  if (m.includes("zip") || m.includes("archive")) return <svg {...s} stroke="#f59e0b"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6"/><path d="M10 12h4M10 16h4"/></svg>;
+  return <svg {...s} stroke="#94a3b8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6"/></svg>;
 }
 
-function CtxMenu({ x, y, file, onClose, onRename, onShare, onStar, onTrash, onRestore, onDelete, onDownload }:
-  { x: number; y: number; file: DriveFile; onClose: () => void; onRename: () => void; onShare: () => void;
-    onStar: () => void; onTrash: () => void; onRestore: () => void; onDelete: () => void; onDownload: () => void }) {
-  const ref = useRef<HTMLDivElement>(null);
+/* ─── 파일 미리보기 모달 ─────────────────────────────────── */
+function PreviewModal({ file, onClose }: { file: DriveFile; onClose: () => void }) {
+  const src = `/api/v1/drive/${file.id}/download?preview=1`;
+  const mime = file.mime_type ?? "";
+  const isImg = mime.startsWith("image/");
+  const isVid = mime.startsWith("video/");
+  const isAud = mime.startsWith("audio/");
+  const isPdf = mime === "application/pdf";
+  const isTxt = mime.startsWith("text/") || mime === "application/json";
+  const [txt, setTxt] = useState<string | null>(null);
+
   useEffect(() => {
-    const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) onClose(); };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [onClose]);
-
-  const item = (label: string, icon: React.ReactNode, action: () => void, danger = false) => (
-    <button key={label} onClick={() => { action(); onClose(); }}
-      style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "8px 14px", background: "none", border: "none", cursor: "pointer", fontSize: "0.875rem", color: danger ? "#dc2626" : "var(--color-ink)", textAlign: "left" }}
-      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "var(--color-canvas)"; }}
-      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "none"; }}>
-      {icon}{label}
-    </button>
-  );
-
-  const iconProps = { width: 14, height: 14, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2 };
+    if (isTxt) fetch(src).then(r => r.text()).then(setTxt).catch(() => setTxt("파일을 불러올 수 없습니다."));
+  }, [src, isTxt]);
 
   return (
-    <div ref={ref} style={{ position: "fixed", left: x, top: y, background: "var(--color-surface)", border: "1px solid var(--color-hairline)", borderRadius: 10, boxShadow: "0 8px 24px rgba(0,0,0,0.15)", zIndex: 500, minWidth: 180, padding: "4px 0", overflow: "hidden" }}>
-      {file.deleted_at ? (
-        <>
-          {item("복원", <svg {...iconProps}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /></svg>, onRestore)}
-          {item("영구 삭제", <svg {...iconProps}><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /></svg>, onDelete, true)}
-        </>
-      ) : (
-        <>
-          {file.type === "file" && item("다운로드", <svg {...iconProps}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg>, onDownload)}
-          {item("공유", <svg {...iconProps}><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98" /></svg>, onShare)}
-          {item("이름 변경", <svg {...iconProps}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>, onRename)}
-          {item(file.is_starred ? "별표 해제" : "별표 추가", <svg {...iconProps}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>, onStar)}
-          {item("휴지통으로 이동", <svg {...iconProps}><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /></svg>, onTrash, true)}
-        </>
-      )}
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.75)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", zIndex: 700, padding: 16 }}
+      onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{ background: "var(--color-surface)", borderRadius: 14, overflow: "hidden", maxWidth: "90vw", maxHeight: "90vh", width: isImg || isVid ? "auto" : 760, display: "flex", flexDirection: "column", boxShadow: "0 24px 80px rgba(0,0,0,.4)" }}>
+        {/* 헤더 */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 18px", borderBottom: "1px solid var(--color-hairline)", flexShrink: 0 }}>
+          <FileIcon file={file} size={18} />
+          <span style={{ flex: 1, fontWeight: 600, fontSize: ".9375rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{file.name}</span>
+          <a href={`/api/v1/drive/${file.id}/download`} className="btn btn-sm btn-ghost" style={{ flexShrink: 0, gap: 4 }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            다운로드
+          </a>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-muted)", fontSize: "1.25rem", lineHeight: 1, padding: "2px 4px" }}>✕</button>
+        </div>
+        {/* 컨텐츠 */}
+        <div style={{ flex: 1, overflow: "auto", display: "flex", alignItems: "center", justifyContent: "center", minHeight: 200 }}>
+          {isImg && <img src={src} alt={file.name} style={{ maxWidth: "85vw", maxHeight: "80vh", objectFit: "contain", display: "block" }} />}
+          {isVid && <video src={src} controls style={{ maxWidth: "85vw", maxHeight: "80vh" }} autoPlay={false} />}
+          {isAud && (
+            <div style={{ padding: 40, textAlign: "center" }}>
+              <FileIcon file={file} size={48} />
+              <div style={{ marginTop: 16, fontWeight: 500, marginBottom: 16 }}>{file.name}</div>
+              <audio src={src} controls style={{ width: 340 }} />
+            </div>
+          )}
+          {isPdf && <iframe src={src} style={{ width: 740, height: "75vh", border: "none" }} title={file.name} />}
+          {isTxt && (
+            <pre style={{ margin: 0, padding: 24, width: "100%", maxHeight: "75vh", overflow: "auto", fontSize: ".8125rem", fontFamily: "monospace", whiteSpace: "pre-wrap", wordBreak: "break-all", color: "var(--color-ink)" }}>
+              {txt ?? "불러오는 중..."}
+            </pre>
+          )}
+          {!isImg && !isVid && !isAud && !isPdf && !isTxt && (
+            <div style={{ padding: 48, textAlign: "center" }}>
+              <FileIcon file={file} size={52} />
+              <div style={{ marginTop: 16, color: "var(--color-muted)", fontSize: ".9rem", marginBottom: 20 }}>이 파일 형식은 미리보기를 지원하지 않습니다.</div>
+              <a href={`/api/v1/drive/${file.id}/download`} className="btn btn-primary">다운로드</a>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
 
+/* ─── 공유 모달 ───────────────────────────────────────────── */
 function ShareModal({ file, onClose, onUnshare }: { file: DriveFile; onClose: () => void; onUnshare: (id: number) => void }) {
-  const [shareUrl, setShareUrl] = useState(file.share_token ? `${typeof window !== "undefined" ? window.location.origin : ""}/drive/share/${file.share_token}` : "");
+  const [url, setUrl] = useState(file.share_token ? `${window.location.origin}/drive/share/${file.share_token}` : "");
   const [copied, setCopied] = useState(false);
-  const [password, setPassword] = useState("");
-  const [expireDays, setExpireDays] = useState("");
-  const [creating, setCreating] = useState(!file.share_token);
+  const [pw, setPw] = useState("");
+  const [days, setDays] = useState("");
+  const [step, setStep] = useState<"form" | "done">(file.share_token ? "done" : "form");
 
-  async function createShare() {
-    setCreating(false);
+  async function create() {
     const body: Record<string, unknown> = {};
-    if (password.trim()) body.password = password.trim();
-    if (expireDays) body.expires_days = Number(expireDays);
+    if (pw.trim()) body.password = pw.trim();
+    if (days) body.expires_days = Number(days);
     const res = await fetch(`/api/v1/drive/${file.id}/share`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     const data = await res.json();
-    if (res.ok) setShareUrl(`${window.location.origin}/drive/share/${data.token}`);
+    if (res.ok) { setUrl(`${window.location.origin}/drive/share/${data.token}`); setStep("done"); }
   }
-
-  async function copy() {
-    await navigator.clipboard.writeText(shareUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }
+  async function copy() { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 2000); }
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 400, padding: 16 }} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div style={{ background: "var(--color-surface)", borderRadius: 16, padding: 28, maxWidth: 480, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-          <FileIcon file={file} size={24} />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontWeight: 600, fontSize: "1rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{file.name}</div>
-            <div style={{ fontSize: "0.8125rem", color: "var(--color-muted)" }}>{file.type === "folder" ? "폴더" : formatBytes(file.size)}</div>
-          </div>
-          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-muted)", padding: 4, borderRadius: 6 }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M18 6L6 18M6 6l12 12" /></svg>
-          </button>
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 500, padding: 16 }}
+      onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{ background: "var(--color-surface)", borderRadius: 14, padding: "24px 28px", width: "100%", maxWidth: 440, boxShadow: "0 20px 60px rgba(0,0,0,.2)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+          <FileIcon file={file} size={22} />
+          <span style={{ flex: 1, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{file.name}</span>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-muted)", lineHeight: 1 }}>✕</button>
         </div>
-
-        {creating && !shareUrl ? (
-          <div>
-            <div style={{ marginBottom: 14 }}>
-              <label style={{ fontSize: "0.8125rem", fontWeight: 500, display: "block", marginBottom: 6 }}>비밀번호 (선택)</label>
-              <input className="input" placeholder="비밀번호 없음" value={password} onChange={e => setPassword(e.target.value)} style={{ width: "100%", height: 36 }} />
+        {step === "form" ? (
+          <>
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ fontSize: ".8125rem", fontWeight: 500, display: "block", marginBottom: 5 }}>비밀번호 (선택)</label>
+              <input className="input" value={pw} onChange={e => setPw(e.target.value)} placeholder="없음" style={{ width: "100%", height: 36 }} />
             </div>
             <div style={{ marginBottom: 20 }}>
-              <label style={{ fontSize: "0.8125rem", fontWeight: 500, display: "block", marginBottom: 6 }}>만료 기간</label>
-              <select className="input" value={expireDays} onChange={e => setExpireDays(e.target.value)} style={{ width: "100%", height: 36 }}>
-                <option value="">만료 없음</option>
-                <option value="1">1일</option>
-                <option value="7">7일</option>
-                <option value="30">30일</option>
-                <option value="90">90일</option>
+              <label style={{ fontSize: ".8125rem", fontWeight: 500, display: "block", marginBottom: 5 }}>만료</label>
+              <select className="input" value={days} onChange={e => setDays(e.target.value)} style={{ width: "100%", height: 36 }}>
+                <option value="">없음</option><option value="1">1일</option><option value="7">7일</option><option value="30">30일</option><option value="90">90일</option>
               </select>
             </div>
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
               <button onClick={onClose} className="btn btn-sm btn-ghost">취소</button>
-              <button onClick={createShare} className="btn btn-sm btn-primary">링크 생성</button>
+              <button onClick={create} className="btn btn-sm btn-primary">링크 생성</button>
             </div>
-          </div>
+          </>
         ) : (
           <>
-            {shareUrl ? (
-              <>
-                <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-                  <input className="input" value={shareUrl} readOnly style={{ flex: 1, fontSize: "0.8125rem", background: "var(--color-canvas)" }} />
-                  <button onClick={copy} className="btn btn-sm btn-primary" style={{ whiteSpace: "nowrap" }}>
-                    {copied ? "복사됨 ✓" : "복사"}
-                  </button>
-                </div>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button onClick={() => { onUnshare(file.id); onClose(); }} className="btn btn-sm btn-ghost" style={{ color: "#dc2626" }}>공유 해제</button>
-                  <div style={{ flex: 1 }} />
-                  <button onClick={onClose} className="btn btn-sm btn-ghost">닫기</button>
-                </div>
-              </>
-            ) : (
-              <p style={{ color: "var(--color-muted)", fontSize: "0.875rem" }}>링크 생성 중...</p>
-            )}
+            <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+              <input className="input" value={url} readOnly style={{ flex: 1, fontSize: ".8125rem", background: "var(--color-canvas)" }} />
+              <button onClick={copy} className="btn btn-sm btn-primary">{copied ? "✓" : "복사"}</button>
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => { onUnshare(file.id); onClose(); }} className="btn btn-sm btn-ghost" style={{ color: "#dc2626" }}>공유 해제</button>
+              <div style={{ flex: 1 }} /><button onClick={onClose} className="btn btn-sm btn-ghost">닫기</button>
+            </div>
           </>
         )}
       </div>
@@ -191,532 +157,468 @@ function ShareModal({ file, onClose, onUnshare }: { file: DriveFile; onClose: ()
   );
 }
 
+/* ─── 컨텍스트 메뉴 ───────────────────────────────────────── */
+function CtxMenu({ x, y, file, onClose, handlers }: {
+  x: number; y: number; file: DriveFile; onClose: () => void;
+  handlers: { rename(): void; share(): void; star(): void; trash(): void; restore(): void; deletePerm(): void; download(): void; };
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) onClose(); };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, [onClose]);
+
+  const Row = ({ label, icon, fn, danger }: { label: string; icon: string; fn(): void; danger?: boolean }) => (
+    <button onClick={() => { fn(); onClose(); }}
+      style={{ display: "flex", alignItems: "center", gap: 9, width: "100%", padding: "7px 14px", background: "none", border: "none", cursor: "pointer", fontSize: ".875rem", color: danger ? "#dc2626" : "var(--color-ink)", textAlign: "left" }}
+      onMouseEnter={e => (e.currentTarget.style.background = "var(--color-canvas)")}
+      onMouseLeave={e => (e.currentTarget.style.background = "none")}
+    >{icon} {label}</button>
+  );
+
+  return (
+    <div ref={ref} style={{ position: "fixed", left: x, top: y, background: "var(--color-surface)", border: "1px solid var(--color-hairline)", borderRadius: 10, boxShadow: "0 8px 24px rgba(0,0,0,.15)", zIndex: 600, minWidth: 170, padding: "4px 0" }}>
+      {file.deleted_at ? (
+        <>
+          <Row label="복원" icon="↩" fn={handlers.restore} />
+          <Row label="영구 삭제" icon="🗑" fn={handlers.deletePerm} danger />
+        </>
+      ) : (
+        <>
+          <Row label="다운로드" icon="↓" fn={handlers.download} />
+          <Row label="공유" icon="⬡" fn={handlers.share} />
+          <Row label="이름 변경" icon="✏" fn={handlers.rename} />
+          <Row label={file.is_starred ? "별표 해제" : "별표 추가"} icon="★" fn={handlers.star} />
+          <div style={{ height: 1, background: "var(--color-hairline)", margin: "4px 0" }} />
+          <Row label="휴지통으로 이동" icon="🗑" fn={handlers.trash} danger />
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ─── 메인 페이지 ─────────────────────────────────────────── */
 export default function DrivePage() {
   const [files, setFiles] = useState<DriveFile[]>([]);
-  const [storage, setStorage] = useState<StorageInfo>({ used: 0, max: 5 * 1024 * 1024 * 1024, plan: "free" });
+  const [storage, setStorage] = useState<StorageInfo>({ used: 0, max: 5 << 30, plan: "free" });
   const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [view, setView] = useState<ViewMode>("my");
-  const [layout, setLayout] = useState<LayoutMode>("list");
+  const [layout, setLayout] = useState<Layout>("list");
   const [sort, setSort] = useState<SortKey>("name");
   const [order, setOrder] = useState<"asc" | "desc">("asc");
-  const [currentParent, setCurrentParent] = useState<number | null>(null);
-  const [breadcrumbs, setBreadcrumbs] = useState<Array<{ id: number | null; name: string }>>([{ id: null, name: "내 드라이브" }]);
+  const [parent, setParent] = useState<number | null>(null);
+  const [crumbs, setCrumbs] = useState<{ id: number | null; name: string }[]>([{ id: null, name: "내 드라이브" }]);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [dragOver, setDragOver] = useState(false);
-  const [newFolderMode, setNewFolderMode] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadPct, setUploadPct] = useState(0);
+  const [newFolder, setNewFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [renameId, setRenameId] = useState<number | null>(null);
   const [renameName, setRenameName] = useState("");
   const [shareFile, setShareFile] = useState<DriveFile | null>(null);
-  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; file: DriveFile } | null>(null);
-  const [error, setError] = useState("");
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [previewFile, setPreviewFile] = useState<DriveFile | null>(null);
+  const [ctx, setCtx] = useState<{ x: number; y: number; file: DriveFile } | null>(null);
+  const [err, setErr] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
   const searchTimer = useRef<ReturnType<typeof setTimeout>>();
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams();
-      if (view === "my" && currentParent != null) params.set("parent", String(currentParent));
-      if (view !== "my") params.set("view", view);
-      if (search) params.set("search", search);
-      params.set("sort", sort);
-      params.set("order", order);
-      const res = await fetch(`/api/v1/drive?${params}`);
-      const data = await res.json();
-      setFiles(data.files ?? []);
-      setStorage(data.storage ?? { used: 0, max: 5 * 1024 * 1024 * 1024, plan: "free" });
-    } catch { setError("불러오기 실패"); }
+      const p = new URLSearchParams();
+      if (view === "my" && parent != null) p.set("parent", String(parent));
+      if (view !== "my") p.set("view", view);
+      if (search) p.set("search", search);
+      p.set("sort", sort); p.set("order", order);
+      const r = await fetch(`/api/v1/drive?${p}`);
+      const d = await r.json();
+      setFiles(d.files ?? []); setStorage(d.storage ?? { used: 0, max: 5 << 30, plan: "free" });
+    } catch { setErr("불러오기 실패"); }
     setLoading(false);
-  }, [view, currentParent, search, sort, order]);
+  }, [view, parent, search, sort, order]);
 
   useEffect(() => { load(); }, [load]);
 
-  function handleSearch(q: string) {
-    setSearch(q);
-    clearTimeout(searchTimer.current);
-    if (!q) return;
-    searchTimer.current = setTimeout(() => load(), 350);
+  function switchView(v: ViewMode) {
+    setView(v); setSelected(new Set()); setSearch("");
+    if (v === "my") { setCrumbs([{ id: null, name: "내 드라이브" }]); setParent(null); }
+  }
+  function openFolder(f: DriveFile) {
+    if (view !== "my") { setView("my"); setCrumbs([{ id: null, name: "내 드라이브" }]); }
+    setParent(f.id); setCrumbs(prev => [...prev, { id: f.id, name: f.name }]); setSelected(new Set());
+  }
+  function navCrumb(idx: number) {
+    const c = crumbs[idx]; setCrumbs(prev => prev.slice(0, idx + 1));
+    setParent(c.id); setSelected(new Set()); setSearch("");
   }
 
-  async function uploadFiles(fileList: FileList) {
-    setUploading(true); setError(""); setUploadProgress(0);
-    const arr = Array.from(fileList);
+  async function upload(list: FileList) {
+    setUploading(true); setErr(""); setUploadPct(0);
+    const arr = Array.from(list);
     for (let i = 0; i < arr.length; i++) {
       const file = arr[i];
-      const fd = new FormData();
-      fd.append("file", file);
-      if (currentParent != null) fd.append("parent_id", String(currentParent));
-      await new Promise<void>(resolve => {
+      const fd = new FormData(); fd.append("file", file);
+      if (parent != null) fd.append("parent_id", String(parent));
+      await new Promise<void>(res => {
         const xhr = new XMLHttpRequest();
         xhr.open("POST", "/api/v1/drive");
-        xhr.upload.onprogress = e => {
-          if (e.lengthComputable) {
-            const fileBase = (i / arr.length) * 100;
-            const fileChunk = (e.loaded / e.total) * (100 / arr.length);
-            setUploadProgress(Math.round(fileBase + fileChunk));
-          }
-        };
+        xhr.upload.onprogress = e => { if (e.lengthComputable) setUploadPct(Math.round(((i + e.loaded / e.total) / arr.length) * 100)); };
         xhr.onload = () => {
-          if (xhr.status === 200) {
-            const data = JSON.parse(xhr.responseText);
-            setFiles(prev => [data.file, ...prev]);
+          if (xhr.status === 200 || xhr.status === 201) {
+            const d = JSON.parse(xhr.responseText);
+            setFiles(prev => [d.file, ...prev]);
             setStorage(s => ({ ...s, used: s.used + file.size }));
-          } else {
-            try { const data = JSON.parse(xhr.responseText); setError(data.error ?? "업로드 실패"); } catch { setError("업로드 실패"); }
-          }
-          resolve();
+          } else { try { setErr(JSON.parse(xhr.responseText).error ?? "업로드 실패"); } catch { setErr("업로드 실패"); } }
+          res();
         };
-        xhr.onerror = () => { setError("업로드 오류"); resolve(); };
+        xhr.onerror = () => { setErr("업로드 오류"); res(); };
         xhr.send(fd);
       });
     }
-    setUploading(false); setUploadProgress(0);
+    setUploading(false); setUploadPct(0);
   }
 
-  async function createFolder() {
+  async function makeFolder() {
     if (!newFolderName.trim()) return;
-    const res = await fetch("/api/v1/drive", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: newFolderName.trim(), parent_id: currentParent }),
-    });
-    const data = await res.json();
-    if (res.ok) { setFiles(prev => [data.file, ...prev]); setNewFolderMode(false); setNewFolderName(""); }
+    const r = await fetch("/api/v1/drive", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: newFolderName.trim(), parent_id: parent }) });
+    const d = await r.json();
+    if (r.ok) { setFiles(prev => [d.file, ...prev]); setNewFolder(false); setNewFolderName(""); }
   }
-
-  async function handleRename(id: number, name: string) {
+  async function rename(id: number, name: string) {
     if (!name.trim()) return;
-    const res = await fetch(`/api/v1/drive/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: name.trim() }) });
-    if (res.ok) { setFiles(prev => prev.map(f => f.id === id ? { ...f, name: name.trim() } : f)); setRenameId(null); }
+    await fetch(`/api/v1/drive/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: name.trim() }) });
+    setFiles(prev => prev.map(f => f.id === id ? { ...f, name: name.trim() } : f)); setRenameId(null);
   }
-
-  async function handleStar(id: number) {
-    const file = files.find(f => f.id === id);
-    if (!file) return;
-    const next = !file.is_starred;
-    setFiles(prev => prev.map(f => f.id === id ? { ...f, is_starred: next } : f));
+  async function star(id: number) {
+    const f = files.find(x => x.id === id); if (!f) return;
+    const next = !f.is_starred;
+    setFiles(prev => prev.map(x => x.id === id ? { ...x, is_starred: next } : x));
     await fetch(`/api/v1/drive/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ is_starred: next }) });
-    if (view === "starred") setFiles(prev => prev.filter(f => f.id !== id));
+    if (view === "starred") setFiles(prev => prev.filter(x => x.id !== id));
   }
-
-  async function handleTrash(ids: number[]) {
-    if (ids.length === 1) {
-      await fetch(`/api/v1/drive/${ids[0]}`, { method: "DELETE" });
-    } else {
-      await fetch("/api/v1/drive", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "bulk_trash", ids }) });
-    }
-    setFiles(prev => prev.filter(f => !ids.includes(f.id)));
-    setSelected(new Set());
+  async function trash(ids: number[]) {
+    if (ids.length === 1) await fetch(`/api/v1/drive/${ids[0]}`, { method: "DELETE" });
+    else await fetch("/api/v1/drive", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "bulk_trash", ids }) });
+    setFiles(prev => prev.filter(f => !ids.includes(f.id))); setSelected(new Set());
   }
-
-  async function handleRestore(id: number) {
-    const res = await fetch(`/api/v1/drive/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "restore" }) });
-    if (res.ok) setFiles(prev => prev.filter(f => f.id !== id));
+  async function restore(id: number) {
+    await fetch(`/api/v1/drive/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "restore" }) });
+    setFiles(prev => prev.filter(f => f.id !== id));
   }
-
-  async function handleDelete(id: number) {
-    const res = await fetch(`/api/v1/drive/${id}?permanent=1`, { method: "DELETE" });
-    if (res.ok) {
-      const file = files.find(f => f.id === id);
-      setFiles(prev => prev.filter(f => f.id !== id));
-      if (file?.size) setStorage(s => ({ ...s, used: Math.max(0, s.used - file.size) }));
-    }
+  async function deletePerm(id: number) {
+    const f = files.find(x => x.id === id);
+    await fetch(`/api/v1/drive/${id}?permanent=1`, { method: "DELETE" });
+    setFiles(prev => prev.filter(x => x.id !== id));
+    if (f?.size) setStorage(s => ({ ...s, used: Math.max(0, s.used - f.size) }));
   }
-
   async function emptyTrash() {
     if (!confirm("휴지통을 비우시겠습니까? 복구할 수 없습니다.")) return;
     await fetch("/api/v1/drive", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "empty_trash" }) });
-    setFiles([]);
-    load();
+    setFiles([]); load();
   }
+  function unshare(id: number) { fetch(`/api/v1/drive/${id}/share`, { method: "DELETE" }); setFiles(prev => prev.map(f => f.id === id ? { ...f, share_token: null, is_shared: false } : f)); }
 
-  async function handleUnshare(id: number) {
-    await fetch(`/api/v1/drive/${id}/share`, { method: "DELETE" });
-    setFiles(prev => prev.map(f => f.id === id ? { ...f, share_token: null, is_shared: false } : f));
-  }
+  const pct = Math.min(100, (storage.used / storage.max) * 100);
+  const views: { id: ViewMode; label: string }[] = [{ id: "my", label: "내 드라이브" }, { id: "recent", label: "최근" }, { id: "starred", label: "별표" }, { id: "trash", label: "휴지통" }];
 
-  function openFolder(folder: DriveFile) {
-    if (view !== "my") { setView("my"); setBreadcrumbs([{ id: null, name: "내 드라이브" }]); }
-    setCurrentParent(folder.id);
-    setBreadcrumbs(prev => [...prev, { id: folder.id, name: folder.name }]);
-    setSelected(new Set());
-  }
-
-  function navigateBreadcrumb(idx: number) {
-    const crumb = breadcrumbs[idx];
-    setBreadcrumbs(prev => prev.slice(0, idx + 1));
-    setCurrentParent(crumb.id);
-    setSelected(new Set());
-    setSearch("");
-  }
-
-  function switchView(v: ViewMode) {
-    setView(v);
-    setSelected(new Set());
-    setSearch("");
-    if (v === "my") {
-      setBreadcrumbs([{ id: null, name: "내 드라이브" }]);
-      setCurrentParent(null);
-    }
-  }
-
-  function toggleSelect(id: number) {
-    setSelected(prev => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next; });
-  }
-
-  function selectAll() {
-    if (selected.size === files.length) setSelected(new Set());
-    else setSelected(new Set(files.map(f => f.id)));
-  }
-
-  function handleCtx(e: React.MouseEvent, file: DriveFile) {
-    e.preventDefault();
-    setCtxMenu({ x: e.clientX, y: e.clientY, file });
-  }
-
-  const storagePercent = Math.min(100, (storage.used / storage.max) * 100);
-
-  const viewLabels: Record<ViewMode, string> = { my: "내 드라이브", recent: "최근 항목", starred: "별표 항목", trash: "휴지통" };
-
-  const sortOptions: { value: SortKey; label: string }[] = [
-    { value: "name", label: "이름" }, { value: "size", label: "크기" },
-    { value: "updated_at", label: "수정일" }, { value: "created_at", label: "생성일" },
-  ];
+  /* 아이콘 SVG 헬퍼 */
+  const ic = (d: string, color = "currentColor", fill = "none") => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill={fill} stroke={color} strokeWidth={2}><path d={d} /></svg>
+  );
 
   return (
-    <div className="dashboard-page" style={{ padding: 0, display: "flex", minHeight: "calc(100vh - 60px)" }}>
+    <div style={{ display: "flex", height: "calc(100vh - 60px)", overflow: "hidden", background: "var(--color-bg)" }}>
       <style>{`
-        .drive-sidebar { width: 220px; flex-shrink: 0; padding: 20px 12px; border-right: 1px solid var(--color-hairline); }
-        .drive-sidebar-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 0.875rem; color: var(--color-muted); transition: all 0.1s; border: none; background: none; width: 100%; text-align: left; }
-        .drive-sidebar-item:hover { background: var(--color-canvas); color: var(--color-ink); }
-        .drive-sidebar-item.active { background: var(--color-canvas); color: var(--color-ink); font-weight: 600; }
-        .drive-main { flex: 1; padding: 24px; min-width: 0; }
-        .drive-list-item { display: flex; align-items: center; gap: 12px; padding: 9px 12px; border-radius: 8px; cursor: pointer; transition: background 0.1s; user-select: none; }
-        .drive-list-item:hover { background: var(--color-canvas); }
-        .drive-list-item.selected { background: #eff6ff; }
-        .drive-grid-item { padding: 18px 12px 14px; background: var(--color-surface); border: 1.5px solid var(--color-hairline); border-radius: 12px; cursor: pointer; text-align: center; transition: box-shadow 0.15s, border-color 0.15s; }
-        .drive-grid-item:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); border-color: var(--color-muted); }
-        .drive-grid-item.selected { border-color: #3b82f6; background: #eff6ff; }
-        .drive-header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-        @media (max-width: 640px) { .drive-sidebar { display: none; } }
+        .drv-nav { display:flex; flex-direction:column; width:200px; flex-shrink:0; border-right:1px solid var(--color-hairline); background:var(--color-surface); overflow:hidden; }
+        .drv-nav-btn { display:flex; align-items:center; gap:8px; padding:8px 14px; border:none; background:none; cursor:pointer; font-size:.875rem; color:var(--color-muted); width:100%; text-align:left; border-radius:0; transition:background .1s,color .1s; }
+        .drv-nav-btn:hover { background:var(--color-canvas); color:var(--color-ink); }
+        .drv-nav-btn.active { background:var(--color-canvas); color:var(--color-ink); font-weight:600; }
+        .drv-main { flex:1; display:flex; flex-direction:column; min-width:0; overflow:hidden; }
+        .drv-toolbar { display:flex; align-items:center; gap:8px; padding:10px 16px; border-bottom:1px solid var(--color-hairline); flex-shrink:0; background:var(--color-surface); flex-wrap:nowrap; min-height:52px; }
+        .drv-crumb { display:flex; align-items:center; gap:4px; padding:8px 16px 0; flex-shrink:0; }
+        .drv-scroll { flex:1; overflow-y:auto; padding:12px 16px 16px; }
+        .drv-row { display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:8px; cursor:pointer; transition:background .1s; user-select:none; }
+        .drv-row:hover { background:var(--color-canvas); }
+        .drv-row.sel { background:#eff6ff; }
+        .drv-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; }
+        .drv-card { padding:16px 10px 12px; border:1.5px solid var(--color-hairline); border-radius:12px; cursor:pointer; text-align:center; transition:box-shadow .15s,border-color .15s; background:var(--color-surface); }
+        .drv-card:hover { box-shadow:0 4px 14px rgba(0,0,0,.08); border-color:var(--color-muted); }
+        .drv-card.sel { border-color:#3b82f6; background:#eff6ff; }
+        .drv-act { display:inline-flex; align-items:center; justify-content:center; padding:4px 7px; border:none; background:none; cursor:pointer; border-radius:5px; color:var(--color-muted); transition:background .1s,color .1s; }
+        .drv-act:hover { background:var(--color-canvas); color:var(--color-ink); }
+        .drv-act.danger:hover { color:#dc2626; }
+        .drv-storage { padding:12px 14px; border-top:1px solid var(--color-hairline); flex-shrink:0; }
+        @media(max-width:640px){ .drv-nav{ display:none } }
       `}</style>
 
-      {/* Sidebar */}
-      <div className="drive-sidebar">
-        <div style={{ marginBottom: 20 }}>
-          <button onClick={() => { setNewFolderMode(true); setNewFolderName(""); switchView("my"); }}
-            className="btn btn-primary" style={{ width: "100%", justifyContent: "center", gap: 8, marginBottom: 6 }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M12 5v14M5 12h14" /></svg>
-            새로 만들기
+      {/* ── 사이드바 ── */}
+      <div className="drv-nav">
+        {/* 상단 버튼 */}
+        <div style={{ padding: "12px 10px 8px" }}>
+          <button onClick={() => fileRef.current?.click()} disabled={uploading}
+            className="btn btn-primary" style={{ width: "100%", justifyContent: "center", gap: 6, fontSize: ".875rem", height: 36 }}>
+            {ic("M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12", "#fff")}
+            {uploading ? `${uploadPct}%` : "업로드"}
+          </button>
+          <input ref={fileRef} type="file" multiple style={{ display: "none" }} onChange={e => { if (e.target.files?.length) upload(e.target.files); e.target.value = ""; }} />
+        </div>
+
+        {/* 네비게이션 */}
+        <div style={{ flex: 1, overflowY: "auto" }}>
+          {views.map(v => (
+            <button key={v.id} className={`drv-nav-btn${view === v.id ? " active" : ""}`} onClick={() => switchView(v.id)}>
+              {v.id === "my" && <svg width="15" height="15" viewBox="0 0 24 24" fill={view === "my" ? "#3b82f6" : "none"} stroke={view === "my" ? "#3b82f6" : "currentColor"} strokeWidth={1.8}><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>}
+              {v.id === "recent" && <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>}
+              {v.id === "starred" && <svg width="15" height="15" viewBox="0 0 24 24" fill={view === "starred" ? "#f59e0b" : "none"} stroke={view === "starred" ? "#f59e0b" : "currentColor"} strokeWidth={1.8}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>}
+              {v.id === "trash" && <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6M9 6V4h6v2"/></svg>}
+              {v.label}
+            </button>
+          ))}
+        </div>
+
+        {/* 저장공간 — 사이드바 하단 고정 */}
+        <div className="drv-storage">
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: ".75rem", color: "var(--color-muted)", marginBottom: 5 }}>
+            <span>저장공간</span><span style={{ textTransform: "uppercase", fontWeight: 600 }}>{storage.plan}</span>
+          </div>
+          <div style={{ height: 4, background: "var(--color-hairline)", borderRadius: 2, marginBottom: 5, overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${pct}%`, borderRadius: 2, background: pct > 90 ? "#dc2626" : pct > 70 ? "#f59e0b" : "#3b82f6", transition: "width .4s" }} />
+          </div>
+          <div style={{ fontSize: ".72rem", color: "var(--color-muted)" }}>{formatBytes(storage.used)} / {formatBytes(storage.max)}</div>
+          <a href={BMC_URL} target="_blank" rel="noreferrer"
+            style={{ display: "block", marginTop: 8, padding: "5px 8px", borderRadius: 7, background: "#FFDD00", color: "#1a1714", fontSize: ".72rem", fontWeight: 700, textDecoration: "none", textAlign: "center" }}>
+            ☕ 저장공간 추가
+          </a>
+        </div>
+      </div>
+
+      {/* ── 메인 영역 ── */}
+      <div className="drv-main"
+        onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+        onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOver(false); }}
+        onDrop={e => { e.preventDefault(); setDragOver(false); if (e.dataTransfer.files.length) upload(e.dataTransfer.files); }}>
+
+        {dragOver && (
+          <div style={{ position: "absolute", inset: 0, background: "rgba(59,130,246,.1)", border: "2px dashed #3b82f6", borderRadius: 10, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
+            <span style={{ fontSize: "1.1rem", fontWeight: 600, color: "#3b82f6" }}>파일을 여기에 놓으세요</span>
+          </div>
+        )}
+
+        {/* ── 툴바 (1줄) ── */}
+        <div className="drv-toolbar">
+          {/* 새 폴더 */}
+          {view === "my" && (
+            <button onClick={() => { setNewFolder(true); setNewFolderName(""); }} className="btn btn-ghost btn-sm" style={{ flexShrink: 0, gap: 4, whiteSpace: "nowrap" }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2zM12 11v6M9 14h6"/></svg>
+              새 폴더
+            </button>
+          )}
+          {view === "trash" && files.length > 0 && (
+            <button onClick={emptyTrash} className="btn btn-sm" style={{ flexShrink: 0, background: "#dc2626", color: "#fff", whiteSpace: "nowrap" }}>휴지통 비우기</button>
+          )}
+          {selected.size > 0 && view !== "trash" && (
+            <button onClick={() => trash(Array.from(selected))} className="btn btn-sm btn-ghost" style={{ flexShrink: 0, color: "#dc2626", whiteSpace: "nowrap" }}>
+              {selected.size}개 삭제
+            </button>
+          )}
+
+          {/* 검색 — flex 확장 */}
+          <input className="input" placeholder="검색..." value={search}
+            onChange={e => { setSearch(e.target.value); clearTimeout(searchTimer.current); searchTimer.current = setTimeout(load, 350); }}
+            style={{ flex: "1 1 0", minWidth: 80, maxWidth: 200, height: 32, fontSize: ".875rem" }} />
+
+          {/* 정렬 */}
+          <select className="input" value={`${sort}-${order}`}
+            onChange={e => { const [s, o] = e.target.value.split("-"); setSort(s as SortKey); setOrder(o as "asc" | "desc"); }}
+            style={{ height: 32, fontSize: ".8125rem", flexShrink: 0, paddingRight: 24, minWidth: 90 }}>
+            <option value="name-asc">이름 ↑</option><option value="name-desc">이름 ↓</option>
+            <option value="size-asc">크기 ↑</option><option value="size-desc">크기 ↓</option>
+            <option value="updated_at-desc">수정일 ↓</option><option value="updated_at-asc">수정일 ↑</option>
+            <option value="created_at-desc">생성일 ↓</option><option value="created_at-asc">생성일 ↑</option>
+          </select>
+
+          {/* 레이아웃 토글 */}
+          <button onClick={() => setLayout(l => l === "list" ? "grid" : "list")} className="drv-act" title="보기 전환" style={{ flexShrink: 0 }}>
+            {layout === "list"
+              ? <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+              : <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>}
           </button>
         </div>
 
-        {(["my", "recent", "starred", "trash"] as ViewMode[]).map(v => {
-          const icons: Record<ViewMode, React.ReactNode> = {
-            my: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" /></svg>,
-            recent: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>,
-            starred: <svg width="16" height="16" viewBox="0 0 24 24" fill={v === "starred" && view === "starred" ? "#f59e0b" : "none"} stroke={view === "starred" ? "#f59e0b" : "currentColor"} strokeWidth={1.8}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>,
-            trash: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6M9 6V4h6v2" /></svg>,
-          };
-          return (
-            <button key={v} className={`drive-sidebar-item${view === v ? " active" : ""}`} onClick={() => switchView(v)}>
-              {icons[v]}{viewLabels[v]}
-            </button>
-          );
-        })}
+        {/* ── 브레드크럼 (My Drive만) ── */}
+        {view === "my" && crumbs.length > 1 && (
+          <div className="drv-crumb">
+            {crumbs.map((c, i) => (
+              <span key={i} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                {i > 0 && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--color-muted)" strokeWidth={2}><path d="M9 18l6-6-6-6"/></svg>}
+                <button onClick={() => navCrumb(i)}
+                  style={{ background: "none", border: "none", cursor: i < crumbs.length - 1 ? "pointer" : "default", padding: "2px 3px", borderRadius: 4, fontSize: ".8125rem", fontWeight: i === crumbs.length - 1 ? 600 : 400, color: i < crumbs.length - 1 ? "var(--color-muted)" : "var(--color-ink)" }}>
+                  {c.name}
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
 
-        {/* Storage bar */}
-        <div style={{ marginTop: "auto", paddingTop: 24, position: "sticky", bottom: 0 }}>
-          <div style={{ fontSize: "0.75rem", color: "var(--color-muted)", marginBottom: 6, display: "flex", justifyContent: "space-between" }}>
-            <span>저장 공간</span>
-            <span style={{ textTransform: "uppercase", fontWeight: 600 }}>{storage.plan}</span>
+        {/* ── 업로드 진행 ── */}
+        {uploading && (
+          <div style={{ padding: "6px 16px", borderBottom: "1px solid var(--color-hairline)", flexShrink: 0 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: ".75rem", marginBottom: 3, color: "var(--color-muted)" }}>
+              <span>업로드 중...</span><span>{uploadPct}%</span>
+            </div>
+            <div style={{ height: 3, background: "var(--color-hairline)", borderRadius: 2 }}>
+              <div style={{ height: "100%", background: "#3b82f6", borderRadius: 2, width: `${uploadPct}%`, transition: "width .2s" }} />
+            </div>
           </div>
-          <div style={{ height: 5, background: "var(--color-hairline)", borderRadius: 3, marginBottom: 6 }}>
-            <div style={{ height: "100%", borderRadius: 3, width: `${storagePercent}%`, background: storagePercent > 90 ? "#dc2626" : storagePercent > 70 ? "#f59e0b" : "#3b82f6", transition: "width 0.4s" }} />
+        )}
+
+        {/* ── 오류 메시지 ── */}
+        {err && (
+          <div style={{ padding: "6px 16px", background: "#fef2f2", borderBottom: "1px solid #fecaca", display: "flex", alignItems: "center", gap: 8, fontSize: ".875rem", color: "#991b1b", flexShrink: 0 }}>
+            <span style={{ flex: 1 }}>{err}</span><button onClick={() => setErr("")} style={{ background: "none", border: "none", cursor: "pointer", color: "#991b1b" }}>✕</button>
           </div>
-          <div style={{ fontSize: "0.75rem", color: "var(--color-muted)" }}>{formatBytes(storage.used)} / {formatBytes(storage.max)}</div>
-          {storage.plan === "free" && (
-            <a href={BMC_STORAGE_URL} target="_blank" rel="noreferrer"
-              style={{ display: "block", marginTop: 10, padding: "6px 10px", borderRadius: 8, background: "#FFDD00", color: "#1a1714", fontSize: "0.75rem", fontWeight: 700, textDecoration: "none", textAlign: "center" }}>
-              ☕ 저장공간 추가
-            </a>
+        )}
+
+        {/* ── 새 폴더 입력 ── */}
+        {newFolder && (
+          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 16px", borderBottom: "1px solid var(--color-hairline)", flexShrink: 0 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="#f59e0b" stroke="#d97706" strokeWidth={1.5}><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            <input autoFocus className="input" placeholder="폴더 이름" value={newFolderName}
+              onChange={e => setNewFolderName(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter") makeFolder(); if (e.key === "Escape") setNewFolder(false); }}
+              style={{ flex: 1, height: 32 }} />
+            <button onClick={makeFolder} className="btn btn-sm btn-primary">만들기</button>
+            <button onClick={() => setNewFolder(false)} className="btn btn-sm btn-ghost">취소</button>
+          </div>
+        )}
+
+        {/* ── 파일 목록 ── */}
+        <div className="drv-scroll">
+          {loading ? (
+            <div style={{ textAlign: "center", padding: 60, color: "var(--color-muted)", fontSize: ".9rem" }}>불러오는 중...</div>
+          ) : files.length === 0 ? (
+            <div style={{ textAlign: "center", padding: 60, color: "var(--color-muted)", fontSize: ".9rem" }}>
+              {view === "trash" ? "휴지통이 비어 있습니다" : view === "starred" ? "별표 항목이 없습니다" : view === "recent" ? "최근 항목이 없습니다" : search ? "검색 결과 없음" : "파일을 드래그하거나 업로드하세요"}
+            </div>
+          ) : layout === "list" ? (
+            /* ── 리스트 ── */
+            <div style={{ background: "var(--color-surface)", borderRadius: 10, border: "1px solid var(--color-hairline)", overflow: "hidden" }}>
+              {/* 헤더 */}
+              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 10px", background: "var(--color-canvas)", borderBottom: "1px solid var(--color-hairline)" }}>
+                <input type="checkbox" checked={selected.size === files.length && files.length > 0}
+                  onChange={() => setSelected(s => s.size === files.length ? new Set() : new Set(files.map(f => f.id)))}
+                  style={{ width: 14, height: 14, cursor: "pointer", flexShrink: 0 }} />
+                <span style={{ flex: 1, fontSize: ".72rem", fontWeight: 600, color: "var(--color-muted)", textTransform: "uppercase", letterSpacing: ".05em" }}>이름</span>
+                <span style={{ width: 70, fontSize: ".72rem", fontWeight: 600, color: "var(--color-muted)", textTransform: "uppercase", textAlign: "right", flexShrink: 0 }}>크기</span>
+                <span style={{ width: 100, flexShrink: 0 }} />
+              </div>
+              {files.map(file => (
+                <div key={file.id} style={{ borderBottom: "1px solid var(--color-hairline)" }} onContextMenu={e => { e.preventDefault(); setCtx({ x: e.clientX, y: e.clientY, file }); }}>
+                  {renameId === file.id ? (
+                    <div style={{ display: "flex", gap: 8, alignItems: "center", padding: "7px 10px" }}>
+                      <FileIcon file={file} />
+                      <input autoFocus className="input" value={renameName} onChange={e => setRenameName(e.target.value)}
+                        onKeyDown={e => { if (e.key === "Enter") rename(file.id, renameName); if (e.key === "Escape") setRenameId(null); }}
+                        style={{ flex: 1, height: 30 }} />
+                      <button onClick={() => rename(file.id, renameName)} className="btn btn-sm btn-primary">저장</button>
+                      <button onClick={() => setRenameId(null)} className="btn btn-sm btn-ghost">취소</button>
+                    </div>
+                  ) : (
+                    <div className={`drv-row${selected.has(file.id) ? " sel" : ""}`}
+                      onDoubleClick={() => file.type === "folder" && openFolder(file)}
+                      onClick={e => { if ((e.target as HTMLElement).closest("button,a,input")) return; file.type === "folder" ? openFolder(file) : setSelected(s => { const n = new Set(s); n.has(file.id) ? n.delete(file.id) : n.add(file.id); return n; }); }}>
+                      <input type="checkbox" checked={selected.has(file.id)} onChange={() => setSelected(s => { const n = new Set(s); n.has(file.id) ? n.delete(file.id) : n.add(file.id); return n; })}
+                        onClick={e => e.stopPropagation()} style={{ width: 14, height: 14, cursor: "pointer", flexShrink: 0 }} />
+                      <FileIcon file={file} />
+                      <span onClick={e => { e.stopPropagation(); if (file.type === "file") setPreviewFile(file); }}
+                        style={{ flex: 1, fontSize: ".875rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: file.type === "file" ? "pointer" : "default" }}
+                        title={file.type === "file" ? "클릭하여 미리보기" : undefined}>{file.name}</span>
+                      {file.is_starred && <svg width="11" height="11" viewBox="0 0 24 24" fill="#f59e0b" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>}
+                      {file.is_shared && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth={2}><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98"/></svg>}
+                      <span style={{ width: 70, fontSize: ".8125rem", color: "var(--color-muted)", textAlign: "right", flexShrink: 0 }}>
+                        {file.type === "file" ? formatBytes(file.size) : "—"}
+                      </span>
+                      {/* 액션 버튼 */}
+                      <div style={{ width: 100, display: "flex", gap: 1, justifyContent: "flex-end", flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+                        {view === "trash" ? (
+                          <>
+                            <button className="drv-act" title="복원" onClick={() => restore(file.id)}>↩</button>
+                            <button className="drv-act danger" title="영구삭제" onClick={() => deletePerm(file.id)}>🗑</button>
+                          </>
+                        ) : (
+                          <>
+                            {file.type === "file" && <button className="drv-act" title="열기" onClick={() => setPreviewFile(file)}>⊙</button>}
+                            <a className="drv-act" title="다운로드" href={`/api/v1/drive/${file.id}/download`}>↓</a>
+                            <button className="drv-act" title="공유" onClick={() => setShareFile(file)}>⬡</button>
+                            <button className="drv-act" title={file.is_starred ? "별표 해제" : "별표"} onClick={() => star(file.id)}
+                              style={{ color: file.is_starred ? "#f59e0b" : undefined }}>★</button>
+                            <button className="drv-act" title="이름 변경" onClick={() => { setRenameId(file.id); setRenameName(file.name); }}>✏</button>
+                            <button className="drv-act danger" title="삭제" onClick={() => trash([file.id])}>🗑</button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            /* ── 그리드 ── */
+            <div className="drv-grid">
+              {files.map(file => (
+                <div key={file.id} className={`drv-card${selected.has(file.id) ? " sel" : ""}`}
+                  onContextMenu={e => { e.preventDefault(); setCtx({ x: e.clientX, y: e.clientY, file }); }}
+                  onDoubleClick={() => file.type === "folder" && openFolder(file)}
+                  onClick={e => { if ((e.target as HTMLElement).closest("button,a")) return; file.type === "folder" ? openFolder(file) : setSelected(s => { const n = new Set(s); n.has(file.id) ? n.delete(file.id) : n.add(file.id); return n; }); }}>
+                  <div style={{ position: "relative", width: "fit-content", margin: "0 auto 10px", display: "flex" }}>
+                    <FileIcon file={file} size={34} />
+                    {file.is_starred && <svg width="10" height="10" viewBox="0 0 24 24" fill="#f59e0b" stroke="none" style={{ position: "absolute", top: -3, right: -3 }}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>}
+                  </div>
+                  <div style={{ fontSize: ".8125rem", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 3 }} title={file.name}>{file.name}</div>
+                  <div style={{ fontSize: ".72rem", color: "var(--color-muted)", marginBottom: 8 }}>{file.type === "file" ? formatBytes(file.size) : "폴더"}</div>
+                  <div style={{ display: "flex", gap: 4, justifyContent: "center" }} onClick={e => e.stopPropagation()}>
+                    {view === "trash" ? (
+                      <>
+                        <button className="drv-act" onClick={() => restore(file.id)} style={{ fontSize: ".72rem", padding: "3px 7px" }}>복원</button>
+                        <button className="drv-act danger" onClick={() => deletePerm(file.id)} style={{ fontSize: ".72rem", padding: "3px 7px" }}>삭제</button>
+                      </>
+                    ) : (
+                      <>
+                        <a className="drv-act" href={`/api/v1/drive/${file.id}/download`} title="다운로드" style={{ fontSize: ".72rem", padding: "3px 7px" }}>↓</a>
+                        <button className="drv-act" onClick={() => setShareFile(file)} style={{ fontSize: ".72rem", padding: "3px 7px" }}>공유</button>
+                        <button className="drv-act danger" onClick={() => trash([file.id])} style={{ fontSize: ".72rem", padding: "3px 7px" }}>삭제</button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       </div>
 
-      {/* Main area */}
-      <div className="drive-main"
-        onDragOver={e => { e.preventDefault(); setDragOver(true); }}
-        onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOver(false); }}
-        onDrop={e => { e.preventDefault(); setDragOver(false); if (e.dataTransfer.files.length) uploadFiles(e.dataTransfer.files); }}>
-
-        {dragOver && (
-          <div style={{ position: "fixed", inset: 0, background: "rgba(59,130,246,0.12)", border: "3px dashed #3b82f6", borderRadius: 16, zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
-            <div style={{ textAlign: "center" }}>
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth={1.5} style={{ margin: "0 auto 12px", display: "block" }}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" /></svg>
-              <div style={{ fontSize: "1.125rem", fontWeight: 600, color: "#3b82f6" }}>파일을 여기에 놓으세요</div>
-            </div>
-          </div>
-        )}
-
-        {error && <div className="alert alert-error" style={{ marginBottom: 16 }}>{error}<button onClick={() => setError("")} style={{ marginLeft: 8, background: "none", border: "none", cursor: "pointer" }}>✕</button></div>}
-
-        {/* Top bar */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
-          <h2 style={{ fontWeight: 700, fontSize: "1.125rem", margin: 0, letterSpacing: "-0.01em" }}>{viewLabels[view]}</h2>
-          <div style={{ flex: 1 }} />
-          <input className="input" placeholder="파일 검색..." value={search}
-            onChange={e => handleSearch(e.target.value)}
-            style={{ height: 34, width: 200, fontSize: "0.875rem" }} />
-          <div className="drive-header-actions">
-            <select className="input" value={`${sort}-${order}`} onChange={e => { const [s, o] = e.target.value.split("-"); setSort(s as SortKey); setOrder(o as "asc" | "desc"); }}
-              style={{ height: 34, fontSize: "0.8125rem", paddingRight: 28 }}>
-              {sortOptions.flatMap(opt => [
-                <option key={`${opt.value}-asc`} value={`${opt.value}-asc`}>{opt.label} ↑</option>,
-                <option key={`${opt.value}-desc`} value={`${opt.value}-desc`}>{opt.label} ↓</option>,
-              ])}
-            </select>
-            <button onClick={() => setLayout(l => l === "list" ? "grid" : "list")} className="btn btn-ghost btn-sm" title={layout === "list" ? "그리드 보기" : "목록 보기"}>
-              {layout === "list"
-                ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>
-                : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" /></svg>}
-            </button>
-            {view === "my" && (
-              <>
-                <button onClick={() => { setNewFolderMode(true); setNewFolderName(""); }} className="btn btn-ghost btn-sm">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2zM12 11v6M9 14h6" /></svg>
-                  새 폴더
-                </button>
-                <button onClick={() => fileInputRef.current?.click()} className="btn btn-primary btn-sm" disabled={uploading}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" /></svg>
-                  {uploading ? `${uploadProgress}%` : "업로드"}
-                </button>
-                <input ref={fileInputRef} type="file" multiple style={{ display: "none" }}
-                  onChange={e => { if (e.target.files?.length) uploadFiles(e.target.files); e.target.value = ""; }} />
-              </>
-            )}
-            {view === "trash" && files.length > 0 && (
-              <button onClick={emptyTrash} className="btn btn-sm" style={{ background: "#dc2626", color: "#fff" }}>
-                휴지통 비우기
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Upload progress bar */}
-        {uploading && (
-          <div style={{ marginBottom: 16, background: "var(--color-surface)", borderRadius: 8, border: "1px solid var(--color-hairline)", padding: "10px 14px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8125rem", marginBottom: 6 }}>
-              <span>업로드 중...</span><span>{uploadProgress}%</span>
-            </div>
-            <div style={{ height: 4, background: "var(--color-hairline)", borderRadius: 2 }}>
-              <div style={{ height: "100%", background: "#3b82f6", borderRadius: 2, width: `${uploadProgress}%`, transition: "width 0.2s" }} />
-            </div>
-          </div>
-        )}
-
-        {/* Breadcrumbs (My Drive only) */}
-        {view === "my" && (
-          <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 16, flexWrap: "wrap" }}>
-            {breadcrumbs.map((crumb, idx) => (
-              <div key={idx} style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                {idx > 0 && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-muted)" strokeWidth={2}><path d="M9 18l6-6-6-6" /></svg>}
-                <button onClick={() => navigateBreadcrumb(idx)}
-                  style={{ background: "none", border: "none", cursor: idx < breadcrumbs.length - 1 ? "pointer" : "default", padding: "2px 4px", borderRadius: 4, fontSize: "0.875rem", fontWeight: idx === breadcrumbs.length - 1 ? 600 : 400, color: idx < breadcrumbs.length - 1 ? "var(--color-muted)" : "var(--color-ink)" }}>
-                  {crumb.name}
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* New folder input */}
-        {newFolderMode && (
-          <div style={{ display: "flex", gap: 8, marginBottom: 16, alignItems: "center" }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="#f59e0b" stroke="#d97706" strokeWidth={1.5}><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" /></svg>
-            <input autoFocus className="input" placeholder="폴더 이름" value={newFolderName}
-              onChange={e => setNewFolderName(e.target.value)}
-              onKeyDown={e => { if (e.key === "Enter") createFolder(); if (e.key === "Escape") setNewFolderMode(false); }}
-              style={{ maxWidth: 220, height: 34 }} />
-            <button onClick={createFolder} className="btn btn-sm btn-primary">만들기</button>
-            <button onClick={() => setNewFolderMode(false)} className="btn btn-sm btn-ghost">취소</button>
-          </div>
-        )}
-
-        {/* Bulk actions bar */}
-        {selected.size > 0 && (
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, padding: "8px 14px", background: "#eff6ff", borderRadius: 10, border: "1.5px solid #bfdbfe" }}>
-            <span style={{ fontSize: "0.875rem", fontWeight: 600, color: "#1d4ed8" }}>{selected.size}개 선택됨</span>
-            <div style={{ flex: 1 }} />
-            {view !== "trash" && (
-              <button onClick={() => handleTrash(Array.from(selected))} className="btn btn-sm btn-ghost" style={{ color: "#dc2626" }}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /></svg>
-                휴지통으로 이동
-              </button>
-            )}
-            <button onClick={() => setSelected(new Set())} className="btn btn-sm btn-ghost">선택 해제</button>
-          </div>
-        )}
-
-        {/* Files */}
-        {loading ? (
-          <div style={{ textAlign: "center", padding: 60, color: "var(--color-muted)", fontSize: "0.9rem" }}>불러오는 중...</div>
-        ) : files.length === 0 ? (
-          <div style={{ textAlign: "center", padding: 60 }}>
-            <div style={{ marginBottom: 16 }}>
-              {view === "trash" ? <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--color-muted)" strokeWidth={1} style={{ margin: "0 auto" }}><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /></svg>
-                : view === "starred" ? <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--color-muted)" strokeWidth={1} style={{ margin: "0 auto" }}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>
-                : <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--color-muted)" strokeWidth={1} style={{ margin: "0 auto" }}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" /></svg>}
-            </div>
-            <p style={{ color: "var(--color-muted)", fontSize: "0.9375rem" }}>
-              {view === "trash" ? "휴지통이 비어 있습니다" : view === "starred" ? "별표 항목이 없습니다" : view === "recent" ? "최근 항목이 없습니다" : search ? "검색 결과가 없습니다" : "파일을 드래그하거나 업로드 버튼을 눌러 시작하세요"}
-            </p>
-          </div>
-        ) : layout === "list" ? (
-          <div style={{ background: "var(--color-surface)", borderRadius: 12, border: "1px solid var(--color-hairline)", overflow: "hidden" }}>
-            {/* List header */}
-            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 12px", borderBottom: "1px solid var(--color-hairline)", background: "var(--color-canvas)" }}>
-              <input type="checkbox" checked={selected.size === files.length && files.length > 0} onChange={selectAll} style={{ width: 15, height: 15, cursor: "pointer" }} />
-              <span style={{ flex: 1, fontSize: "0.75rem", fontWeight: 600, color: "var(--color-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>이름</span>
-              <span style={{ width: 80, fontSize: "0.75rem", fontWeight: 600, color: "var(--color-muted)", textTransform: "uppercase", letterSpacing: "0.05em", textAlign: "right" }}>크기</span>
-              <span style={{ width: 130, fontSize: "0.75rem", fontWeight: 600, color: "var(--color-muted)", textTransform: "uppercase", letterSpacing: "0.05em", display: "none" } as React.CSSProperties}>수정일</span>
-              <span style={{ width: 120 }} />
-            </div>
-            {files.map(file => (
-              <div key={file.id} onContextMenu={e => handleCtx(e, file)}
-                style={{ borderBottom: "1px solid var(--color-hairline)" }}>
-                {renameId === file.id ? (
-                  <div style={{ display: "flex", gap: 8, alignItems: "center", padding: "8px 12px" }}>
-                    <FileIcon file={file} />
-                    <input autoFocus className="input" value={renameName} onChange={e => setRenameName(e.target.value)}
-                      onKeyDown={e => { if (e.key === "Enter") handleRename(file.id, renameName); if (e.key === "Escape") setRenameId(null); }}
-                      style={{ flex: 1, height: 32 }} />
-                    <button onClick={() => handleRename(file.id, renameName)} className="btn btn-sm btn-primary">저장</button>
-                    <button onClick={() => setRenameId(null)} className="btn btn-sm btn-ghost">취소</button>
-                  </div>
-                ) : (
-                  <div className={`drive-list-item${selected.has(file.id) ? " selected" : ""}`}
-                    onDoubleClick={() => file.type === "folder" && openFolder(file)}
-                    onClick={e => {
-                      if ((e.target as HTMLElement).closest("button,a,input")) return;
-                      if (file.type === "folder") openFolder(file);
-                      else toggleSelect(file.id);
-                    }}>
-                    <input type="checkbox" checked={selected.has(file.id)} onChange={() => toggleSelect(file.id)}
-                      onClick={e => e.stopPropagation()} style={{ width: 15, height: 15, cursor: "pointer", flexShrink: 0 }} />
-                    <FileIcon file={file} />
-                    <span style={{ flex: 1, fontSize: "0.875rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {file.name}
-                    </span>
-                    {file.is_starred && <svg width="13" height="13" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" strokeWidth={1.5}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>}
-                    {file.is_shared && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth={2}><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98" /></svg>}
-                    <span style={{ width: 80, fontSize: "0.8125rem", color: "var(--color-muted)", textAlign: "right", flexShrink: 0 }}>
-                      {file.type === "file" ? formatBytes(file.size) : "—"}
-                    </span>
-                    <div style={{ width: 120, display: "flex", gap: 2, justifyContent: "flex-end", flexShrink: 0 }} onClick={e => e.stopPropagation()}>
-                      {view === "trash" ? (
-                        <>
-                          <button onClick={() => handleRestore(file.id)} className="btn btn-ghost" style={{ padding: "4px 8px", height: "auto", fontSize: "0.75rem" }} title="복원">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /></svg>
-                          </button>
-                          <button onClick={() => handleDelete(file.id)} className="btn btn-ghost" style={{ padding: "4px 8px", height: "auto", color: "#dc2626" }} title="영구 삭제">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /></svg>
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          {file.type === "file" && (
-                            <a href={`/api/v1/drive/${file.id}/download`} className="btn btn-ghost" style={{ padding: "4px 8px", height: "auto" }} title="다운로드">
-                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg>
-                            </a>
-                          )}
-                          <button onClick={() => setShareFile(file)} className="btn btn-ghost" style={{ padding: "4px 8px", height: "auto" }} title="공유">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98" /></svg>
-                          </button>
-                          <button onClick={() => handleStar(file.id)} className="btn btn-ghost" style={{ padding: "4px 8px", height: "auto", color: file.is_starred ? "#f59e0b" : undefined }} title={file.is_starred ? "별표 해제" : "별표 추가"}>
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill={file.is_starred ? "#f59e0b" : "none"} stroke={file.is_starred ? "#f59e0b" : "currentColor"} strokeWidth={2}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>
-                          </button>
-                          <button onClick={() => { setRenameId(file.id); setRenameName(file.name); }} className="btn btn-ghost" style={{ padding: "4px 8px", height: "auto" }} title="이름 변경">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
-                          </button>
-                          <button onClick={() => handleTrash([file.id])} className="btn btn-ghost" style={{ padding: "4px 8px", height: "auto", color: "#dc2626" }} title="삭제">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6M9 6V4h6v2" /></svg>
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        ) : (
-          // Grid view
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 12 }}>
-            {files.map(file => (
-              <div key={file.id} className={`drive-grid-item${selected.has(file.id) ? " selected" : ""}`}
-                onContextMenu={e => handleCtx(e, file)}
-                onDoubleClick={() => file.type === "folder" && openFolder(file)}
-                onClick={e => {
-                  if ((e.target as HTMLElement).closest("button,a,input")) return;
-                  if (file.type === "folder") openFolder(file);
-                  else toggleSelect(file.id);
-                }}>
-                <div style={{ position: "relative", marginBottom: 10 }}>
-                  <input type="checkbox" checked={selected.has(file.id)} onChange={() => toggleSelect(file.id)}
-                    onClick={e => e.stopPropagation()}
-                    style={{ position: "absolute", top: -4, left: -4, width: 15, height: 15, cursor: "pointer" }} />
-                  <FileIcon file={file} size={36} />
-                  {file.is_starred && (
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" strokeWidth={1.5} style={{ position: "absolute", top: -4, right: -4 }}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>
-                  )}
-                </div>
-                <div style={{ fontSize: "0.8125rem", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 4 }} title={file.name}>{file.name}</div>
-                <div style={{ fontSize: "0.75rem", color: "var(--color-muted)" }}>{file.type === "file" ? formatBytes(file.size) : "폴더"}</div>
-                {view !== "trash" && (
-                  <div style={{ display: "flex", gap: 2, justifyContent: "center", marginTop: 8 }} onClick={e => e.stopPropagation()}>
-                    {file.type === "file" && (
-                      <a href={`/api/v1/drive/${file.id}/download`} className="btn btn-ghost" style={{ padding: "3px 6px", height: "auto", fontSize: "0.7rem" }}>↓</a>
-                    )}
-                    <button onClick={() => setShareFile(file)} className="btn btn-ghost" style={{ padding: "3px 6px", height: "auto", fontSize: "0.7rem" }}>공유</button>
-                    <button onClick={() => handleTrash([file.id])} className="btn btn-ghost" style={{ padding: "3px 6px", height: "auto", color: "#dc2626", fontSize: "0.7rem" }}>삭제</button>
-                  </div>
-                )}
-                {view === "trash" && (
-                  <div style={{ display: "flex", gap: 2, justifyContent: "center", marginTop: 8 }} onClick={e => e.stopPropagation()}>
-                    <button onClick={() => handleRestore(file.id)} className="btn btn-ghost" style={{ padding: "3px 6px", height: "auto", fontSize: "0.7rem" }}>복원</button>
-                    <button onClick={() => handleDelete(file.id)} className="btn btn-ghost" style={{ padding: "3px 6px", height: "auto", color: "#dc2626", fontSize: "0.7rem" }}>삭제</button>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Context menu */}
-      {ctxMenu && (
-        <CtxMenu
-          x={ctxMenu.x} y={ctxMenu.y} file={ctxMenu.file}
-          onClose={() => setCtxMenu(null)}
-          onRename={() => { setRenameId(ctxMenu.file.id); setRenameName(ctxMenu.file.name); }}
-          onShare={() => setShareFile(ctxMenu.file)}
-          onStar={() => handleStar(ctxMenu.file.id)}
-          onTrash={() => handleTrash([ctxMenu.file.id])}
-          onRestore={() => handleRestore(ctxMenu.file.id)}
-          onDelete={() => handleDelete(ctxMenu.file.id)}
-          onDownload={() => { window.location.href = `/api/v1/drive/${ctxMenu.file.id}/download`; }}
-        />
+      {/* ── 컨텍스트 메뉴 ── */}
+      {ctx && (
+        <CtxMenu x={ctx.x} y={ctx.y} file={ctx.file} onClose={() => setCtx(null)}
+          handlers={{
+            rename: () => { setRenameId(ctx.file.id); setRenameName(ctx.file.name); },
+            share: () => setShareFile(ctx.file),
+            star: () => star(ctx.file.id),
+            trash: () => trash([ctx.file.id]),
+            restore: () => restore(ctx.file.id),
+            deletePerm: () => deletePerm(ctx.file.id),
+            download: () => { window.location.href = `/api/v1/drive/${ctx.file.id}/download`; },
+          }} />
       )}
 
-      {/* Share modal */}
-      {shareFile && (
-        <ShareModal file={shareFile} onClose={() => setShareFile(null)} onUnshare={handleUnshare} />
-      )}
+      {/* ── 공유 모달 ── */}
+      {shareFile && <ShareModal file={shareFile} onClose={() => setShareFile(null)} onUnshare={unshare} />}
+
+      {/* ── 미리보기 모달 ── */}
+      {previewFile && <PreviewModal file={previewFile} onClose={() => setPreviewFile(null)} />}
     </div>
   );
 }
