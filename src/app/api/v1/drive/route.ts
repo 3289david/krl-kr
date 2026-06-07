@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
 import { getDB } from "@/lib/env";
+import { checkStorageQuota, getStorageUsed, getUserPlan, getStorageLimit } from "@/lib/storage-quota";
 import path from "path";
 import fs from "fs";
 import { randomUUID } from "crypto";
@@ -8,12 +9,6 @@ import { randomUUID } from "crypto";
 export const runtime = "nodejs";
 
 const DRIVE_DIR = "/var/www/krl-kr/drive";
-
-const PLAN_STORAGE: Record<string, number> = {
-  free: 5 * 1024 * 1024 * 1024,
-  pro: 20 * 1024 * 1024 * 1024,
-  vip: 100 * 1024 * 1024 * 1024,
-};
 
 async function ensureTable() {
   const { getPool } = await import("@/lib/db/postgres");
@@ -37,26 +32,6 @@ async function ensureTable() {
   return pool;
 }
 
-const BLOG_MEDIA_DIR = "/var/www/krl-kr/blog-media";
-
-function getDirSize(dir: string): number {
-  if (!fs.existsSync(dir)) return 0;
-  let total = 0;
-  function walk(d: string) {
-    for (const e of fs.readdirSync(d, { withFileTypes: true })) {
-      const p = path.join(d, e.name);
-      if (e.isDirectory()) walk(p);
-      else total += fs.statSync(p).size;
-    }
-  }
-  walk(dir);
-  return total;
-}
-
-function getUserTotalStorage(userId: string | number): number {
-  const id = String(userId);
-  return getDirSize(path.join(DRIVE_DIR, id)) + getDirSize(path.join(BLOG_MEDIA_DIR, id));
-}
 
 export async function GET(request: NextRequest) {
   try {
@@ -85,21 +60,15 @@ export async function GET(request: NextRequest) {
 
     const result = await pool.query(query, queryParams);
 
-    const planRow = await pool.query(
-      "SELECT plan, extra_storage_bytes, storage_override_bytes FROM user_plans WHERE user_id = $1",
-      [user.id]
-    );
-    const plan = planRow.rows[0]?.plan ?? "free";
-    const extraBytes = Number(planRow.rows[0]?.extra_storage_bytes ?? 0);
-    const overrideBytes = planRow.rows[0]?.storage_override_bytes != null
-      ? Number(planRow.rows[0].storage_override_bytes) : null;
-    const planMax = PLAN_STORAGE[plan] ?? PLAN_STORAGE.free;
-    const maxStorage = overrideBytes != null ? overrideBytes : planMax + extraBytes;
-    const usedStorage = getUserTotalStorage(user.id);
+    const [planRow, usedStorage] = await Promise.all([
+      getUserPlan(pool, user.id),
+      getStorageUsed(pool, user.id),
+    ]);
+    const maxStorage = getStorageLimit(planRow.plan, planRow.extra_storage_bytes, planRow.storage_override_bytes);
 
     return NextResponse.json({
       files: result.rows,
-      storage: { used: usedStorage, max: maxStorage, plan, extra_bytes: extraBytes },
+      storage: { used: usedStorage, max: maxStorage, plan: planRow.plan, extra_bytes: planRow.extra_storage_bytes },
     });
   } catch (err) {
     console.error("[drive GET]", err);
@@ -133,26 +102,15 @@ export async function POST(request: NextRequest) {
 
     // Upload file
     if (contentType.includes("multipart/form-data")) {
-      const planRow = await pool.query(
-        "SELECT plan, extra_storage_bytes, storage_override_bytes FROM user_plans WHERE user_id = $1",
-        [user.id]
-      );
-      const plan = planRow.rows[0]?.plan ?? "free";
-      const extraBytes = Number(planRow.rows[0]?.extra_storage_bytes ?? 0);
-      const overrideBytes = planRow.rows[0]?.storage_override_bytes != null
-        ? Number(planRow.rows[0].storage_override_bytes) : null;
-      const planMax = PLAN_STORAGE[plan] ?? PLAN_STORAGE.free;
-      const maxStorage = overrideBytes != null ? overrideBytes : planMax + extraBytes;
-      const usedStorage = getUserTotalStorage(user.id);
-
       const formData = await request.formData();
       const file = formData.get("file") as File | null;
       const parentId = formData.get("parent_id")?.toString() ?? null;
 
       if (!file) return NextResponse.json({ error: "파일을 선택해주세요." }, { status: 400 });
 
-      if (usedStorage + file.size > maxStorage) {
-        return NextResponse.json({ error: "저장 공간이 부족합니다." }, { status: 413 });
+      const quota = await checkStorageQuota(pool, user.id, file.size);
+      if (!quota.ok) {
+        return NextResponse.json({ error: "저장 공간이 부족합니다.", storage: quota }, { status: 413 });
       }
 
       const ext = file.name.split(".").pop() ?? "";
