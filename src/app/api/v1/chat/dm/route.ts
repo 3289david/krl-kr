@@ -16,11 +16,24 @@ export async function POST(request: NextRequest) {
     const { user, error } = await requireAuth(db, request);
     if (error) return error;
 
-    const { userId } = await request.json();
-    if (!userId || userId === user.id)
-      return NextResponse.json({ error: "잘못된 요청" }, { status: 400 });
+    const body = await request.json();
+    let { userId, username } = body;
 
     const pool = await getPool();
+
+    // Resolve by username (@name or @name#DISC)
+    if (!userId && username) {
+      username = username.replace(/^@/, "");
+      const [uname, disc] = username.split("#");
+      const q = disc
+        ? await pool.query("SELECT id FROM users WHERE username=$1 AND discriminator=$2", [uname, disc.toUpperCase()])
+        : await pool.query("SELECT id FROM users WHERE username=$1 LIMIT 1", [uname]);
+      if (!q.rows[0]) return NextResponse.json({ error: "사용자 없음" }, { status: 404 });
+      userId = q.rows[0].id;
+    }
+
+    if (!userId || userId === user.id)
+      return NextResponse.json({ error: "잘못된 요청" }, { status: 400 });
 
     // Check target user exists
     const target = await pool.query("SELECT id, name, avatar_url FROM users WHERE id=$1", [userId]);

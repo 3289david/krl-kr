@@ -53,6 +53,8 @@ const DEFAULT_CONFIG: HeaderConfig = {
     {
       id: "krl-services", label: "KRL 서비스", visible: true,
       items: [
+        { id: "chat", href: "/dashboard/chat", label: "KRL Chat", desc: "메신저 · 그룹채팅 · 채널", icon: "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z", visible: true },
+        { id: "voice", href: "/dashboard/voice", label: "KRL Voice", desc: "음성 채팅방 · 스테이지 모드", icon: "M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z M19 10v2a7 7 0 0 1-14 0v-2 M12 19v4 M8 23h8", visible: true },
         { id: "notes", href: "/dashboard/notes", label: "KRL Notes", desc: "클라우드 메모 서비스", icon: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M16 13H8 M16 17H8 M10 9H8", visible: true },
         { id: "tasks", href: "/dashboard/tasks", label: "KRL Tasks", desc: "할 일 관리", icon: "M9 11l3 3L22 4 M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11", visible: true },
         { id: "calendar", href: "/dashboard/calendar", label: "KRL Calendar", desc: "일정 관리", icon: "M8 2v4 M16 2v4 M3 10h18 M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z", visible: true },

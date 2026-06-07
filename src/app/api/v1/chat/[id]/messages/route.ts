@@ -112,9 +112,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (!member.rows[0]) return NextResponse.json({ error: "권한 없음" }, { status: 403 });
 
     const body = await request.json();
-    const { content, type = "text", threadId } = body;
+    const { content, type = "text", threadId, attachments = [] } = body;
 
-    if (!content?.trim() && type === "text") {
+    if (!content?.trim() && type === "text" && attachments.length === 0) {
       return NextResponse.json({ error: "내용이 없습니다" }, { status: 400 });
     }
 
@@ -125,6 +125,19 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       [id, user.id, content?.trim() ?? "", type, threadId ?? null, now]
     );
     const msg = r.rows[0];
+
+    // Save attachments
+    const savedAttachments: any[] = [];
+    for (const att of attachments as any[]) {
+      if (!att.name || !att.url) continue;
+      const ar = await pool.query(
+        `INSERT INTO chat_attachments (message_id, name, mime_type, size, url)
+         VALUES ($1,$2,$3,$4,$5) RETURNING *`,
+        [msg.id, att.name, att.mimeType ?? "application/octet-stream", att.size ?? 0, att.url]
+      );
+      const a = ar.rows[0];
+      savedAttachments.push({ id: Number(a.id), name: a.name, mimeType: a.mime_type, size: a.size, url: a.url });
+    }
 
     if (threadId) {
       await pool.query(
@@ -152,7 +165,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       createdAt: Number(msg.created_at),
       author: { id: user.id, name: authorName, avatar: authorAvatar },
       reactions: [],
-      attachments: [],
+      attachments: savedAttachments,
       isOwn: true,
     };
 

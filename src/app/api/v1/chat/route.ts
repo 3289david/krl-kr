@@ -17,6 +17,35 @@ export async function GET(request: NextRequest) {
     if (error) return error;
 
     const pool = await getPool();
+    const { searchParams } = new URL(request.url);
+    const isPublicFilter = searchParams.get("public") === "1";
+
+    // Public rooms discovery (not necessarily joined)
+    if (isPublicFilter) {
+      const result = await pool.query(
+        `SELECT r.id, r.type, r.name, r.description, r.avatar, r.invite_code,
+          r.owner_id, r.created_at, r.updated_at,
+          (SELECT COUNT(*) FROM chat_members WHERE room_id=r.id)::int AS member_count,
+          EXISTS(SELECT 1 FROM chat_members WHERE room_id=r.id AND user_id=$1) AS joined,
+          (SELECT json_agg(json_build_object('id', u.id, 'name', u.name, 'avatar', u.avatar_url))
+            FROM chat_members m2 JOIN users u ON u.id=m2.user_id
+            WHERE m2.room_id=r.id LIMIT 5) AS other_members
+         FROM chat_rooms r
+         WHERE r.is_public=true AND r.type != 'direct'
+         ORDER BY member_count DESC, r.created_at DESC
+         LIMIT 50`,
+        [user.id]
+      );
+      return NextResponse.json({
+        rooms: result.rows.map(r => ({
+          id: Number(r.id), type: r.type, name: r.name, description: r.description,
+          avatar: r.avatar, isPublic: true, ownerId: r.owner_id, inviteCode: r.invite_code,
+          role: null, lastReadAt: 0, unread: 0, otherMembers: r.other_members ?? [],
+          lastMessage: null, memberCount: r.member_count, joined: r.joined,
+          createdAt: Number(r.created_at), updatedAt: Number(r.updated_at),
+        }))
+      });
+    }
 
     const result = await pool.query(
       `SELECT
