@@ -37,56 +37,85 @@ function FileIcon({ file, size = 18 }: { file: DriveFile; size?: number }) {
   return <svg {...s} stroke="#94a3b8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6"/></svg>;
 }
 
+/* ─── 미리보기 타입 판별 ──────────────────────────────────── */
+const TEXT_EXTS = new Set(["txt","md","mdx","markdown","csv","tsv","log","ini","cfg","conf","env","gitignore","gitattributes","editorconfig","toml","yaml","yml","json","json5","jsonc","xml","html","htm","xhtml","svg","css","scss","sass","less","js","mjs","cjs","jsx","ts","tsx","vue","svelte","astro","py","rb","php","java","kt","kts","go","rs","c","h","cpp","hpp","cc","cs","swift","m","sh","bash","zsh","fish","ps1","bat","cmd","sql","graphql","gql","r","rmd","ipynb","tex","bib","gradle","makefile","dockerfile","docker-compose","nginx","htaccess","properties","plist","nix","lua","vim","el","clj","cljs","edn","scala","hs","ml","fs","fsx","fsi","elm","ex","exs","erl","hrl","dart","zig","v","odin","d","pas","pp","vb","asm","s","proto","thrift","avsc","wasm","wat"]);
+const IMG_MIME = new Set(["image/jpeg","image/png","image/gif","image/webp","image/avif","image/svg+xml","image/bmp","image/tiff","image/x-icon","image/heic","image/heif"]);
+const VID_MIME = new Set(["video/mp4","video/webm","video/ogg","video/quicktime","video/x-msvideo","video/x-matroska","video/3gpp","video/mpeg"]);
+const AUD_MIME = new Set(["audio/mpeg","audio/ogg","audio/wav","audio/webm","audio/aac","audio/flac","audio/x-flac","audio/mp4","audio/opus"]);
+
+function getPreviewType(file: DriveFile): "image"|"video"|"audio"|"pdf"|"text"|"iframe"|"none" {
+  const mime = file.mime_type ?? "";
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+  if (IMG_MIME.has(mime) || mime.startsWith("image/")) return "image";
+  if (VID_MIME.has(mime) || mime.startsWith("video/")) return "video";
+  if (AUD_MIME.has(mime) || mime.startsWith("audio/")) return "audio";
+  if (mime === "application/pdf") return "pdf";
+  if (mime.startsWith("text/") || mime === "application/json" || mime === "application/xml"
+    || mime === "application/javascript" || mime === "application/typescript"
+    || mime === "application/x-yaml" || mime === "application/toml"
+    || TEXT_EXTS.has(ext)) return "text";
+  return "none";
+}
+
 /* ─── 파일 미리보기 모달 ─────────────────────────────────── */
 function PreviewModal({ file, onClose }: { file: DriveFile; onClose: () => void }) {
   const src = `/api/v1/drive/${file.id}/download?preview=1`;
-  const mime = file.mime_type ?? "";
-  const isImg = mime.startsWith("image/");
-  const isVid = mime.startsWith("video/");
-  const isAud = mime.startsWith("audio/");
-  const isPdf = mime === "application/pdf";
-  const isTxt = mime.startsWith("text/") || mime === "application/json";
+  const type = getPreviewType(file);
   const [txt, setTxt] = useState<string | null>(null);
+  const isWide = type === "pdf" || type === "text" || type === "iframe";
 
   useEffect(() => {
-    if (isTxt) fetch(src).then(r => r.text()).then(setTxt).catch(() => setTxt("파일을 불러올 수 없습니다."));
-  }, [src, isTxt]);
+    if (type === "text") fetch(src).then(r => r.text()).then(t => setTxt(t.slice(0, 500_000))).catch(() => setTxt("파일을 불러올 수 없습니다."));
+  }, [src, type]);
+
+  // Esc 키로 닫기
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [onClose]);
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.75)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", zIndex: 700, padding: 16 }}
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.8)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", zIndex: 700, padding: 16 }}
       onClick={e => e.target === e.currentTarget && onClose()}>
-      <div style={{ background: "var(--color-surface)", borderRadius: 14, overflow: "hidden", maxWidth: "90vw", maxHeight: "90vh", width: isImg || isVid ? "auto" : 760, display: "flex", flexDirection: "column", boxShadow: "0 24px 80px rgba(0,0,0,.4)" }}>
+      <div style={{ background: "var(--color-surface)", borderRadius: 14, overflow: "hidden", maxWidth: isWide ? "min(92vw,860px)" : "min(92vw,680px)", maxHeight: "92vh", width: "100%", display: "flex", flexDirection: "column", boxShadow: "0 24px 80px rgba(0,0,0,.5)" }}>
         {/* 헤더 */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 18px", borderBottom: "1px solid var(--color-hairline)", flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 16px", borderBottom: "1px solid var(--color-hairline)", flexShrink: 0 }}>
           <FileIcon file={file} size={18} />
-          <span style={{ flex: 1, fontWeight: 600, fontSize: ".9375rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{file.name}</span>
-          <a href={`/api/v1/drive/${file.id}/download`} className="btn btn-sm btn-ghost" style={{ flexShrink: 0, gap: 4 }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-            다운로드
-          </a>
-          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-muted)", fontSize: "1.25rem", lineHeight: 1, padding: "2px 4px" }}>✕</button>
+          <span style={{ flex: 1, fontWeight: 600, fontSize: ".9rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{file.name}</span>
+          <a href={`/api/v1/drive/${file.id}/download`} className="btn btn-sm btn-ghost" style={{ flexShrink: 0 }}>↓ 다운로드</a>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-muted)", fontSize: "1.1rem", lineHeight: 1, padding: "3px 6px", borderRadius: 6 }}>✕</button>
         </div>
         {/* 컨텐츠 */}
-        <div style={{ flex: 1, overflow: "auto", display: "flex", alignItems: "center", justifyContent: "center", minHeight: 200 }}>
-          {isImg && <img src={src} alt={file.name} style={{ maxWidth: "85vw", maxHeight: "80vh", objectFit: "contain", display: "block" }} />}
-          {isVid && <video src={src} controls style={{ maxWidth: "85vw", maxHeight: "80vh" }} autoPlay={false} />}
-          {isAud && (
-            <div style={{ padding: 40, textAlign: "center" }}>
-              <FileIcon file={file} size={48} />
-              <div style={{ marginTop: 16, fontWeight: 500, marginBottom: 16 }}>{file.name}</div>
-              <audio src={src} controls style={{ width: 340 }} />
+        <div style={{ flex: 1, overflow: "auto", display: "flex", alignItems: type === "image" || type === "video" || type === "audio" ? "center" : "flex-start", justifyContent: "center", background: type === "image" ? "#0a0a0a" : undefined }}>
+          {type === "image" && (
+            <img src={src} alt={file.name} style={{ maxWidth: "100%", maxHeight: "80vh", objectFit: "contain", display: "block" }} />
+          )}
+          {type === "video" && (
+            <video src={src} controls style={{ maxWidth: "100%", maxHeight: "80vh", background: "#000" }} />
+          )}
+          {type === "audio" && (
+            <div style={{ padding: 48, textAlign: "center", width: "100%" }}>
+              <FileIcon file={file} size={56} />
+              <div style={{ margin: "16px 0", fontWeight: 500, fontSize: ".9375rem" }}>{file.name}</div>
+              <audio src={src} controls style={{ width: "100%", maxWidth: 380 }} />
             </div>
           )}
-          {isPdf && <iframe src={src} style={{ width: 740, height: "75vh", border: "none" }} title={file.name} />}
-          {isTxt && (
-            <pre style={{ margin: 0, padding: 24, width: "100%", maxHeight: "75vh", overflow: "auto", fontSize: ".8125rem", fontFamily: "monospace", whiteSpace: "pre-wrap", wordBreak: "break-all", color: "var(--color-ink)" }}>
-              {txt ?? "불러오는 중..."}
+          {type === "pdf" && (
+            <iframe src={src} style={{ width: "100%", height: "80vh", border: "none" }} title={file.name} />
+          )}
+          {type === "text" && (
+            <pre style={{ margin: 0, padding: "20px 24px", width: "100%", fontSize: ".8125rem", fontFamily: "'JetBrains Mono',monospace,ui-monospace", lineHeight: 1.6, whiteSpace: "pre-wrap", wordBreak: "break-all", color: "var(--color-ink)", overflowWrap: "anywhere" }}>
+              {txt === null ? "불러오는 중..." : txt}
             </pre>
           )}
-          {!isImg && !isVid && !isAud && !isPdf && !isTxt && (
-            <div style={{ padding: 48, textAlign: "center" }}>
-              <FileIcon file={file} size={52} />
-              <div style={{ marginTop: 16, color: "var(--color-muted)", fontSize: ".9rem", marginBottom: 20 }}>이 파일 형식은 미리보기를 지원하지 않습니다.</div>
+          {type === "none" && (
+            <div style={{ padding: 56, textAlign: "center" }}>
+              <FileIcon file={file} size={56} />
+              <div style={{ marginTop: 16, color: "var(--color-muted)", fontSize: ".9rem", marginBottom: 24 }}>
+                이 파일 형식은 미리보기를 지원하지 않습니다.<br />
+                <span style={{ fontSize: ".8rem" }}>{file.mime_type ?? "알 수 없는 형식"}</span>
+              </div>
               <a href={`/api/v1/drive/${file.id}/download`} className="btn btn-primary">다운로드</a>
             </div>
           )}
@@ -347,10 +376,17 @@ export default function DrivePage() {
         .drv-card { padding:16px 10px 12px; border:1.5px solid var(--color-hairline); border-radius:12px; cursor:pointer; text-align:center; transition:box-shadow .15s,border-color .15s; background:var(--color-surface); }
         .drv-card:hover { box-shadow:0 4px 14px rgba(0,0,0,.08); border-color:var(--color-muted); }
         .drv-card.sel { border-color:#3b82f6; background:#eff6ff; }
-        .drv-act { display:inline-flex; align-items:center; justify-content:center; padding:4px 7px; border:none; background:none; cursor:pointer; border-radius:5px; color:var(--color-muted); transition:background .1s,color .1s; }
-        .drv-act:hover { background:var(--color-canvas); color:var(--color-ink); }
+        .drv-act { display:inline-flex; align-items:center; justify-content:center; padding:4px 7px; border:none; background:none; cursor:pointer; border-radius:5px; color:var(--color-muted); transition:background .1s,color .1s; text-decoration:none; }
+        .drv-act:hover { background:var(--color-hairline); color:var(--color-ink); }
         .drv-act.danger:hover { color:#dc2626; }
         .drv-storage { padding:12px 14px; border-top:1px solid var(--color-hairline); flex-shrink:0; }
+        /* 파일 행: 평소엔 크기 표시, 호버 시 액션 버튼 표시 */
+        .drv-row .drv-size { display:flex; align-items:center; }
+        .drv-row .drv-actions { display:none; align-items:center; gap:1px; }
+        .drv-row:hover .drv-size { display:none; }
+        .drv-row:hover .drv-actions { display:flex; }
+        .drv-row.sel .drv-size { display:none; }
+        .drv-row.sel .drv-actions { display:flex; }
         @media(max-width:640px){ .drv-nav{ display:none } }
       `}</style>
 
@@ -512,8 +548,7 @@ export default function DrivePage() {
                   onChange={() => setSelected(s => s.size === files.length ? new Set() : new Set(files.map(f => f.id)))}
                   style={{ width: 14, height: 14, cursor: "pointer", flexShrink: 0 }} />
                 <span style={{ flex: 1, fontSize: ".72rem", fontWeight: 600, color: "var(--color-muted)", textTransform: "uppercase", letterSpacing: ".05em" }}>이름</span>
-                <span style={{ width: 70, fontSize: ".72rem", fontWeight: 600, color: "var(--color-muted)", textTransform: "uppercase", textAlign: "right", flexShrink: 0 }}>크기</span>
-                <span style={{ width: 100, flexShrink: 0 }} />
+                <span style={{ minWidth: 64, fontSize: ".72rem", fontWeight: 600, color: "var(--color-muted)", textTransform: "uppercase", textAlign: "right", flexShrink: 0 }}>크기</span>
               </div>
               {files.map(file => (
                 <div key={file.id} style={{ borderBottom: "1px solid var(--color-hairline)" }} onContextMenu={e => { e.preventDefault(); setCtx({ x: e.clientX, y: e.clientY, file }); }}>
@@ -536,16 +571,19 @@ export default function DrivePage() {
                       <span onClick={e => { e.stopPropagation(); if (file.type === "file") setPreviewFile(file); }}
                         style={{ flex: 1, fontSize: ".875rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: file.type === "file" ? "pointer" : "default" }}
                         title={file.type === "file" ? "클릭하여 미리보기" : undefined}>{file.name}</span>
-                      {file.is_starred && <svg width="11" height="11" viewBox="0 0 24 24" fill="#f59e0b" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>}
-                      {file.is_shared && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth={2}><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98"/></svg>}
-                      <span style={{ width: 70, fontSize: ".8125rem", color: "var(--color-muted)", textAlign: "right", flexShrink: 0 }}>
-                        {file.type === "file" ? formatBytes(file.size) : "—"}
-                      </span>
-                      {/* 액션 버튼 */}
-                      <div style={{ width: 100, display: "flex", gap: 1, justifyContent: "flex-end", flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+                      {/* 크기 — 평소 표시, 호버 시 숨김 */}
+                      <div className="drv-size" style={{ minWidth: 64, justifyContent: "flex-end", flexShrink: 0 }}>
+                        {file.is_starred && <svg width="11" height="11" viewBox="0 0 24 24" fill="#f59e0b" stroke="none" style={{ marginRight: 4 }}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>}
+                        {file.is_shared && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth={2} style={{ marginRight: 4 }}><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98"/></svg>}
+                        <span style={{ fontSize: ".8125rem", color: "var(--color-muted)" }}>
+                          {file.type === "file" ? formatBytes(file.size) : "폴더"}
+                        </span>
+                      </div>
+                      {/* 액션 버튼 — 호버 시 표시 */}
+                      <div className="drv-actions" style={{ flexShrink: 0 }} onClick={e => e.stopPropagation()}>
                         {view === "trash" ? (
                           <>
-                            <button className="drv-act" title="복원" onClick={() => restore(file.id)}>↩</button>
+                            <button className="drv-act" title="복원" onClick={() => restore(file.id)}>↩ 복원</button>
                             <button className="drv-act danger" title="영구삭제" onClick={() => deletePerm(file.id)}>🗑</button>
                           </>
                         ) : (
