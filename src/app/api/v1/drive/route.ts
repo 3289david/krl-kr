@@ -8,30 +8,12 @@ import { randomUUID } from "crypto";
 
 export const runtime = "nodejs";
 
-const DRIVE_DIR = "/var/www/krl-kr/drive";
+export const DRIVE_DIR = "/var/www/krl-kr/drive";
 
-async function ensureTable() {
-  const { getPool } = await import("@/lib/db/postgres");
-  const pool = getPool();
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS drive_files (
-      id SERIAL PRIMARY KEY,
-      user_id TEXT NOT NULL,
-      parent_id INTEGER REFERENCES drive_files(id) ON DELETE CASCADE,
-      name TEXT NOT NULL,
-      type TEXT NOT NULL CHECK (type IN ('file', 'folder')),
-      mime_type TEXT,
-      size BIGINT DEFAULT 0,
-      storage_path TEXT,
-      share_token TEXT UNIQUE,
-      is_shared BOOLEAN DEFAULT FALSE,
-      created_at BIGINT NOT NULL,
-      updated_at BIGINT
-    )
-  `);
-  return pool;
+export async function getPool() {
+  const { getPool: gp } = await import("@/lib/db/postgres");
+  return gp();
 }
-
 
 export async function GET(request: NextRequest) {
   try {
@@ -39,22 +21,39 @@ export async function GET(request: NextRequest) {
     const { user, error } = await requireAuth(db, request);
     if (error) return error;
 
-    const pool = await ensureTable();
+    const pool = await getPool();
     const { searchParams } = new URL(request.url);
     const parentId = searchParams.get("parent");
     const search = searchParams.get("search");
+    const view = searchParams.get("view"); // "starred" | "trash" | "recent"
+    const sort = searchParams.get("sort") ?? "name";
+    const order = searchParams.get("order") ?? "asc";
+
+    const sortCol = ["name", "size", "created_at", "updated_at"].includes(sort) ? sort : "name";
+    const sortDir = order === "desc" ? "DESC" : "ASC";
+    // Folders always first
+    const orderClause = `ORDER BY type DESC, ${sortCol} ${sortDir}`;
 
     let query: string;
     let queryParams: unknown[];
 
-    if (search) {
-      query = "SELECT * FROM drive_files WHERE user_id = $1 AND name ILIKE $2 ORDER BY type DESC, name ASC";
+    if (view === "starred") {
+      query = `SELECT * FROM drive_files WHERE user_id=$1 AND is_starred=TRUE AND deleted_at IS NULL ${orderClause}`;
+      queryParams = [user.id];
+    } else if (view === "trash") {
+      query = `SELECT * FROM drive_files WHERE user_id=$1 AND deleted_at IS NOT NULL ${orderClause}`;
+      queryParams = [user.id];
+    } else if (view === "recent") {
+      query = `SELECT * FROM drive_files WHERE user_id=$1 AND type='file' AND deleted_at IS NULL ORDER BY updated_at DESC LIMIT 50`;
+      queryParams = [user.id];
+    } else if (search) {
+      query = `SELECT * FROM drive_files WHERE user_id=$1 AND name ILIKE $2 AND deleted_at IS NULL ${orderClause}`;
       queryParams = [user.id, `%${search}%`];
     } else if (parentId) {
-      query = "SELECT * FROM drive_files WHERE user_id = $1 AND parent_id = $2 ORDER BY type DESC, name ASC";
+      query = `SELECT * FROM drive_files WHERE user_id=$1 AND parent_id=$2 AND deleted_at IS NULL ${orderClause}`;
       queryParams = [user.id, parentId];
     } else {
-      query = "SELECT * FROM drive_files WHERE user_id = $1 AND parent_id IS NULL ORDER BY type DESC, name ASC";
+      query = `SELECT * FROM drive_files WHERE user_id=$1 AND parent_id IS NULL AND deleted_at IS NULL ${orderClause}`;
       queryParams = [user.id];
     }
 
@@ -82,15 +81,46 @@ export async function POST(request: NextRequest) {
     const { user, error } = await requireAuth(db, request);
     if (error) return error;
 
-    const pool = await ensureTable();
+    const pool = await getPool();
     const contentType = request.headers.get("content-type") ?? "";
 
-    // Create folder
     if (contentType.includes("application/json")) {
       const body = await request.json();
-      const { name, parent_id } = body;
-      if (!name) return NextResponse.json({ error: "폴더 이름을 입력해주세요." }, { status: 400 });
+      const { name, parent_id, action, ids, target_id } = body as Record<string, unknown>;
 
+      // Bulk delete (to trash)
+      if (action === "bulk_trash" && Array.isArray(ids)) {
+        await pool.query(
+          `UPDATE drive_files SET deleted_at=$1 WHERE user_id=$2 AND id=ANY($3::int[])`,
+          [Date.now(), user.id, ids]
+        );
+        return NextResponse.json({ success: true });
+      }
+
+      // Bulk move
+      if (action === "bulk_move" && Array.isArray(ids)) {
+        await pool.query(
+          `UPDATE drive_files SET parent_id=$1, updated_at=$2 WHERE user_id=$3 AND id=ANY($4::int[])`,
+          [target_id ?? null, Date.now(), user.id, ids]
+        );
+        return NextResponse.json({ success: true });
+      }
+
+      // Empty trash
+      if (action === "empty_trash") {
+        const trashed = await pool.query(
+          "SELECT storage_path FROM drive_files WHERE user_id=$1 AND deleted_at IS NOT NULL AND type='file'",
+          [user.id]
+        );
+        for (const row of trashed.rows) {
+          if (row.storage_path) try { fs.unlinkSync(row.storage_path); } catch {}
+        }
+        await pool.query("DELETE FROM drive_files WHERE user_id=$1 AND deleted_at IS NOT NULL", [user.id]);
+        return NextResponse.json({ success: true });
+      }
+
+      // Create folder
+      if (!name) return NextResponse.json({ error: "폴더 이름을 입력해주세요." }, { status: 400 });
       const now = Date.now();
       const result = await pool.query(
         `INSERT INTO drive_files (user_id, parent_id, name, type, created_at, updated_at)
