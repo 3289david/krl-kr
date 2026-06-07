@@ -10,24 +10,19 @@ const NAV_ITEMS = [
     exact: true,
   },
   {
+    href: "/dashboard/chat",
+    label: "채팅",
+    icon: "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z",
+  },
+  {
+    href: "/dashboard/drive",
+    label: "드라이브",
+    icon: "M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z",
+  },
+  {
     href: "/dashboard/links",
     label: "링크",
     icon: "M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71 M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71",
-  },
-  {
-    href: "/dashboard/qr",
-    label: "QR",
-    icon: "M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h4 M18 14v4 M14 18h4 M18 18v4",
-  },
-  {
-    href: "/dashboard/bio",
-    label: "Bio",
-    icon: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z",
-  },
-  {
-    href: "/dashboard/blog",
-    label: "블로그",
-    icon: "M12 20h9 M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z",
   },
   {
     href: "/dashboard/settings",

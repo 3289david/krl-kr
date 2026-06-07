@@ -387,23 +387,26 @@ export default function DrivePage() {
         .drv-row:hover .drv-actions { display:flex; }
         .drv-row.sel .drv-size { display:none; }
         .drv-row.sel .drv-actions { display:flex; }
-        /* 모바일 */
-        .drv-mobile-nav { display:none; position:fixed; bottom:0; left:0; right:0; height:56px; background:var(--color-surface); border-top:1px solid var(--color-hairline); z-index:100; }
-        .drv-mobile-tab { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; border:none; background:none; cursor:pointer; font-size:.6875rem; color:var(--color-muted); padding:6px 0; transition:color .15s; }
-        .drv-mobile-tab.active { color:#3b82f6; }
-        .drv-mobile-tab svg { transition:transform .15s; }
-        .drv-mobile-tab.active svg { transform:scale(1.1); }
+        /* 모바일 뷰 탭 (인라인, 고정 아님) */
+        .drv-view-tabs { display:none; overflow-x:auto; scrollbar-width:none; border-bottom:1px solid var(--color-hairline); background:var(--color-surface); flex-shrink:0; }
+        .drv-view-tabs::-webkit-scrollbar { display:none; }
+        .drv-view-tab { flex-shrink:0; display:inline-flex; align-items:center; gap:6px; padding:9px 14px; border:none; background:none; cursor:pointer; font-size:.8125rem; color:var(--color-muted); white-space:nowrap; border-bottom:2px solid transparent; transition:color .15s,border-color .15s; }
+        .drv-view-tab.active { color:#3b82f6; border-bottom-color:#3b82f6; font-weight:600; }
+        /* FAB — 위치는 대시보드 하단 탭바(~56px) 위 */
         .drv-fab { display:none; position:fixed; bottom:70px; right:18px; width:52px; height:52px; border-radius:50%; background:#3b82f6; color:#fff; border:none; cursor:pointer; box-shadow:0 4px 16px rgba(59,130,246,.5); font-size:1.5rem; align-items:center; justify-content:center; z-index:101; transition:transform .15s,box-shadow .15s; }
         .drv-fab:hover { transform:scale(1.05); box-shadow:0 6px 20px rgba(59,130,246,.6); }
         .drv-fab:active { transform:scale(.96); }
+        @media(max-width:768px){
+          /* 대시보드 하단 탭바가 보이는 breakpoint와 맞춤 */
+          .drv-scroll { padding-bottom:70px; }
+        }
         @media(max-width:640px){
           .drv-nav { display:none; }
-          .drv-mobile-nav { display:flex; }
+          .drv-view-tabs { display:flex; }
           .drv-fab { display:flex; }
           /* 모바일에서 항상 액션 표시 */
           .drv-row .drv-size { display:none !important; }
           .drv-row .drv-actions { display:flex !important; }
-          .drv-scroll { padding-bottom:72px; }
           .drv-toolbar { padding:8px 10px; gap:6px; min-height:46px; }
           .drv-row { padding:10px 8px; gap:8px; min-height:48px; }
           .drv-card { padding:14px 8px 10px; }
@@ -465,6 +468,19 @@ export default function DrivePage() {
             <span style={{ fontSize: "1.1rem", fontWeight: 600, color: "#3b82f6" }}>파일을 여기에 놓으세요</span>
           </div>
         )}
+
+        {/* ── 모바일 뷰 탭 (인라인, 대시보드 하단바와 충돌 없음) ── */}
+        <div className="drv-view-tabs">
+          {views.map(v => (
+            <button key={v.id} className={`drv-view-tab${view === v.id ? " active" : ""}`} onClick={() => switchView(v.id)}>
+              {v.id === "my" && <svg width="14" height="14" viewBox="0 0 24 24" fill={view==="my"?"#3b82f6":"none"} stroke={view==="my"?"#3b82f6":"currentColor"} strokeWidth={1.8}><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>}
+              {v.id === "recent" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>}
+              {v.id === "starred" && <svg width="14" height="14" viewBox="0 0 24 24" fill={view==="starred"?"#f59e0b":"none"} stroke={view==="starred"?"#f59e0b":"currentColor"} strokeWidth={1.8}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>}
+              {v.id === "trash" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>}
+              {v.label}
+            </button>
+          ))}
+        </div>
 
         {/* ── 툴바 (1줄) ── */}
         <div className="drv-toolbar">
@@ -703,20 +719,6 @@ export default function DrivePage() {
           : <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>}
       </button>
 
-      {/* ── 모바일 하단 탭바 ── */}
-      <nav className="drv-mobile-nav">
-        {[
-          { id: "my" as ViewMode, label: "드라이브", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill={view==="my"?"#3b82f6":"none"} stroke={view==="my"?"#3b82f6":"currentColor"} strokeWidth={1.8}><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> },
-          { id: "recent" as ViewMode, label: "최근", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> },
-          { id: "starred" as ViewMode, label: "별표", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill={view==="starred"?"#f59e0b":"none"} stroke={view==="starred"?"#f59e0b":"currentColor"} strokeWidth={1.8}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> },
-          { id: "trash" as ViewMode, label: "휴지통", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6M9 6V4h6v2"/></svg> },
-        ].map(t => (
-          <button key={t.id} className={`drv-mobile-tab${view===t.id?" active":""}`} onClick={() => switchView(t.id)}>
-            {t.icon}
-            <span>{t.label}</span>
-          </button>
-        ))}
-      </nav>
     </div>
   );
 }
