@@ -25,9 +25,17 @@ const staticSrc = path.join(__dirname, '.next', 'static');
 const staticDest = path.join(standaloneNext, 'static');
 const buildIdSrc = path.join(__dirname, '.next', 'BUILD_ID');
 const buildIdDest = path.join(standaloneNext, 'BUILD_ID');
+// Clean up any leftover temp dirs from previous interrupted swaps
+const standaloneNextDir = standaloneNext;
+if (fs.existsSync(standaloneNextDir)) {
+  for (const entry of fs.readdirSync(standaloneNextDir)) {
+    if (entry.startsWith('static_tmp_')) {
+      execSync(`rm -rf "${path.join(standaloneNextDir, entry)}"`);
+    }
+  }
+}
 if (fs.existsSync(staticSrc)) {
-  const tmpDest = staticDest + '_tmp_' + Date.now();
-  execSync(`cp -r "${staticSrc}" "${tmpDest}" && rm -rf "${staticDest}" && mv "${tmpDest}" "${staticDest}"`);
+  execSync(`rm -rf "${staticDest}" && cp -r "${staticSrc}" "${staticDest}"`);
 }
 if (fs.existsSync(buildIdSrc)) {
   fs.copyFileSync(buildIdSrc, buildIdDest);
