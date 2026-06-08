@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
 
     const pool = await getPool();
     const r = await pool.query(
-      "SELECT id, name, username, email, avatar_url, plan, created_at FROM users WHERE id=$1",
+      "SELECT id, name, username, discriminator, email, avatar_url, plan, created_at FROM users WHERE id=$1",
       [user.id]
     );
     const u = r.rows[0];
@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
       id: u.id,
       name: u.name,
       username: u.username,
+      discriminator: u.discriminator,
       email: u.email,
       avatar: u.avatar_url,
       plan: u.plan,
@@ -44,7 +45,7 @@ export async function PATCH(request: NextRequest) {
     const { user, error } = await requireAuth(db, request);
     if (error) return error;
 
-    const { username, name } = await request.json();
+    const { username, name, discriminator } = await request.json();
     const pool = await getPool();
 
     const sets: string[] = [];
@@ -71,6 +72,18 @@ export async function PATCH(request: NextRequest) {
       vals.push(name.trim());
     }
 
+    if (discriminator !== undefined) {
+      if (!discriminator) {
+        sets.push(`discriminator=$${idx++}`);
+        vals.push(null);
+      } else {
+        const d = String(discriminator).toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4);
+        if (d.length !== 4) return NextResponse.json({ error: "태그는 4자리 영숫자여야 합니다" }, { status: 400 });
+        sets.push(`discriminator=$${idx++}`);
+        vals.push(d);
+      }
+    }
+
     if (sets.length === 0) return NextResponse.json({ ok: true });
 
     sets.push(`updated_at=$${idx++}`);
@@ -79,7 +92,11 @@ export async function PATCH(request: NextRequest) {
 
     await pool.query(`UPDATE users SET ${sets.join(",")} WHERE id=$${idx}`, vals);
     return NextResponse.json({ ok: true });
-  } catch (err) {
+  } catch (err: any) {
+    if (err?.code === "23505") {
+      if (err.constraint?.includes("name_disc")) return NextResponse.json({ error: "이미 사용 중인 username#태그 조합입니다" }, { status: 409 });
+      return NextResponse.json({ error: "이미 사용 중인 정보입니다" }, { status: 409 });
+    }
     console.error("[profile PATCH]", err);
     return NextResponse.json({ error: "서버 오류" }, { status: 500 });
   }

@@ -177,7 +177,7 @@ function AIModal({ roomId, plan, onClose }: { roomId: number; plan: string; onCl
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
-  const isPro = plan !== "free";
+  const isPro = plan === "pro" || plan === "vip" || plan === "starter";
 
   async function run() {
     if (!isPro) return;
@@ -273,7 +273,13 @@ function NewRoomModal({ onClose, onCreate, myId }: { onClose(): void; onCreate(r
         window.location.href = `/dashboard/chat?room=${d.roomId}`; return;
       }
       if (tab === "dm") {
-        const r = await api("/dm", { method: "POST", body: JSON.stringify({ username: target.replace(/^@/,"").split("#")[0], userId: target.includes("#") ? undefined : target }) });
+        // Send the full username string (including # discriminator if present)
+        // The DM route resolves @username, username#DISC, or plain userId
+        const trimmed = target.trim();
+        const body = trimmed.includes("@") || trimmed.includes("#")
+          ? { username: trimmed }
+          : { userId: trimmed, username: trimmed }; // could be ID or username
+        const r = await api("/dm", { method: "POST", body: JSON.stringify(body) });
         const d = await r.json();
         if (!r.ok) { setErr(d.error); return; }
         window.location.href = `/dashboard/chat?room=${d.roomId}`; return;
@@ -324,13 +330,21 @@ function NewRoomModal({ onClose, onCreate, myId }: { onClose(): void; onCreate(r
           {tab === "open" && (
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               {openRooms.length === 0 ? <div style={{ textAlign: "center", color: "var(--color-muted)", padding: "20px 0", fontSize: ".875rem" }}>공개 채팅방이 없습니다</div> : openRooms.map(r => (
-                <button key={r.id} onClick={() => { window.location.href = `/dashboard/chat?room=${r.id}`; }}
+                <button key={r.id} onClick={async () => {
+                  setLoading(true);
+                  const res = await api("/join", { method: "POST", body: JSON.stringify({ roomId: r.id }) });
+                  const d = await res.json();
+                  setLoading(false);
+                  if (!res.ok) { setErr(d.error); return; }
+                  window.location.href = `/dashboard/chat?room=${d.roomId}`;
+                }}
                   style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: "var(--color-canvas)", border: "1px solid var(--color-hairline)", borderRadius: 10, cursor: "pointer", textAlign: "left" }}>
                   <span style={{ width: 32, height: 32, borderRadius: 8, background: "#eff6ff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{r.type==="channel"?I.hash:I.users}</span>
-                  <div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 600, fontSize: ".875rem" }}>{r.name}</div>
-                    {r.description && <div style={{ fontSize: ".75rem", color: "var(--color-muted)" }}>{r.description}</div>}
+                    {r.description && <div style={{ fontSize: ".75rem", color: "var(--color-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.description}</div>}
                   </div>
+                  <span style={{ fontSize: ".75rem", color: "var(--color-muted)", flexShrink: 0 }}>참여 →</span>
                 </button>
               ))}
             </div>
@@ -457,6 +471,7 @@ export default function ChatPage() {
   const [typingUsers, setTypingUsers] = useState<Map<string,{name:string;ts:number}>>(new Map());
   const [search, setSearch] = useState("");
   const [friendSearch, setFriendSearch] = useState("");
+  const [micError, setMicError] = useState("");
 
   const msgEndRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -466,6 +481,7 @@ export default function ChatPage() {
   const sseRef = useRef<EventSource|null>(null);
   const recorderRef = useRef<MediaRecorder|null>(null);
   const recTimerRef = useRef<ReturnType<typeof setInterval>>();
+  const micStreamRef = useRef<MediaStream|null>(null);
   const loadedRef = useRef(false);
 
   // Load me
@@ -582,8 +598,14 @@ export default function ChatPage() {
     const d = await r.json();
     if (r.ok) {
       const msg: Message = { ...d.message, isOwn: true };
-      if (threadId) { setThreadMsgs(prev => [...prev, msg]); setMessages(prev => prev.map(m => m.id === threadId ? { ...m, replyCount: m.replyCount+1 } : m)); }
-      else { setMessages(prev => [...prev, msg]); setTimeout(() => msgEndRef.current?.scrollIntoView({ behavior: "smooth" }), 40); }
+      // Dedup: SSE may have already delivered this message before the HTTP response resolved
+      if (threadId) {
+        setThreadMsgs(prev => prev.find(m => m.id === msg.id) ? prev : [...prev, msg]);
+        setMessages(prev => prev.map(m => m.id === threadId ? { ...m, replyCount: m.replyCount+1 } : m));
+      } else {
+        setMessages(prev => prev.find(m => m.id === msg.id) ? prev : [...prev, msg]);
+        setTimeout(() => msgEndRef.current?.scrollIntoView({ behavior: "smooth" }), 40);
+      }
       setPendingAttachments([]);
     }
   }
@@ -613,25 +635,58 @@ export default function ChatPage() {
   }
 
   async function startRecording() {
+    setMicError("");
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setMicError("이 브라우저는 음성 메시지를 지원하지 않습니다. HTTPS 환경의 Chrome/Safari를 사용해주세요.");
+      return;
+    }
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: { noiseSuppression: true, echoCancellation: true, autoGainControl: true } });
-      const recorder = new MediaRecorder(stream, { mimeType: "audio/webm;codecs=opus" });
+      // Reuse existing stream to avoid repeated permission prompts
+      let stream = micStreamRef.current;
+      if (!stream || !stream.active) {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: { noiseSuppression: true, echoCancellation: true, autoGainControl: true } });
+        micStreamRef.current = stream;
+      }
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus"
+        : MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm"
+        : MediaRecorder.isTypeSupported("audio/mp4") ? "audio/mp4"
+        : "";
+      const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+      const ext = mimeType.includes("mp4") ? "m4a" : "webm";
       const chunks: Blob[] = [];
       recorder.ondataavailable = e => chunks.push(e.data);
+      const roomId = activeRoom!.id;
       recorder.onstop = async () => {
-        stream.getTracks().forEach(t => t.stop());
-        const blob = new Blob(chunks, { type: "audio/webm" });
-        const file = new File([blob], `voice_${Date.now()}.webm`, { type: "audio/webm" });
-        await uploadFile(file);
-        // Auto-send voice message
-        await sendMsg("[음성 메시지]");
-        setPendingAttachments([]);
+        const blob = new Blob(chunks, { type: recorder.mimeType || "audio/webm" });
+        const file = new File([blob], `voice_${Date.now()}.${ext}`, { type: blob.type });
+        const fd = new FormData(); fd.append("file", file);
+        setUploading(true);
+        const up = await fetch(`/api/v1/chat/${roomId}/upload`, { method: "POST", body: fd }).catch(() => null);
+        setUploading(false);
+        if (!up?.ok) { setMicError("음성 메시지 업로드에 실패했습니다"); return; }
+        const ud = await up.json();
+        const res = await api(`/${roomId}/messages`, { method: "POST", body: JSON.stringify({ content: "[음성 메시지]", type: "text", attachments: [ud.attachment] }) });
+        const rd = await res.json();
+        if (res.ok) {
+          const msg: Message = { ...rd.message, isOwn: true };
+          setMessages(prev => prev.find(m => m.id === msg.id) ? prev : [...prev, msg]);
+          setTimeout(() => msgEndRef.current?.scrollIntoView({ behavior: "smooth" }), 40);
+        }
       };
       recorder.start();
       recorderRef.current = recorder;
       setRecording(true); setRecSec(0);
       recTimerRef.current = setInterval(() => setRecSec(s => s + 1), 1000);
-    } catch { alert("마이크 권한이 필요합니다"); }
+    } catch (e: any) {
+      if (e?.name === "NotAllowedError" || e?.name === "PermissionDeniedError") {
+        micStreamRef.current = null;
+        setMicError("마이크 접근이 거부되었습니다. 브라우저 주소창 옆 자물쇠 아이콘 → 마이크 허용 후 다시 시도해주세요.");
+      } else if (e?.name === "NotFoundError") {
+        setMicError("마이크를 찾을 수 없습니다. 마이크가 연결되어 있는지 확인해주세요.");
+      } else {
+        setMicError(`마이크 오류: ${e?.message ?? "알 수 없는 오류"}`);
+      }
+    }
   }
 
   function stopRecording() {
@@ -639,6 +694,11 @@ export default function ChatPage() {
     clearInterval(recTimerRef.current);
     setRecording(false); setRecSec(0);
   }
+
+  // Release mic on unmount
+  useEffect(() => {
+    return () => { micStreamRef.current?.getTracks().forEach(t => t.stop()); };
+  }, []);
 
   async function react(msgId: number, emoji: string) {
     await api(`/messages/${msgId}/react`, { method: "POST", body: JSON.stringify({ emoji }) });
@@ -685,19 +745,43 @@ export default function ChatPage() {
   const acceptedFriends = friends.filter(f => f.status==="accepted");
 
   return (
-    <div style={{ display: "flex", height: "calc(100vh - 60px)", overflow: "hidden", background: "var(--color-canvas)", fontFamily: "var(--font-sans)" }}>
+    <div className="chat-app" style={{ display: "flex", overflow: "hidden", background: "var(--color-canvas)", fontFamily: "var(--font-sans)" }}>
       <style>{`
+        /* Desktop */
+        .chat-app { height: calc(100dvh - 54px); margin: -24px 0; }
+        @media(min-width:769px){ .chat-app { margin: -24px 0; } }
+
+        /* Mobile: fixed full-screen below header, above bottom nav */
+        @media(max-width:768px){
+          .chat-app {
+            position: fixed !important;
+            top: 54px !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: calc(60px + env(safe-area-inset-bottom, 0px)) !important;
+            height: auto !important;
+            margin: 0 !important;
+            z-index: 20;
+          }
+        }
+
         .chat-sb { width:240px; flex-shrink:0; display:flex; flex-direction:column; background:var(--color-surface); border-right:1px solid var(--color-hairline); overflow:hidden; }
         .room-btn { display:flex; align-items:center; gap:8px; padding:6px 8px; border:none; background:none; cursor:pointer; width:100%; text-align:left; border-radius:8px; transition:background .1s; }
         .room-btn:hover { background:var(--color-canvas); }
         .room-btn.active { background:#eff6ff; }
         .sect-label { padding:6px 8px 2px; font-size:.7rem; font-weight:700; color:var(--color-muted); text-transform:uppercase; letter-spacing:.05em; }
-        .chat-textarea { width:100%; border:1.5px solid var(--color-hairline); border-radius:10px; padding:9px 12px; font-family:var(--font-sans); font-size:.9375rem; resize:none; outline:none; background:var(--color-canvas); color:var(--color-ink); transition:border-color .15s; min-height:40px; max-height:150px; }
+        .chat-textarea { width:100%; border:1.5px solid var(--color-hairline); border-radius:10px; padding:9px 12px; font-family:var(--font-sans); font-size:.9375rem; resize:none; outline:none; background:var(--color-canvas); color:var(--color-ink); transition:border-color .15s; min-height:40px; max-height:120px; }
         .chat-textarea:focus { border-color:#3b82f6; }
         .icon-btn { background:none; border:none; cursor:pointer; padding:5px; border-radius:6px; color:var(--color-muted); display:flex; align-items:center; transition:background .1s,color .1s; }
         .icon-btn:hover { background:var(--color-canvas); color:var(--color-ink); }
         .thread-panel { width:300px; flex-shrink:0; border-left:1px solid var(--color-hairline); display:flex; flex-direction:column; background:var(--color-surface); overflow:hidden; }
-        @media(max-width:768px){ .chat-sb { position:absolute; left:0; top:0; bottom:0; z-index:50; transform:translateX(-100%); transition:transform .2s; } .chat-sb.open { transform:translateX(0); } .thread-panel { display:none; } .mobile-overlay { display:block !important; } }
+        @media(max-width:768px){
+          .chat-sb { position:absolute; left:0; top:0; bottom:0; width:260px; z-index:50; transform:translateX(-100%); transition:transform .2s; box-shadow: 4px 0 20px rgba(0,0,0,.15); }
+          .chat-sb.open { transform:translateX(0); }
+          .thread-panel { display:none; }
+          .mobile-overlay { display:block !important; }
+          .chat-textarea { font-size:16px !important; } /* prevent iOS zoom */
+        }
       `}</style>
 
       {/* ── Sidebar ── */}
@@ -859,6 +943,14 @@ export default function ChatPage() {
                     <button onClick={() => setPendingAttachments(prev => prev.filter((_,j) => j !== i))} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-muted)" }}>{I.x}</button>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* Mic error */}
+            {micError && (
+              <div style={{ padding: "6px 14px", background: "#fef2f2", borderTop: "1px solid #fecaca", display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                <span style={{ fontSize: ".8125rem", color: "#991b1b", flex: 1 }}>{micError}</span>
+                <button onClick={() => setMicError("")} style={{ background: "none", border: "none", cursor: "pointer", color: "#991b1b" }}>{I.x}</button>
               </div>
             )}
 

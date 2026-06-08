@@ -131,9 +131,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     for (const att of attachments as any[]) {
       if (!att.name || !att.url) continue;
       const ar = await pool.query(
-        `INSERT INTO chat_attachments (message_id, name, mime_type, size, url)
-         VALUES ($1,$2,$3,$4,$5) RETURNING *`,
-        [msg.id, att.name, att.mimeType ?? "application/octet-stream", att.size ?? 0, att.url]
+        `INSERT INTO chat_attachments (message_id, name, mime_type, size, url, created_at)
+         VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
+        [msg.id, att.name, att.mimeType ?? "application/octet-stream", att.size ?? 0, att.url, now]
       );
       const a = ar.rows[0];
       savedAttachments.push({ id: Number(a.id), name: a.name, mimeType: a.mime_type, size: a.size, url: a.url });
