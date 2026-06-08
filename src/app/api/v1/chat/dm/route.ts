@@ -9,7 +9,7 @@ async function getPool() {
   return gp();
 }
 
-// GET or create a DM room between current user and target userId
+// GET or create a DM room between current user and target user
 export async function POST(request: NextRequest) {
   try {
     const db = getDB(request);
@@ -21,23 +21,41 @@ export async function POST(request: NextRequest) {
 
     const pool = await getPool();
 
-    // Resolve by username (@name or @name#DISC)
+    // Resolve target user ID from username/discriminator
     if (!userId && username) {
-      username = username.replace(/^@/, "");
-      const [uname, disc] = username.split("#");
-      const q = disc
-        ? await pool.query("SELECT id FROM users WHERE username=$1 AND discriminator=$2", [uname, disc.toUpperCase()])
-        : await pool.query("SELECT id FROM users WHERE username=$1 LIMIT 1", [uname]);
-      if (!q.rows[0]) return NextResponse.json({ error: "사용자 없음" }, { status: 404 });
-      userId = q.rows[0].id;
+      // Strip leading @ and parse username#DISC
+      const raw = String(username).replace(/^@/, "").trim();
+      const hashIdx = raw.indexOf("#");
+      if (hashIdx !== -1) {
+        const uname = raw.slice(0, hashIdx);
+        const disc = raw.slice(hashIdx + 1).toUpperCase();
+        const q = await pool.query(
+          "SELECT id FROM users WHERE username=$1 AND discriminator=$2",
+          [uname, disc]
+        );
+        if (!q.rows[0]) return NextResponse.json({ error: `@${uname}#${disc} 사용자를 찾을 수 없습니다` }, { status: 404 });
+        userId = q.rows[0].id;
+      } else {
+        const q = await pool.query("SELECT id FROM users WHERE username=$1 LIMIT 1", [raw]);
+        if (!q.rows[0]) return NextResponse.json({ error: `@${raw} 사용자를 찾을 수 없습니다. 구분자(#)를 포함한 전체 ID를 입력하세요.` }, { status: 404 });
+        userId = q.rows[0].id;
+      }
+    } else if (userId && username && !userId.includes("-")) {
+      // userId looks like a username, not a UUID — try resolving by ID first, then username
+      const q = await pool.query("SELECT id FROM users WHERE id=$1", [userId]);
+      if (!q.rows[0]) {
+        const q2 = await pool.query("SELECT id FROM users WHERE username=$1 LIMIT 1", [username.replace(/^@/, "")]);
+        if (!q2.rows[0]) return NextResponse.json({ error: "사용자를 찾을 수 없습니다" }, { status: 404 });
+        userId = q2.rows[0].id;
+      }
     }
 
     if (!userId || userId === user.id)
       return NextResponse.json({ error: "잘못된 요청" }, { status: 400 });
 
-    // Check target user exists
-    const target = await pool.query("SELECT id, name, avatar_url FROM users WHERE id=$1", [userId]);
-    if (!target.rows[0]) return NextResponse.json({ error: "사용자 없음" }, { status: 404 });
+    // Verify target user exists
+    const target = await pool.query("SELECT id FROM users WHERE id=$1", [userId]);
+    if (!target.rows[0]) return NextResponse.json({ error: "사용자를 찾을 수 없습니다" }, { status: 404 });
 
     // Find existing DM
     const existing = await pool.query(

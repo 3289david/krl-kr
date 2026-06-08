@@ -9,7 +9,7 @@ async function getPool() {
   return gp();
 }
 
-const AI_LIMITS: Record<string, number> = { free: 5, pro: 200, vip: 9999 };
+const AI_LIMITS: Record<string, number> = { free: 5, pro: 500, vip: 9999, starter: 50 };
 
 async function callAI(prompt: string): Promise<string> {
   const res = await fetch("https://text.pollinations.ai/", {
@@ -63,17 +63,20 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     );
     if (!member.rows[0]) return NextResponse.json({ error: "권한 없음" }, { status: 403 });
 
-    // Rate limit check
-    const planRow = await pool.query("SELECT plan FROM users WHERE id=$1", [user.id]);
+    // Rate limit check (user_plans is the authoritative source)
+    const planRow = await pool.query(
+      "SELECT plan FROM user_plans WHERE user_id=$1",
+      [user.id]
+    );
     const plan = planRow.rows[0]?.plan ?? "free";
     const limit = AI_LIMITS[plan] ?? AI_LIMITS.free;
 
-    const dayStart = new Date(); dayStart.setHours(0,0,0,0);
+    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
     const usageRow = await pool.query(
-      "SELECT COUNT(*) AS c FROM ai_chat_usage WHERE user_id=$1 AND created_at>=$2",
-      [user.id, dayStart.getTime()]
-    ).catch(() => ({ rows: [{ c: "0" }] }));
-    const used = parseInt(usageRow.rows[0]?.c ?? "0");
+      "SELECT count FROM ai_chat_usage WHERE user_id=$1 AND date=$2",
+      [user.id, today]
+    ).catch(() => ({ rows: [] }));
+    const used = parseInt(usageRow.rows[0]?.count ?? "0");
 
     if (used >= limit) {
       return NextResponse.json({ error: `AI 사용 한도(${limit}회/일)에 도달했습니다`, limitReached: true }, { status: 429 });
@@ -115,8 +118,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: "알 수 없는 action" }, { status: 400 });
     }
 
-    // Record usage
-    pool.query("INSERT INTO ai_chat_usage (user_id, created_at) VALUES ($1,$2)", [user.id, Date.now()]).catch(() => {});
+    // Record usage (upsert daily counter)
+    pool.query(
+      "INSERT INTO ai_chat_usage (user_id, date, count) VALUES ($1, CURRENT_DATE, 1) ON CONFLICT (user_id, date) DO UPDATE SET count = ai_chat_usage.count + 1",
+      [user.id]
+    ).catch(() => {});
 
     return NextResponse.json({ result, used: used + 1, limit });
   } catch (err) {

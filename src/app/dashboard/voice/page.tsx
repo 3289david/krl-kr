@@ -84,6 +84,7 @@ function CreateModal({ onClose, onCreate }: { onClose(): void; onCreate(r: Voice
     setLoading(true); setErr("");
     const r = await fetch("/api/v1/voice", {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: name.trim(), description: description.trim(), isPublic, isTemporary, stageMode }),
     });
@@ -151,6 +152,7 @@ export default function VoicePage() {
   const [connecting, setConnecting] = useState(false);
   const [quickCode, setQuickCode] = useState("");
   const [showQuickJoin, setShowQuickJoin] = useState(false);
+  const [joinError, setJoinError] = useState("");
 
   const localStreamRef = useRef<MediaStream | null>(null);
   const pcsRef = useRef<Map<string, RTCPeerConnection>>(new Map());
@@ -171,7 +173,7 @@ export default function VoicePage() {
 
   async function loadRooms() {
     setLoading(true);
-    const r = await fetch("/api/v1/voice");
+    const r = await fetch("/api/v1/voice", { credentials: "include" });
     const d = await r.json();
     setRooms(d.rooms ?? []);
     setLoading(false);
@@ -305,10 +307,24 @@ export default function VoicePage() {
     setConnecting(true);
     try {
       // Get local audio
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { noiseSuppression: true, echoCancellation: true, autoGainControl: true, sampleRate: 48000 },
-        video: false,
-      });
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error("이 브라우저는 음성 채팅을 지원하지 않습니다. HTTPS 환경의 Chrome/Safari를 사용해주세요.");
+      }
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: { noiseSuppression: true, echoCancellation: true, autoGainControl: true, sampleRate: 48000 },
+          video: false,
+        });
+      } catch (micErr: any) {
+        if (micErr.name === "NotAllowedError" || micErr.name === "PermissionDeniedError") {
+          throw new Error("마이크 접근이 거부되었습니다. 브라우저 주소창 옆 자물쇠 아이콘 → 마이크 허용 후 다시 시도해주세요.");
+        }
+        if (micErr.name === "NotFoundError") {
+          throw new Error("마이크를 찾을 수 없습니다. 마이크가 연결되어 있는지 확인해주세요.");
+        }
+        throw new Error(`마이크 오류: ${micErr.message}`);
+      }
       localStreamRef.current = stream;
 
       // Speaking detection for self
@@ -331,22 +347,23 @@ export default function VoicePage() {
       // Join via API
       const r = await fetch(`/api/v1/voice/${room.id}`, {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
       });
       const d = await r.json();
-      if (!r.ok) throw new Error(d.error);
+      if (!r.ok) throw new Error(d.error ?? "입장 실패. 다시 로그인해 주세요.");
 
       activeRoomIdRef.current = room.id;
 
       // Load current members
-      const rm = await fetch(`/api/v1/voice/${room.id}`);
+      const rm = await fetch(`/api/v1/voice/${room.id}`, { credentials: "include" });
       const rd = await rm.json();
       setMembers(rd.members ?? []);
       setActiveRoom({ ...room, joined: true });
 
       // Existing members will send us offers via SSE (triggered by voice_join broadcast)
     } catch (err: any) {
-      alert(err.message ?? "입장 실패");
+      setJoinError(err.message ?? "입장 실패");
       localStreamRef.current?.getTracks().forEach(t => t.stop());
       localStreamRef.current = null;
     }
@@ -440,12 +457,25 @@ export default function VoicePage() {
   const myMember = members.find(m => m.userId === myId);
 
   return (
-    <div style={{ display: "flex", height: "calc(100vh - 60px)", overflow: "hidden", background: "var(--color-canvas)", fontFamily: "var(--font-sans)" }}>
+    <div className="voice-app" style={{ display: "flex", overflow: "hidden", background: "var(--color-canvas)", fontFamily: "var(--font-sans)" }}>
       <style>{`
+        .voice-app { height: calc(100dvh - 54px); margin: -24px 0; }
+        @media(max-width:768px){
+          .voice-app {
+            position: fixed !important;
+            top: 54px !important; left: 0 !important; right: 0 !important;
+            bottom: calc(60px + env(safe-area-inset-bottom, 0px)) !important;
+            height: auto !important; margin: 0 !important; z-index: 20;
+          }
+          .voice-list { width: 100% !important; border-right: none !important; }
+          .voice-main { display: none; }
+          .voice-list.has-active { display: none; }
+          .voice-main.has-active { display: flex !important; position: absolute; inset: 0; z-index: 30; }
+        }
         @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.7;transform:scale(1.06)} }
         .voice-card { background:var(--color-surface); border:1.5px solid var(--color-hairline); border-radius:14px; padding:16px; cursor:pointer; transition:box-shadow .15s,border-color .15s; }
         .voice-card:hover { box-shadow:0 4px 14px rgba(0,0,0,.08); border-color:var(--color-muted); }
-        .voice-ctrl { width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:none; cursor:pointer; transition:background .15s; }
+        .voice-ctrl { width:48px; height:48px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:none; cursor:pointer; transition:background .15s; }
         .voice-ctrl.active { background:#ef4444; color:#fff; }
         .voice-ctrl.normal { background:var(--color-surface); color:var(--color-ink); border:1.5px solid var(--color-hairline); }
         .voice-ctrl.normal:hover { background:var(--color-canvas); }
@@ -458,7 +488,7 @@ export default function VoicePage() {
       `}</style>
 
       {/* ── Left: Room List ── */}
-      <div style={{ width: 280, flexShrink: 0, borderRight: "1px solid var(--color-hairline)", background: "var(--color-surface)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      <div className={`voice-list${activeRoom?" has-active":""}`} style={{ width: 280, flexShrink: 0, borderRight: "1px solid var(--color-hairline)", background: "var(--color-surface)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <div style={{ padding: "14px 14px 10px", borderBottom: "1px solid var(--color-hairline)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
@@ -477,6 +507,12 @@ export default function VoicePage() {
               style={{ flex: 1, height: 30, fontSize: ".8rem", textTransform: "uppercase" }} />
             <button onClick={quickJoin} className="btn btn-ghost btn-sm" style={{ height: 30, padding: "0 8px" }}>입장</button>
           </div>
+          {joinError && (
+            <div style={{ margin: "8px 0 0", padding: "8px 12px", background: "#fee2e2", borderRadius: 8, fontSize: ".8rem", color: "#dc2626", lineHeight: 1.4 }}
+              onClick={() => setJoinError("")}>
+              {joinError}
+            </div>
+          )}
         </div>
 
         <div style={{ flex: 1, overflowY: "auto", padding: "8px 8px" }}>
@@ -512,11 +548,16 @@ export default function VoicePage() {
       </div>
 
       {/* ── Right: Room / Welcome ── */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+      <div className={`voice-main${activeRoom?" has-active":""}`} style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
         {activeRoom ? (
           <>
             {/* Room header */}
-            <div style={{ padding: "12px 20px", borderBottom: "1px solid var(--color-hairline)", background: "var(--color-surface)", display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--color-hairline)", background: "var(--color-surface)", display: "flex", alignItems: "center", gap: 10 }}>
+              {/* Mobile back button */}
+              <button onClick={leaveRoom} style={{ display: "none", background: "none", border: "none", cursor: "pointer", color: "var(--color-muted)", padding: "2px 4px" }} className="voice-back-btn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              <style>{`.voice-main.has-active .voice-back-btn { display:flex !important; } @media(min-width:769px){ .voice-back-btn { display:none !important; } }`}</style>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                 <path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
               </svg>
