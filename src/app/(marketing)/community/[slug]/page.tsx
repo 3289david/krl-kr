@@ -220,10 +220,10 @@ export default function PostPage() {
           <div style={{ padding: "28px 28px 20px" }}>
             {post.is_pinned && (
               <span style={{
-                display: "inline-block", fontSize: "0.6875rem", fontWeight: 700,
+                display: "inline-flex", alignItems: "center", gap: "3px", fontSize: "0.6875rem", fontWeight: 700,
                 color: "#ef4444", background: "#FFF1F2", border: "1px solid #FECDD3",
                 borderRadius: "4px", padding: "2px 7px", marginBottom: "10px",
-              }}>📌 고정</span>
+              }}><svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M16 2v4l2 2-8 8-2-2 8-8 2 2V2h-2zM5 20l3-3"/></svg>고정</span>
             )}
 
             {editing ? (

@@ -53,20 +53,28 @@ export default function SpacePage() {
   }
 
   return (
-    <div style={{ padding: "32px", maxWidth: "1000px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+    <div className="space-page" style={{ padding: "32px", maxWidth: "1000px" }}>
+      <style>{`
+        @media (max-width: 640px) {
+          .space-page { padding: 16px !important; }
+          .space-header { flex-direction: column !important; align-items: flex-start !important; gap: 12px; }
+          .space-new-btn { width: 100%; text-align: center; }
+          .space-form-row { flex-direction: column !important; }
+        }
+      `}</style>
+      <div className="space-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
         <div>
           <h1 style={{ fontSize: "1.5rem", fontWeight: 700, marginBottom: "4px" }}>KRL Space</h1>
           <p style={{ color: "var(--color-muted)", fontSize: "0.9375rem" }}>웹사이트 빌더</p>
         </div>
-        <button onClick={() => setShowNew(true)} style={{ padding: "8px 20px", background: "var(--color-accent)", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "0.9375rem", fontWeight: 600 }}>+ 새 사이트</button>
+        <button onClick={() => setShowNew(true)} className="space-new-btn" style={{ padding: "8px 20px", background: "var(--color-accent)", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "0.9375rem", fontWeight: 600 }}>+ 새 사이트</button>
       </div>
 
       {showNew && (
         <div style={{ background: "var(--color-lifted)", border: "1px solid var(--color-hairline)", borderRadius: "12px", padding: "20px", marginBottom: "20px" }}>
           {error && <div style={{ padding: "8px 12px", background: "#FFF1F2", borderRadius: "6px", color: "#9B1C1C", fontSize: "0.875rem", marginBottom: "10px" }}>{error}</div>}
           <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-            <div style={{ display: "flex", gap: "8px" }}>
+            <div className="space-form-row" style={{ display: "flex", gap: "8px" }}>
               <input value={newSite.slug} onChange={e => setNewSite(p => ({ ...p, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") }))} placeholder="슬러그 (영문소문자, 숫자, -)" style={{ flex: 1, padding: "8px 12px", border: "1px solid var(--color-hairline)", borderRadius: "8px", fontSize: "0.9375rem", background: "var(--color-surface)", color: "var(--color-ink)" }} />
               <input value={newSite.name} onChange={e => setNewSite(p => ({ ...p, name: e.target.value }))} placeholder="사이트 이름" style={{ flex: 1, padding: "8px 12px", border: "1px solid var(--color-hairline)", borderRadius: "8px", fontSize: "0.9375rem", background: "var(--color-surface)", color: "var(--color-ink)" }} />
             </div>

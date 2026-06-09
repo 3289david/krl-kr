@@ -355,7 +355,7 @@ function navHtml(blog: Blog, baseUrl: string): string {
       <a href="${baseUrl}" class="nav-brand">${e(blog.title)}</a>
       <div class="nav-links">
         <a href="${baseUrl}/rss.xml" class="rss-pill" title="RSS 피드">RSS</a>
-        <button id="dm-btn" onclick="(function(){var h=document.documentElement;var cur=h.getAttribute('data-mode')||'';var sys=window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';var next=cur===''?(sys==='dark'?'light':'dark'):(cur==='dark'?'light':'dark');h.setAttribute('data-mode',next);try{localStorage.setItem('krl-mode',next);}catch(e){}document.getElementById('dm-btn').textContent=next==='dark'?'☀️':'🌙';})()" title="다크모드 전환">🌙</button>
+        <button id="dm-btn" onclick="(function(){var h=document.documentElement;var cur=h.getAttribute('data-mode')||'';var sys=window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';var next=cur===''?(sys==='dark'?'light':'dark'):(cur==='dark'?'light':'dark');h.setAttribute('data-mode',next);try{localStorage.setItem('krl-mode',next);}catch(e){}document.getElementById('dm-btn').textContent=next==='dark'?'밝게':'다크';})()" title="다크모드 전환">다크</button>
       </div>
     </div>
   </nav>`;
@@ -453,7 +453,7 @@ export function renderBlogHome(blog: Blog, posts: Post[], baseUrl: string): stri
       <a href="${baseUrl}/posts/${e(feat.slug)}" class="pfeat">
         ${feat.cover_image
           ? `<div class="pfeat-img"><img src="${e(feat.cover_image)}" alt="${e(feat.title)}" loading="eager"></div>`
-          : `<div class="pfeat-nimg">✍️</div>`}
+          : `<div class="pfeat-nimg"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:.4"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></div>`}
         <div class="pfeat-body">
           <div class="feat-label">추천 글</div>
           ${featTags ? `<div class="ctags">${featTags}</div>` : ""}
@@ -500,7 +500,7 @@ export function renderBlogHome(blog: Blog, posts: Post[], baseUrl: string): stri
       ${posts.length > 3 ? `
       <div class="search-wrap">
         <div class="search-box">
-          <span class="search-icon">🔍</span>
+          <span class="search-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
           <input class="search-inp" type="search" id="srch" placeholder="글 검색..." oninput="doSearch(this.value)" autocomplete="off">
         </div>
         <div class="no-results" id="no-res">검색 결과가 없습니다.</div>
@@ -629,7 +629,7 @@ export function renderBlogPost(
     <script type="application/ld+json">${jsonLd}</script>
     <script>
     // Init dark mode button icon
-    (function(){var m=document.documentElement.getAttribute('data-mode');var b=document.getElementById('dm-btn');if(b&&m)b.textContent=m==='dark'?'☀️':'🌙';}());
+    (function(){var m=document.documentElement.getAttribute('data-mode');var b=document.getElementById('dm-btn');if(b&&m)b.textContent=m==='dark'?'밝게':'다크';}());
     // Like button init
     (function(){
       var key='krl-liked-${post.id}';

@@ -119,21 +119,36 @@ export default function CalendarPage() {
 
   return (
     <div style={{ padding: "24px", maxWidth: "900px" }}>
+      <style>{`
+        @media (max-width: 768px) {
+          .cal-header { flex-direction: column; align-items: flex-start !important; gap: 10px !important; }
+          .cal-header-add { width: 100%; }
+          .cal-day-header { font-size: 0.6875rem !important; padding: 5px 0 !important; }
+          .cal-cell { min-height: 60px !important; padding: 3px !important; }
+          .cal-event-chip { font-size: 0.6rem !important; padding: 1px 3px !important; }
+          .cal-day-num { width: 20px !important; height: 20px !important; font-size: 0.75rem !important; }
+          .cal-modal-inner { width: calc(100vw - 32px) !important; padding: 18px !important; }
+          .cal-datetime-row { flex-direction: column !important; }
+        }
+        @media (max-width: 480px) {
+          .cal-cell { min-height: 48px !important; }
+        }
+      `}</style>
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+      <div className="cal-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           <button onClick={prevMonth} style={{ padding: "6px 12px", border: "1px solid var(--color-hairline)", borderRadius: "6px", background: "var(--color-surface)", cursor: "pointer" }}>‹</button>
           <h2 style={{ fontSize: "1.25rem", fontWeight: 700 }}>{current.getFullYear()}년 {current.getMonth() + 1}월</h2>
           <button onClick={nextMonth} style={{ padding: "6px 12px", border: "1px solid var(--color-hairline)", borderRadius: "6px", background: "var(--color-surface)", cursor: "pointer" }}>›</button>
           <button onClick={() => setCurrent(new Date(today.getFullYear(), today.getMonth(), 1))} style={{ padding: "6px 10px", border: "1px solid var(--color-hairline)", borderRadius: "6px", background: "var(--color-surface)", cursor: "pointer", fontSize: "0.8125rem" }}>오늘</button>
         </div>
-        <button onClick={() => openCreateModal()} style={{ padding: "8px 16px", background: "var(--color-accent)", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "0.875rem" }}>+ 일정 추가</button>
+        <button className="cal-header-add" onClick={() => openCreateModal()} style={{ padding: "8px 16px", background: "var(--color-accent)", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "0.875rem" }}>+ 일정 추가</button>
       </div>
 
       {/* Day headers */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", marginBottom: "4px" }}>
         {DAYS.map((d, i) => (
-          <div key={d} style={{ textAlign: "center", fontSize: "0.8125rem", fontWeight: 700, color: i === 0 ? "#ef4444" : i === 6 ? "#3b82f6" : "var(--color-muted)", padding: "8px 0" }}>{d}</div>
+          <div key={d} className="cal-day-header" style={{ textAlign: "center", fontSize: "0.8125rem", fontWeight: 700, color: i === 0 ? "#ef4444" : i === 6 ? "#3b82f6" : "var(--color-muted)", padding: "8px 0" }}>{d}</div>
         ))}
       </div>
 
@@ -143,7 +158,7 @@ export default function CalendarPage() {
           const isToday = date && date.toDateString() === today.toDateString();
           const dayEvents = date ? getEventsForDay(date) : [];
           return (
-            <div key={idx} onClick={() => date && openCreateModal(date)}
+            <div key={idx} className="cal-cell" onClick={() => date && openCreateModal(date)}
               style={{
                 minHeight: "90px", padding: "6px", borderRight: idx % 7 < 6 ? "1px solid var(--color-hairline)" : "none",
                 borderBottom: idx < cells.length - 7 ? "1px solid var(--color-hairline)" : "none",
@@ -155,11 +170,11 @@ export default function CalendarPage() {
             >
               {date && (
                 <>
-                  <div style={{ width: "24px", height: "24px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.8125rem", fontWeight: isToday ? 700 : 400, background: isToday ? "var(--color-accent)" : "transparent", color: isToday ? "white" : date.getDay() === 0 ? "#ef4444" : date.getDay() === 6 ? "#3b82f6" : "var(--color-ink)" }}>
+                  <div className="cal-day-num" style={{ width: "24px", height: "24px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.8125rem", fontWeight: isToday ? 700 : 400, background: isToday ? "var(--color-accent)" : "transparent", color: isToday ? "white" : date.getDay() === 0 ? "#ef4444" : date.getDay() === 6 ? "#3b82f6" : "var(--color-ink)" }}>
                     {date.getDate()}
                   </div>
                   {dayEvents.slice(0, 3).map(ev => (
-                    <div key={ev.id} onClick={e => openEventDetail(ev, e)}
+                    <div key={ev.id} className="cal-event-chip" onClick={e => openEventDetail(ev, e)}
                       style={{ marginTop: "2px", padding: "2px 5px", borderRadius: "4px", fontSize: "0.7rem", background: ev.color + "30", color: ev.color, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: "pointer" }}
                       title={ev.title}
                     >
@@ -178,13 +193,13 @@ export default function CalendarPage() {
       {showModal && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}
           onClick={e => { if (e.target === e.currentTarget) { setShowModal(false); setSelectedEvent(null); } }}>
-          <div style={{ background: "var(--color-lifted)", border: "1px solid var(--color-hairline)", borderRadius: "16px", padding: "24px", width: "420px", maxWidth: "calc(100vw - 32px)" }}>
+          <div className="cal-modal-inner" style={{ background: "var(--color-lifted)", border: "1px solid var(--color-hairline)", borderRadius: "16px", padding: "24px", width: "420px", maxWidth: "calc(100vw - 32px)" }}>
             {editMode === "create" ? (
               <>
                 <h3 style={{ fontWeight: 700, marginBottom: "16px" }}>일정 추가</h3>
                 <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                   <input value={newEvent.title} onChange={e => setNewEvent(p => ({ ...p, title: e.target.value }))} placeholder="일정 제목 *" style={{ padding: "8px 12px", border: "1px solid var(--color-hairline)", borderRadius: "8px", fontSize: "0.9375rem", background: "var(--color-surface)", color: "var(--color-ink)" }} />
-                  <div style={{ display: "flex", gap: "8px" }}>
+                  <div className="cal-datetime-row" style={{ display: "flex", gap: "8px" }}>
                     <div style={{ flex: 1 }}>
                       <label style={{ fontSize: "0.8125rem", color: "var(--color-muted)", display: "block", marginBottom: "4px" }}>시작 *</label>
                       <input type="datetime-local" value={newEvent.start_at} onChange={e => setNewEvent(p => ({ ...p, start_at: e.target.value }))} style={{ width: "100%", padding: "6px 10px", border: "1px solid var(--color-hairline)", borderRadius: "6px", fontSize: "0.875rem", background: "var(--color-surface)", color: "var(--color-ink)" }} />

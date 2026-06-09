@@ -48,7 +48,7 @@ export default function RoomLandingPage() {
 
         {/* Create */}
         <div style={{ background:"#fff", borderRadius:16, padding:28, boxShadow:"0 4px 24px rgba(0,0,0,.08)", marginBottom:16 }}>
-          <div style={{ fontWeight:700, fontSize:"1rem", marginBottom:16 }}>🆕 새 방 만들기</div>
+          <div style={{ fontWeight:700, fontSize:"1rem", marginBottom:16, display:"flex", alignItems:"center", gap:6 }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>새 방 만들기</div>
           <input value={name} onChange={e => setName(e.target.value)} onKeyDown={e => e.key==="Enter" && create()}
             placeholder="방 이름 (선택)" style={{ width:"100%", border:"1.5px solid #e2e8f0", borderRadius:10, padding:"10px 14px", fontSize:".9375rem", outline:"none", marginBottom:12, fontFamily:"inherit" }} />
           <button onClick={create} disabled={loading} style={{ width:"100%", background:"linear-gradient(135deg, #3b82f6, #8b5cf6)", color:"#fff", border:"none", borderRadius:10, padding:"12px", fontSize:"1rem", fontWeight:700, cursor:"pointer", opacity:loading?0.7:1 }}>
@@ -58,7 +58,7 @@ export default function RoomLandingPage() {
 
         {/* Join */}
         <div style={{ background:"#fff", borderRadius:16, padding:28, boxShadow:"0 4px 24px rgba(0,0,0,.08)" }}>
-          <div style={{ fontWeight:700, fontSize:"1rem", marginBottom:16 }}>🔑 코드로 참여</div>
+          <div style={{ fontWeight:700, fontSize:"1rem", marginBottom:16, display:"flex", alignItems:"center", gap:6 }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg>코드로 참여</div>
           <input value={code} onChange={e => setCode(e.target.value)} onKeyDown={e => e.key==="Enter" && join()}
             placeholder="방 코드 입력 (예: abc123)" style={{ width:"100%", border:"1.5px solid #e2e8f0", borderRadius:10, padding:"10px 14px", fontSize:".9375rem", outline:"none", marginBottom:12, fontFamily:"monospace" }} />
           <button onClick={join} disabled={loading || !code.trim()} style={{ width:"100%", background:"#f8fafc", color:"#1e293b", border:"1.5px solid #e2e8f0", borderRadius:10, padding:"12px", fontSize:".9375rem", fontWeight:600, cursor:"pointer", opacity:(loading||!code.trim())?0.5:1 }}>

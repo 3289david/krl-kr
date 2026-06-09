@@ -171,6 +171,25 @@ export default function EmailInboxPage() {
 
   return (
     <div style={{ height: "calc(100vh - 52px)", display: "flex", flexDirection: "column" }}>
+      <style>{`
+        @media (max-width: 768px) {
+          .email-aliases { width: 100% !important; flex-direction: row !important; overflow-x: auto; border-right: none !important; border-bottom: 1px solid var(--color-hairline); padding: 8px !important; display: flex !important; gap: 4px; flex-shrink: 0; overflow-y: visible !important; }
+          .email-aliases p { display: none !important; }
+          .email-aliases > button { flex-shrink: 0; width: auto !important; }
+          .email-aliases > div { flex-shrink: 0; }
+          .email-aliases > div > button:first-child { width: auto !important; }
+          .email-main { flex-direction: column !important; overflow-y: auto !important; overflow-x: hidden; }
+          .email-list { width: 100% !important; flex-shrink: 0 !important; border-right: none !important; overflow-y: visible !important; }
+          .email-list-hidden { display: none !important; }
+          .email-reader { min-width: 0; }
+          .email-reader-hidden { display: none !important; }
+          .email-back-btn { display: flex !important; }
+        }
+        @media (min-width: 769px) {
+          .email-back-btn { display: none !important; }
+          .email-main { overflow: hidden; }
+        }
+      `}</style>
       {/* Header */}
       <div className="page-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div>
@@ -232,10 +251,10 @@ export default function EmailInboxPage() {
       )}
 
       {/* Main layout: sidebar + list + reader */}
-      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+      <div className="email-main" style={{ flex: 1, display: "flex", overflow: "hidden" }}>
 
         {/* Left: Alias sidebar */}
-        <div style={{ width: "200px", flexShrink: 0, borderRight: "1px solid var(--color-hairline)", padding: "16px 12px", overflowY: "auto" }}>
+        <div className="email-aliases" style={{ width: "200px", flexShrink: 0, borderRight: "1px solid var(--color-hairline)", padding: "16px 12px", overflowY: "auto" }}>
           <button
             onClick={() => setActiveAlias(null)}
             style={{
@@ -290,7 +309,7 @@ export default function EmailInboxPage() {
         </div>
 
         {/* Center: Message list */}
-        <div style={{ width: "320px", flexShrink: 0, borderRight: "1px solid var(--color-hairline)", overflowY: "auto" }}>
+        <div className={`email-list${selected ? " email-list-hidden" : ""}`} style={{ width: "320px", flexShrink: 0, borderRight: "1px solid var(--color-hairline)", overflowY: "auto" }}>
           {loading ? (
             <div style={{ padding: "40px", textAlign: "center", color: "var(--color-muted)", fontSize: "0.875rem" }}>불러오는 중...</div>
           ) : messages.length === 0 ? (
@@ -344,7 +363,7 @@ export default function EmailInboxPage() {
         </div>
 
         {/* Right: Message reader */}
-        <div style={{ flex: 1, overflowY: "auto", background: "var(--color-lifted)" }}>
+        <div className={`email-reader${!selected ? " email-reader-hidden" : ""}`} style={{ flex: 1, overflowY: "auto", background: "var(--color-lifted)" }}>
           {!selected ? (
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", flexDirection: "column", gap: "16px" }}>
               <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" style={{ color: "var(--color-dust)" }}>
@@ -354,6 +373,9 @@ export default function EmailInboxPage() {
             </div>
           ) : (
             <div style={{ padding: "32px 40px" }}>
+              <button className="email-back-btn" onClick={() => setSelected(null)} style={{ display: "none", marginBottom: "16px", alignItems: "center", gap: "6px", background: "none", border: "none", cursor: "pointer", color: "var(--color-accent)", fontSize: "0.875rem", fontWeight: 600, padding: 0 }}>
+                ← 목록으로
+              </button>
               {/* Email header */}
               <div style={{ marginBottom: "24px", paddingBottom: "24px", borderBottom: "1px solid var(--color-hairline)" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>

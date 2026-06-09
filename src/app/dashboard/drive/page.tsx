@@ -211,16 +211,16 @@ function CtxMenu({ x, y, file, onClose, handlers }: {
       {file.deleted_at ? (
         <>
           <Row label="복원" icon="↩" fn={handlers.restore} />
-          <Row label="영구 삭제" icon="🗑" fn={handlers.deletePerm} danger />
+          <Row label="영구 삭제" icon="✕" fn={handlers.deletePerm} danger />
         </>
       ) : (
         <>
           <Row label="다운로드" icon="↓" fn={handlers.download} />
           <Row label="공유" icon="⬡" fn={handlers.share} />
-          <Row label="이름 변경" icon="✏" fn={handlers.rename} />
+          <Row label="이름 변경" icon="✎" fn={handlers.rename} />
           <Row label={file.is_starred ? "별표 해제" : "별표 추가"} icon="★" fn={handlers.star} />
           <div style={{ height: 1, background: "var(--color-hairline)", margin: "4px 0" }} />
-          <Row label="휴지통으로 이동" icon="🗑" fn={handlers.trash} danger />
+          <Row label="휴지통으로 이동" icon="✕" fn={handlers.trash} danger />
         </>
       )}
     </div>

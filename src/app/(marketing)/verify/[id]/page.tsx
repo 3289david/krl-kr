@@ -29,12 +29,19 @@ export default function PublicVerifyPage() {
   }
 
   if (loading) return <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"60vh", color:"#888" }}>불러오는 중...</div>;
-  if (!record) return <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"60vh", flexDirection:"column", gap:8 }}><div style={{ fontSize:"3rem" }}>🔍</div><div style={{ fontWeight:700 }}>찾을 수 없습니다</div></div>;
+  if (!record) return (
+    <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"60vh", flexDirection:"column", gap:12, color:"#94a3b8" }}>
+      <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.2} strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <div style={{ fontWeight:700, color:"#1e293b" }}>찾을 수 없습니다</div>
+    </div>
+  );
 
   return (
     <div style={{ maxWidth:600, margin:"0 auto", padding:"40px 20px", fontFamily:"system-ui" }}>
       <div style={{ textAlign:"center", marginBottom:32 }}>
-        <div style={{ fontSize:"2.5rem", marginBottom:8 }}>🔏</div>
+        <div style={{ display:"flex", justifyContent:"center", marginBottom:12 }}>
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#1e293b" strokeWidth={1.4} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
         <h1 style={{ fontSize:"1.5rem", fontWeight:800 }}>KRL Verify — 진위 검증</h1>
         <p style={{ color:"#64748b", fontSize:".875rem", marginTop:4 }}>이 기록으로 파일의 원본 여부를 확인합니다</p>
       </div>
@@ -42,7 +49,9 @@ export default function PublicVerifyPage() {
       {/* Record info */}
       <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e2e8f0", padding:20, marginBottom:24, boxShadow:"0 2px 8px rgba(0,0,0,.06)" }}>
         <div style={{ display:"flex", gap:12, alignItems:"flex-start" }}>
-          <div style={{ width:48, height:48, borderRadius:12, background:"#eff6ff", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"1.5rem", flexShrink:0 }}>📄</div>
+          <div style={{ width:48, height:48, borderRadius:12, background:"#eff6ff", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </div>
           <div style={{ flex:1 }}>
             <div style={{ fontWeight:700, fontSize:"1rem" }}>{record.fileName}</div>
             <div style={{ fontSize:".8rem", color:"#64748b", marginTop:2 }}>{fmt(record.fileSize)} · {record.mimeType}</div>
@@ -62,9 +71,19 @@ export default function PublicVerifyPage() {
         <div style={{ fontWeight:700, marginBottom:14 }}>파일 진위 확인</div>
         <div style={{ border:"2px dashed #e2e8f0", borderRadius:10, padding:20, textAlign:"center", cursor:"pointer", marginBottom:14, background:checkFile?"#f0fdf4":"#f8fafc" }}
           onClick={() => fileRef.current?.click()}>
-          {checkFile
-            ? <><div style={{ fontWeight:600 }}>{checkFile.name}</div><div style={{ color:"#64748b", fontSize:".8rem" }}>{fmt(checkFile.size)}</div></>
-            : <><div style={{ fontSize:"1.5rem", marginBottom:4 }}>📂</div><div style={{ fontSize:".875rem", color:"#64748b" }}>확인할 파일을 선택하세요</div></>}
+          {checkFile ? (
+            <>
+              <div style={{ fontWeight:600 }}>{checkFile.name}</div>
+              <div style={{ color:"#64748b", fontSize:".8rem" }}>{fmt(checkFile.size)}</div>
+            </>
+          ) : (
+            <>
+              <div style={{ display:"flex", justifyContent:"center", marginBottom:6 }}>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth={1.4} strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+              </div>
+              <div style={{ fontSize:".875rem", color:"#64748b" }}>확인할 파일을 선택하세요</div>
+            </>
+          )}
         </div>
         <input ref={fileRef} type="file" style={{ display:"none" }} onChange={e => { setCheckFile(e.target.files?.[0]??null); setResult(null); }} />
         <button onClick={check} disabled={!checkFile||checking} style={{ width:"100%", background:"#1e293b", color:"#fff", border:"none", borderRadius:10, padding:"12px", fontSize:".9375rem", fontWeight:700, cursor:"pointer", opacity:(!checkFile||checking)?0.5:1 }}>
@@ -72,8 +91,12 @@ export default function PublicVerifyPage() {
         </button>
         {result && (
           <div style={{ marginTop:16, background:result.match?"#f0fdf4":"#fef2f2", border:`1px solid ${result.match?"#bbf7d0":"#fecaca"}`, borderRadius:10, padding:16, textAlign:"center" }}>
-            <div style={{ fontSize:"2rem" }}>{result.match?"✅":"❌"}</div>
-            <div style={{ fontWeight:800, fontSize:"1.1rem", color:result.match?"#166534":"#dc2626", marginTop:6 }}>
+            <div style={{ display:"flex", justifyContent:"center", marginBottom:8 }}>
+              {result.match
+                ? <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#166534" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                : <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>}
+            </div>
+            <div style={{ fontWeight:800, fontSize:"1.1rem", color:result.match?"#166534":"#dc2626", marginTop:2 }}>
               {result.match ? "원본 파일입니다" : "파일이 변조되었거나 다른 파일입니다"}
             </div>
             {!result.match && <div style={{ marginTop:8, fontSize:".75rem", color:"#64748b" }}>해시값이 일치하지 않습니다</div>}

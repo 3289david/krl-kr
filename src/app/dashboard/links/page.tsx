@@ -340,18 +340,26 @@ function LinksPageInner() {
 
   return (
     <div className="dashboard-page">
+      <style>{`
+        @media (max-width: 640px) {
+          .links-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap !important; }
+          .links-tabs button { flex-shrink: 0; white-space: nowrap; }
+          .links-search { max-width: 100% !important; }
+          .links-new-btn { width: 100%; justify-content: center; }
+        }
+      `}</style>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px", flexWrap: "wrap", gap: "16px" }}>
         <div>
           <h1 style={{ fontSize: "1.5rem", fontWeight: 600, letterSpacing: "-0.02em", marginBottom: "4px" }}>{TAB_LABELS[tab] ?? "링크 관리"}</h1>
           <p style={{ fontSize: "0.9375rem", color: "var(--color-muted)" }}>{TAB_DESCS[tab] ?? ""}</p>
         </div>
-        <button onClick={() => setShowCreate(true)} className="btn btn-primary btn-pill" style={{ gap: "6px" }}>
+        <button onClick={() => setShowCreate(true)} className="btn btn-primary btn-pill links-new-btn" style={{ gap: "6px" }}>
           <PlusIcon size={16} />새 링크
         </button>
       </div>
 
       {/* Tabs */}
-      <div style={{ display: "flex", gap: "4px", marginBottom: "20px", borderBottom: "1px solid var(--color-hairline)", paddingBottom: "0" }}>
+      <div className="links-tabs" style={{ display: "flex", gap: "4px", marginBottom: "20px", borderBottom: "1px solid var(--color-hairline)", paddingBottom: "0" }}>
         {TABS.map((t) => (
           <button key={t.key} onClick={() => router.push(`/dashboard/links${t.key === "all" ? "" : `?tab=${t.key}`}`)}
             style={{
@@ -367,7 +375,7 @@ function LinksPageInner() {
       </div>
 
       {/* Search */}
-      <div style={{ position: "relative", marginBottom: "20px", maxWidth: "400px" }}>
+      <div className="links-search" style={{ position: "relative", marginBottom: "20px", maxWidth: "400px" }}>
         <div style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--color-muted)" }}>
           <SearchIcon size={16} />
         </div>

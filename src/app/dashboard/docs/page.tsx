@@ -41,13 +41,20 @@ export default function DocsPage() {
   }
 
   return (
-    <div style={{ padding: "32px", maxWidth: "800px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+    <div className="docs-page" style={{ padding: "32px", maxWidth: "800px" }}>
+      <style>{`
+        @media (max-width: 640px) {
+          .docs-page { padding: 16px !important; }
+          .docs-header { flex-direction: column !important; align-items: flex-start !important; gap: 12px; }
+          .docs-new-btn { width: 100%; text-align: center; }
+        }
+      `}</style>
+      <div className="docs-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
         <div>
           <h1 style={{ fontSize: "1.5rem", fontWeight: 700, marginBottom: "4px" }}>KRL Docs</h1>
           <p style={{ color: "var(--color-muted)", fontSize: "0.9375rem" }}>마크다운 문서 작성</p>
         </div>
-        <button onClick={createDoc} style={{ padding: "8px 20px", background: "var(--color-accent)", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "0.9375rem", fontWeight: 600 }}>+ 새 문서</button>
+        <button onClick={createDoc} className="docs-new-btn" style={{ padding: "8px 20px", background: "var(--color-accent)", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "0.9375rem", fontWeight: 600 }}>+ 새 문서</button>
       </div>
 
       {loading ? (

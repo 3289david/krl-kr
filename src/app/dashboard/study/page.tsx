@@ -110,10 +110,16 @@ export default function StudyPage() {
   const secs = seconds % 60;
 
   return (
-    <div style={{ padding: "32px", maxWidth: "900px" }}>
+    <div className="study-page" style={{ padding: "32px", maxWidth: "900px" }}>
+      <style>{`
+        @media (max-width: 640px) {
+          .study-page { padding: 16px !important; }
+          .study-grid { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
       <h1 style={{ fontSize: "1.5rem", fontWeight: 700, marginBottom: "24px" }}>KRL Study</h1>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", marginBottom: "32px" }}>
+      <div className="study-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", marginBottom: "32px" }}>
         {/* Pomodoro timer */}
         <div style={{ background: "var(--color-lifted)", border: "1px solid var(--color-hairline)", borderRadius: "16px", padding: "32px", textAlign: "center" }}>
           <h3 style={{ fontWeight: 600, marginBottom: "20px" }}>포모도로 타이머</h3>

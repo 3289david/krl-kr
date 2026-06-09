@@ -290,19 +290,27 @@ function SubdomainsPageInner() {
   };
 
   return (
-    <div style={{ padding: "32px" }}>
+    <div className="subdomains-page" style={{ padding: "32px" }}>
+      <style>{`
+        @media (max-width: 768px) {
+          .subdomains-page { padding: 16px !important; }
+          .subdomains-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap !important; padding-bottom: 2px; }
+          .subdomains-tabs button { flex-shrink: 0; white-space: nowrap; }
+          .subdomains-new-btn { width: 100%; justify-content: center; }
+        }
+      `}</style>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px", flexWrap: "wrap", gap: "16px" }}>
         <div>
           <h1 style={{ fontSize: "1.5rem", fontWeight: 600, letterSpacing: "-0.02em", marginBottom: "4px" }}>서브도메인</h1>
           <p style={{ fontSize: "0.9375rem", color: "var(--color-muted)" }}>*.krl.kr 서브도메인을 관리하세요.</p>
         </div>
-        <button onClick={() => setShowCreate(true)} className="btn btn-primary btn-pill" style={{ gap: "6px" }}>
+        <button onClick={() => setShowCreate(true)} className="btn btn-primary btn-pill subdomains-new-btn" style={{ gap: "6px" }}>
           <PlusIcon size={16} />새 서브도메인
         </button>
       </div>
 
       {/* Tabs */}
-      <div style={{ display: "flex", gap: "4px", marginBottom: "20px", borderBottom: "1px solid var(--color-hairline)" }}>
+      <div className="subdomains-tabs" style={{ display: "flex", gap: "4px", marginBottom: "20px", borderBottom: "1px solid var(--color-hairline)" }}>
         {TYPE_TABS.map((t) => (
           <button
             key={t.key}
@@ -335,7 +343,7 @@ function SubdomainsPageInner() {
 
       {/* DNS 레코드 안내 박스 */}
       <div style={{ padding: "14px 18px", background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: "var(--radius-md)", marginBottom: "20px", fontSize: "0.8125rem", color: "#1e40af", lineHeight: 1.6 }}>
-        <strong>📌 DNS 레코드 구조 안내</strong><br />
+        <strong>DNS 레코드 구조 안내</strong><br />
         • <strong>리다이렉트 / HTML / API</strong>: CNAME → <code>krl.kr</code> (KRL.KR 서버 경유)<br />
         • <strong>GitHub Pages</strong>: CNAME → <code>username.github.io</code> (GitHub 직접 연결)<br />
         • <strong>Vercel</strong>: CNAME → <code>cname.vercel-dns.com</code> (Vercel 요구사항)<br />
@@ -412,7 +420,7 @@ function SubdomainsPageInner() {
                           <>
                             <button onClick={() => handleSyncDns(s)} disabled={syncingId === s.id} title="DNS 동기화"
                               className="btn btn-ghost btn-sm" style={{ fontSize: "0.75rem", padding: "4px 8px", color: "var(--color-info)" }}>
-                              {syncingId === s.id ? "⏳" : "DNS동기화"}
+                              {syncingId === s.id ? "···" : "DNS동기화"}
                             </button>
                             <button onClick={() => openEdit(s)} className="btn btn-ghost btn-sm btn-icon" title="편집">
                               <EditIcon size={14} />
@@ -560,7 +568,7 @@ function SubdomainsPageInner() {
                 </label>
               </div>
               <div style={{ padding: "12px", background: "var(--color-surface-card)", borderRadius: "var(--radius-sm)", fontSize: "0.8125rem", color: "var(--color-muted)" }}>
-                💡 유형·대상 변경 시 Cloudflare DNS가 자동으로 업데이트됩니다.<br />
+                유형·대상 변경 시 Cloudflare DNS가 자동으로 업데이트됩니다.<br />
                 DNS: <code style={{ fontFamily: "var(--font-mono)" }}>{CNAME_EXPLAIN[editType] ?? editType}</code>
               </div>
               <div style={{ display: "flex", gap: "12px" }}>

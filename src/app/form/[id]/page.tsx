@@ -74,7 +74,7 @@ export default function PublicFormPage() {
   if (submitted) return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontFamily: "sans-serif", background: "#f9fafb" }}>
       <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: "16px", padding: "48px 40px", textAlign: "center", maxWidth: "480px" }}>
-        <div style={{ fontSize: "48px", marginBottom: "16px" }}>✅</div>
+        <div style={{ marginBottom: "16px", display:"flex", justifyContent:"center" }}><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
         <h2 style={{ fontSize: "1.5rem", fontWeight: 700, marginBottom: "8px" }}>응답이 제출되었습니다!</h2>
         <p style={{ color: "#6b7280", marginBottom: "24px" }}>소중한 의견 감사합니다.</p>
         <Link href="/" style={{ color: "#6366f1", textDecoration: "none" }}>KRL.KR 홈으로</Link>

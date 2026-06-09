@@ -454,7 +454,7 @@ export default function HostingPage() {
           {editingFile && (
             <div>
               <div style={{ marginBottom: 12, padding: "8px 12px", background: "var(--color-canvas)", borderRadius: 8, fontSize: "0.8125rem", color: "var(--color-muted)", fontFamily: "monospace" }}>
-                📄 {editingFile}
+                {editingFile}
               </div>
               {editorLoading ? (
                 <div style={{ textAlign: "center", padding: 40, color: "var(--color-muted)" }}>로딩 중...</div>

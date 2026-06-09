@@ -102,7 +102,14 @@ export default function VaultPage() {
 
   if (!masterSet) {
     return (
-      <div style={{ padding: "32px", maxWidth: "480px" }}>
+      <div className="vault-page" style={{ padding: "32px", maxWidth: "480px" }}>
+        <style>{`
+          @media (max-width: 640px) {
+            .vault-page { padding: 16px !important; }
+            .vault-header { flex-direction: column !important; align-items: flex-start !important; gap: 12px; }
+            .vault-header-actions { width: 100%; justify-content: flex-start !important; }
+          }
+        `}</style>
         <h1 style={{ fontSize: "1.5rem", fontWeight: 700, marginBottom: "8px" }}>KRL Vault</h1>
         <p style={{ color: "var(--color-muted)", marginBottom: "32px" }}>비밀번호는 마스터 비밀번호로 암호화됩니다. 마스터 비밀번호는 서버에 저장되지 않습니다.</p>
         {error && <div style={{ padding: "10px 14px", background: "#FFF1F2", border: "1px solid #FECDD3", borderRadius: "8px", marginBottom: "12px", color: "#9B1C1C", fontSize: "0.875rem" }}>{error}</div>}
@@ -116,13 +123,20 @@ export default function VaultPage() {
   }
 
   return (
-    <div style={{ padding: "32px", maxWidth: "800px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+    <div className="vault-page" style={{ padding: "32px", maxWidth: "800px" }}>
+      <style>{`
+        @media (max-width: 640px) {
+          .vault-page { padding: 16px !important; }
+          .vault-header { flex-direction: column !important; align-items: flex-start !important; gap: 12px; }
+          .vault-header-actions { width: 100%; justify-content: flex-start !important; }
+        }
+      `}</style>
+      <div className="vault-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
         <div>
           <h1 style={{ fontSize: "1.5rem", fontWeight: 700, marginBottom: "4px" }}>KRL Vault</h1>
           <p style={{ color: "var(--color-muted)", fontSize: "0.875rem" }}>클라이언트 측 AES-256 암호화</p>
         </div>
-        <div style={{ display: "flex", gap: "8px" }}>
+        <div className="vault-header-actions" style={{ display: "flex", gap: "8px" }}>
           <button onClick={() => { setCryptoKey(null); setMasterSet(false); setItems([]); }} style={{ padding: "6px 12px", border: "1px solid var(--color-hairline)", borderRadius: "6px", background: "transparent", cursor: "pointer", fontSize: "0.875rem" }}>잠금</button>
           <button onClick={() => setShowAdd(true)} style={{ padding: "8px 16px", background: "var(--color-accent)", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "0.9375rem", fontWeight: 600 }}>+ 추가</button>
         </div>
@@ -172,7 +186,7 @@ export default function VaultPage() {
           </div>
           {item.url && <a href={item.url} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ fontSize: "0.75rem", color: "var(--color-accent)", textDecoration: "none" }}>방문</a>}
           {revealed[item.id] && (
-            <button onClick={() => { navigator.clipboard.writeText(revealed[item.id]); }} style={{ padding: "4px 8px", border: "1px solid var(--color-hairline)", borderRadius: "6px", background: "transparent", cursor: "pointer", fontSize: "0.8125rem", color: "var(--color-muted)" }} title="복사">📋</button>
+            <button onClick={() => { navigator.clipboard.writeText(revealed[item.id]); }} style={{ padding: "4px 8px", border: "1px solid var(--color-hairline)", borderRadius: "6px", background: "transparent", cursor: "pointer", color: "var(--color-muted)", display:"flex", alignItems:"center" }} title="복사"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
           )}
           <button onClick={() => revealed[item.id] ? setRevealed(p => { const r = { ...p }; delete r[item.id]; return r; }) : reveal(item)} style={{ padding: "4px 10px", border: "1px solid var(--color-hairline)", borderRadius: "6px", background: "transparent", cursor: "pointer", fontSize: "0.8125rem", color: "var(--color-body)" }}>
             {revealed[item.id] ? "숨기기" : "보기"}

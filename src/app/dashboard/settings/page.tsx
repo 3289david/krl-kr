@@ -179,7 +179,12 @@ export default function SettingsPage() {
   if (loading) return <div style={{ padding: "32px", color: "var(--color-muted)" }}>로딩 중...</div>;
 
   return (
-    <div style={{ padding: "32px", maxWidth: "640px" }}>
+    <div className="settings-page" style={{ padding: "32px", maxWidth: "640px" }}>
+      <style>{`
+        @media (max-width: 640px) {
+          .settings-page { padding: 16px !important; }
+        }
+      `}</style>
       <div style={{ marginBottom: "32px" }}>
         <h1 style={{ fontSize: "1.5rem", fontWeight: 600, letterSpacing: "-0.02em", marginBottom: "4px" }}>설정</h1>
         <p style={{ fontSize: "0.9375rem", color: "var(--color-muted)" }}>계정 정보를 관리하세요.</p>

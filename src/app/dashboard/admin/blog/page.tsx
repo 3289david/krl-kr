@@ -124,7 +124,7 @@ function MarkdownEditor({ value, onChange }: { value: string; onChange: (v: stri
     { title: "코드", label: "`C`", action: () => wrap("`", "`", "코드") },
     { title: "코드 블록", label: "```", action: () => wrap("```\n", "\n```", "코드") },
     { title: "구분선", label: "—", action: () => { const ta = textareaRef.current; if (!ta) return; const c = ta.selectionStart; onChange(value.slice(0, c) + "\n---\n" + value.slice(c)); } },
-    { title: "링크", label: "🔗", action: insertLink },
+    { title: "링크", label: "URL", action: insertLink },
   ];
 
   return (

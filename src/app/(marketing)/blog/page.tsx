@@ -62,7 +62,7 @@ export default async function BlogPage() {
             background: "var(--color-lifted)", border: "1px solid var(--color-hairline)",
             borderRadius: "20px",
           }}>
-            <div style={{ fontSize: "2.5rem", marginBottom: "16px" }}>✍️</div>
+            <div style={{ marginBottom: "16px", display: "flex", justifyContent: "center" }}><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--color-muted)", opacity: 0.4 }}><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></div>
             <p style={{ fontWeight: 600, fontSize: "1.0625rem", marginBottom: "8px" }}>아직 게시글이 없습니다</p>
             <p style={{ color: "var(--color-muted)", fontSize: "0.9375rem" }}>곧 첫 번째 포스트가 올라올 예정입니다.</p>
           </div>

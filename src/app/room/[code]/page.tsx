@@ -12,6 +12,13 @@ function fmt(bytes: number) { if (bytes < 1024) return `${bytes}B`; if (bytes < 
 function shortTime(ts: number) { return new Date(ts).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }); }
 const COLORS = ["#3b82f6","#8b5cf6","#ec4899","#ef4444","#f59e0b","#10b981"];
 function nameColor(name: string) { return COLORS[name.charCodeAt(0) % COLORS.length]; }
+function mimeIcon(mime: string) {
+  const p = { width:18, height:18, viewBox:"0 0 24 24", fill:"none", stroke:"#64748b", strokeWidth:1.5, strokeLinecap:"round" as const, strokeLinejoin:"round" as const };
+  if (mime.startsWith("image/")) return <svg {...p}><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>;
+  if (mime.startsWith("audio/")) return <svg {...p}><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>;
+  if (mime.startsWith("video/")) return <svg {...p}><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>;
+  return <svg {...p}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>;
+}
 
 export default function RoomPage() {
   const params = useParams();
@@ -141,14 +148,14 @@ export default function RoomPage() {
   if (loading) return <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"100vh", fontSize:"1rem", color:"#888" }}>방 불러오는 중...</div>;
   if (error) return (
     <div style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", height:"100vh", gap:16 }}>
-      <div style={{ fontSize:"3rem" }}>🚪</div>
+      <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth={1.2} strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14"/><path d="M14 21v-5a2 2 0 0 0-2-2h0a2 2 0 0 0-2 2v5"/></svg>
       <div style={{ fontWeight:700, fontSize:"1.2rem" }}>{error}</div>
       <a href="/room" style={{ color:"#3b82f6", textDecoration:"underline" }}>새 방 만들기</a>
     </div>
   );
   if (room?.archivedAt) return (
     <div style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", height:"100vh", gap:12 }}>
-      <div style={{ fontSize:"3rem" }}>📦</div>
+      <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth={1.2} strokeLinecap="round" strokeLinejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
       <div style={{ fontWeight:700, fontSize:"1.2rem" }}>이 방은 아카이브되었습니다</div>
       <div style={{ color:"#888", fontSize:".875rem" }}>7일 이상 활동이 없어 자동으로 닫혔습니다</div>
       <a href="/room" style={{ color:"#3b82f6", textDecoration:"underline" }}>새 방 만들기</a>
@@ -166,7 +173,7 @@ export default function RoomPage() {
         .rm-btn-primary:hover { background:#2563eb; }
         .rm-btn-ghost { background:none; color:#64748b; }
         .rm-btn-ghost:hover { background:#f1f5f9; }
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+        @keyframes spin { to { transform: rotate(360deg); } }
       `}</style>
 
       {/* Name modal */}
@@ -193,11 +200,13 @@ export default function RoomPage() {
             {room?.ownerName ? `${room.ownerName} 님의 방` : "임시 협업 공간"} · 코드: <code style={{ fontFamily:"monospace", background:"#f1f5f9", padding:"0 4px", borderRadius:4 }}>{code}</code>
           </div>
         </div>
-        <button className="rm-btn rm-btn-ghost" style={{ fontSize:".8rem", padding:"5px 10px" }} onClick={() => { navigator.clipboard.writeText(window.location.href); }}>
-          🔗 링크 복사
+        <button className="rm-btn rm-btn-ghost" style={{ fontSize:".8rem", padding:"5px 10px", display:"flex", alignItems:"center", gap:4 }} onClick={() => { navigator.clipboard.writeText(window.location.href); }}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          링크 복사
         </button>
-        <button className="rm-btn rm-btn-ghost" style={{ fontSize:".8rem", padding:"5px 10px" }} onClick={() => setShowNameModal(true)}>
-          👤 {guestName || "이름 설정"}
+        <button className="rm-btn rm-btn-ghost" style={{ fontSize:".8rem", padding:"5px 10px", display:"flex", alignItems:"center", gap:4 }} onClick={() => setShowNameModal(true)}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          {guestName || "이름 설정"}
         </button>
       </div>
 
@@ -205,8 +214,11 @@ export default function RoomPage() {
       <div style={{ background:"#fff", borderBottom:"1px solid #e2e8f0", display:"flex", flexShrink:0 }}>
         {(["chat","files","note"] as const).map(t => (
           <button key={t} onClick={() => setTab(t)}
-            style={{ flex:1, padding:"10px", border:"none", background:"none", cursor:"pointer", fontWeight:tab===t?700:400, color:tab===t?"#3b82f6":"#64748b", borderBottom:tab===t?"2px solid #3b82f6":"2px solid transparent", fontSize:".875rem", transition:"color .1s" }}>
-            {t==="chat"?"💬 채팅":t==="files"?`📎 파일 (${files.length})`:"📝 메모"}
+            style={{ flex:1, padding:"10px", border:"none", background:"none", cursor:"pointer", fontWeight:tab===t?700:400, color:tab===t?"#3b82f6":"#64748b", borderBottom:tab===t?"2px solid #3b82f6":"2px solid transparent", fontSize:".875rem", transition:"color .1s", display:"flex", alignItems:"center", justifyContent:"center", gap:5 }}>
+            {t==="chat" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>}
+            {t==="files" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>}
+            {t==="note" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>}
+            {t==="chat"?"채팅":t==="files"?`파일 (${files.length})`:"메모"}
           </button>
         ))}
       </div>
@@ -245,8 +257,10 @@ export default function RoomPage() {
               <div ref={msgEndRef} />
             </div>
             <div style={{ padding:"10px 16px", background:"#fff", borderTop:"1px solid #e2e8f0", display:"flex", gap:8, alignItems:"flex-end" }}>
-              <button onClick={() => fileRef.current?.click()} style={{ background:"none", border:"none", cursor:"pointer", color:"#64748b", padding:"6px", borderRadius:6, flexShrink:0 }} title="파일 첨부" disabled={uploading}>
-                {uploading ? <span style={{ animation:"pulse 1s infinite", display:"inline-block" }}>⏳</span> : "📎"}
+              <button onClick={() => fileRef.current?.click()} style={{ background:"none", border:"none", cursor:"pointer", color:"#64748b", padding:"6px", borderRadius:6, flexShrink:0, display:"flex", alignItems:"center" }} title="파일 첨부" disabled={uploading}>
+                {uploading
+                  ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" style={{ animation:"spin 1s linear infinite" }}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                  : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>}
               </button>
               <textarea className="rm-input" style={{ flex:1, resize:"none", minHeight:40, maxHeight:120 }} rows={1}
                 placeholder="메시지 입력... (Enter 전송, Shift+Enter 줄바꿈)"
@@ -262,33 +276,33 @@ export default function RoomPage() {
         {tab === "files" && (
           <div style={{ flex:1, overflowY:"auto", padding:16 }}>
             <div style={{ marginBottom:12, display:"flex", gap:8 }}>
-              <button className="rm-btn rm-btn-primary" onClick={() => fileRef.current?.click()} disabled={uploading}>
-                {uploading ? "업로드 중..." : "📎 파일 업로드"}
+              <button className="rm-btn rm-btn-primary" onClick={() => fileRef.current?.click()} disabled={uploading} style={{ display:"flex", alignItems:"center", gap:6 }}>
+                {uploading ? "업로드 중..." : (
+                  <>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                    파일 업로드
+                  </>
+                )}
               </button>
               <input ref={fileRef} type="file" multiple style={{ display:"none" }} onChange={e => { Array.from(e.target.files??[]).forEach(f => uploadFile(f)); e.target.value=""; }} />
             </div>
             {files.length === 0 && <div style={{ textAlign:"center", color:"#94a3b8", padding:"40px 0", fontSize:".9rem" }}>업로드된 파일이 없습니다</div>}
             <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-              {files.map(f => {
-                const isImg = f.mimeType.startsWith("image/");
-                const isAudio = f.mimeType.startsWith("audio/");
-                const isVideo = f.mimeType.startsWith("video/");
-                return (
-                  <div key={f.id} style={{ background:"#fff", borderRadius:10, border:"1px solid #e2e8f0", padding:12 }}>
-                    {isImg && <img src={f.url} alt={f.name} style={{ maxWidth:"100%", maxHeight:200, borderRadius:8, objectFit:"cover", display:"block", marginBottom:8 }} />}
-                    {isAudio && <audio controls src={f.url} style={{ width:"100%", marginBottom:8 }} />}
-                    {isVideo && <video controls src={f.url} style={{ maxWidth:"100%", maxHeight:200, borderRadius:8, display:"block", marginBottom:8 }} />}
-                    <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                      <span style={{ fontSize:"1.2rem" }}>{isImg?"🖼️":isAudio?"🎵":isVideo?"🎬":"📄"}</span>
-                      <div style={{ flex:1, minWidth:0 }}>
-                        <div style={{ fontWeight:600, fontSize:".875rem", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{f.name}</div>
-                        <div style={{ fontSize:".72rem", color:"#64748b" }}>{fmt(f.size)} · {f.uploaderName} · {shortTime(f.createdAt)}</div>
-                      </div>
-                      <a href={f.url} download={f.name} style={{ color:"#3b82f6", fontSize:".8rem", textDecoration:"none", padding:"4px 8px", border:"1px solid #3b82f6", borderRadius:6 }}>다운</a>
+              {files.map(f => (
+                <div key={f.id} style={{ background:"#fff", borderRadius:10, border:"1px solid #e2e8f0", padding:12 }}>
+                  {f.mimeType.startsWith("image/") && <img src={f.url} alt={f.name} style={{ maxWidth:"100%", maxHeight:200, borderRadius:8, objectFit:"cover", display:"block", marginBottom:8 }} />}
+                  {f.mimeType.startsWith("audio/") && <audio controls src={f.url} style={{ width:"100%", marginBottom:8 }} />}
+                  {f.mimeType.startsWith("video/") && <video controls src={f.url} style={{ maxWidth:"100%", maxHeight:200, borderRadius:8, display:"block", marginBottom:8 }} />}
+                  <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                    <div style={{ flexShrink:0 }}>{mimeIcon(f.mimeType)}</div>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontWeight:600, fontSize:".875rem", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{f.name}</div>
+                      <div style={{ fontSize:".72rem", color:"#64748b" }}>{fmt(f.size)} · {f.uploaderName} · {shortTime(f.createdAt)}</div>
                     </div>
+                    <a href={f.url} download={f.name} style={{ color:"#3b82f6", fontSize:".8rem", textDecoration:"none", padding:"4px 8px", border:"1px solid #3b82f6", borderRadius:6 }}>다운</a>
                   </div>
-                );
-              })}
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -299,7 +313,10 @@ export default function RoomPage() {
             <div style={{ marginBottom:10, display:"flex", alignItems:"center", gap:8 }}>
               <span style={{ fontWeight:700, flex:1 }}>공유 메모</span>
               {!noteEditing
-                ? <button className="rm-btn rm-btn-primary" style={{ padding:"6px 14px" }} onClick={() => { setNoteDraft(note); setNoteEditing(true); }}>✏️ 편집</button>
+                ? <button className="rm-btn rm-btn-primary" style={{ padding:"6px 14px", display:"flex", alignItems:"center", gap:5 }} onClick={() => { setNoteDraft(note); setNoteEditing(true); }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    편집
+                  </button>
                 : <><button className="rm-btn rm-btn-primary" style={{ padding:"6px 14px" }} onClick={saveNote}>저장</button>
                    <button className="rm-btn rm-btn-ghost" style={{ padding:"6px 14px" }} onClick={() => setNoteEditing(false)}>취소</button></>}
             </div>

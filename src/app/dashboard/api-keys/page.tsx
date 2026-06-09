@@ -95,13 +95,21 @@ export default function ApiKeysPage() {
   }
 
   return (
-    <div style={{ padding: "32px" }}>
+    <div className="api-keys-page" style={{ padding: "32px" }}>
+      <style>{`
+        @media (max-width: 640px) {
+          .api-keys-page { padding: 16px !important; }
+          .api-keys-new-btn { width: 100%; justify-content: center; }
+          .api-keys-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+          .api-keys-scopes-grid { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "32px", flexWrap: "wrap", gap: "16px" }}>
         <div>
           <h1 style={{ fontSize: "1.5rem", fontWeight: 600, letterSpacing: "-0.02em", marginBottom: "4px" }}>API 키</h1>
           <p style={{ fontSize: "0.9375rem", color: "var(--color-muted)" }}>자동화 및 외부 통합을 위한 API 키를 관리하세요.</p>
         </div>
-        <button onClick={() => setShowCreate(true)} className="btn btn-primary btn-pill" style={{ gap: "6px" }}>
+        <button onClick={() => setShowCreate(true)} className="btn btn-primary btn-pill api-keys-new-btn" style={{ gap: "6px" }}>
           <PlusIcon size={16} />새 API 키
         </button>
       </div>
@@ -131,7 +139,7 @@ export default function ApiKeysPage() {
       )}
 
       {/* Keys table */}
-      <div style={{ background: "var(--color-lifted)", border: "1px solid var(--color-hairline)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
+      <div className="api-keys-table-wrap" style={{ background: "var(--color-lifted)", border: "1px solid var(--color-hairline)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
         {loading ? (
           <div style={{ padding: "64px", textAlign: "center", color: "var(--color-muted)" }}>로딩 중...</div>
         ) : keys.length === 0 ? (
@@ -213,7 +221,7 @@ export default function ApiKeysPage() {
               </div>
               <div>
                 <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 500, marginBottom: "12px" }}>권한 *</label>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                <div className="api-keys-scopes-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
                   {ALL_SCOPES.map((scope) => (
                     <label key={scope.value} style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontSize: "0.875rem", color: "var(--color-body)", fontWeight: 400 }}>
                       <input type="checkbox" checked={selectedScopes.includes(scope.value)} onChange={() => toggleScope(scope.value)} style={{ width: "auto", cursor: "pointer" }} />

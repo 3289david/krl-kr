@@ -601,13 +601,20 @@ export default function CodesPage() {
   const [tab, setTab] = useState("invite");
 
   return (
-    <div style={{ padding: "32px", maxWidth: "960px" }}>
+    <div className="codes-page" style={{ padding: "32px", maxWidth: "960px" }}>
+      <style>{`
+        @media (max-width: 640px) {
+          .codes-page { padding: 16px !important; }
+          .codes-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap !important; padding-bottom: 2px; }
+          .codes-tabs button { flex-shrink: 0; white-space: nowrap; }
+        }
+      `}</style>
       <div style={{ marginBottom: "24px" }}>
         <h1 style={{ fontSize: "1.5rem", fontWeight: 700, marginBottom: "4px" }}>KRL Codes</h1>
         <p style={{ color: "var(--color-muted)", fontSize: "0.875rem" }}>초대 코드, 쿠폰, 라이선스 키, OTP, URL 단축 통합 관리</p>
       </div>
 
-      <div style={{ display: "flex", gap: "4px", borderBottom: "1px solid var(--color-hairline)", marginBottom: "24px", flexWrap: "wrap" }}>
+      <div className="codes-tabs" style={{ display: "flex", gap: "4px", borderBottom: "1px solid var(--color-hairline)", marginBottom: "24px", flexWrap: "wrap" }}>
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
             style={{
