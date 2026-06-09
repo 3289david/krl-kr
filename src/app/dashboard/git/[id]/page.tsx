@@ -181,7 +181,7 @@ export default function GitRepoPage() {
             <div key={dir}>
               <div onClick={() => toggleDir(dir)} style={{ padding: "5px 12px", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", fontSize: "0.8125rem", color: "var(--color-ink)", userSelect: "none" }}>
                 <span style={{ fontSize: "0.65rem", color: "var(--color-muted)" }}>{isExpanded ? "▼" : "▶"}</span>
-                <span style={{ fontSize: "0.9rem" }}>📁</span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
                 <span style={{ fontWeight: 600 }}>{dirName}</span>
               </div>
               {isExpanded && dirFiles.map(f => (
@@ -208,13 +208,24 @@ export default function GitRepoPage() {
   const breadcrumbs = selectedFile ? selectedFile.path.split("/") : [];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 54px)" }}>
+    <div className="git-outer" style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 54px)" }}>
+      <style>{`
+        @media (max-width: 768px) {
+          .git-outer { height: auto !important; min-height: calc(100vh - 54px); }
+          .git-header { flex-wrap: wrap !important; padding: 10px 12px !important; gap: 8px !important; }
+          .git-header-tabs { margin-left: 0 !important; }
+          .git-body { flex-direction: column !important; overflow: visible !important; height: auto !important; flex: none !important; }
+          .git-sidebar { width: 100% !important; height: auto !important; max-height: 220px; border-right: none !important; border-bottom: 1px solid var(--color-hairline); }
+          .git-editor { min-height: 60vh; overflow: auto !important; }
+          .git-editor textarea { min-height: 50vh; }
+        }
+      `}</style>
       {/* Repo header */}
-      <div style={{ padding: "12px 24px", borderBottom: "1px solid var(--color-hairline)", display: "flex", alignItems: "center", gap: "12px" }}>
+      <div className="git-header" style={{ padding: "12px 24px", borderBottom: "1px solid var(--color-hairline)", display: "flex", alignItems: "center", gap: "12px" }}>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" style={{ color: "var(--color-muted)", flexShrink: 0 }}><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9V5.25M18 15v-2.25M6 9v6"/></svg>
         <span style={{ fontWeight: 700, fontSize: "1rem" }}>{repo?.name ?? "로딩 중..."}</span>
         {repo?.is_public && <span style={{ fontSize: "0.75rem", padding: "2px 8px", borderRadius: "99px", background: "#10b98120", color: "#10b981", fontWeight: 600 }}>공개</span>}
-        <div style={{ marginLeft: "auto", display: "flex", gap: "4px" }}>
+        <div className="git-header-tabs" style={{ marginLeft: "auto", display: "flex", gap: "4px" }}>
           {(["files", "commits"] as const).map(t => (
             <button key={t} onClick={() => setTab(t)} style={{ padding: "5px 12px", border: `1px solid ${tab === t ? "var(--color-accent)" : "var(--color-hairline)"}`, borderRadius: "6px", background: tab === t ? "var(--color-accent)" : "transparent", color: tab === t ? "white" : "var(--color-body)", cursor: "pointer", fontSize: "0.8125rem" }}>
               {t === "files" ? "파일" : "커밋"}
@@ -223,13 +234,13 @@ export default function GitRepoPage() {
         </div>
       </div>
 
-      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+      <div className="git-body" style={{ flex: 1, display: "flex", overflow: "hidden" }}>
         {/* File tree sidebar */}
-        <div style={{ width: "220px", borderRight: "1px solid var(--color-hairline)", overflowY: "auto", display: "flex", flexDirection: "column" }}>
+        <div className="git-sidebar" style={{ width: "220px", borderRight: "1px solid var(--color-hairline)", overflowY: "auto", display: "flex", flexDirection: "column" }}>
           <div style={{ padding: "8px 12px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--color-hairline)" }}>
             <span style={{ fontSize: "0.7rem", fontWeight: 700, textTransform: "uppercase", color: "var(--color-muted)" }}>파일</span>
             <div style={{ display: "flex", gap: "4px" }}>
-              <button onClick={createFolder} title="새 폴더" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-muted)", fontSize: "0.9rem", padding: "2px" }}>📁</button>
+              <button onClick={createFolder} title="새 폴더" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-muted)", padding: "2px", display: "flex", alignItems: "center" }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></button>
               <button onClick={() => setShowNewFile(true)} title="새 파일" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-muted)", fontSize: "1.1rem", padding: "2px" }}>+</button>
               <input ref={fileUploadRef} type="file" style={{ display: "none" }} onChange={handleFileUpload} />
               <button onClick={() => fileUploadRef.current?.click()} disabled={uploading} title="파일 업로드" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-muted)", fontSize: "0.85rem", padding: "2px" }}>↑</button>
@@ -248,7 +259,7 @@ export default function GitRepoPage() {
         </div>
 
         {/* Editor / Commits */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <div className="git-editor" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
           {tab === "files" && selectedFile ? (
             <>
               <div style={{ padding: "8px 16px", borderBottom: "1px solid var(--color-hairline)", display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--color-surface)" }}>

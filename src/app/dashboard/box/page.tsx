@@ -16,14 +16,13 @@ function formatSize(bytes: number) {
 }
 
 function getMimeIcon(mime: string) {
-  if (mime.startsWith("image/")) return "🖼";
-  if (mime.startsWith("video/")) return "🎬";
-  if (mime.startsWith("audio/")) return "🎵";
-  if (mime.includes("pdf")) return "📄";
-  if (mime.includes("zip") || mime.includes("tar") || mime.includes("gz")) return "📦";
-  if (mime.includes("word") || mime.includes("document")) return "📝";
-  if (mime.includes("sheet") || mime.includes("excel")) return "📊";
-  return "📁";
+  const p = { width:18, height:18, viewBox:"0 0 24 24", fill:"none", stroke:"currentColor", strokeWidth:1.5, strokeLinecap:"round" as const, strokeLinejoin:"round" as const };
+  if (mime.startsWith("image/")) return <svg {...p}><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>;
+  if (mime.startsWith("video/")) return <svg {...p}><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>;
+  if (mime.startsWith("audio/")) return <svg {...p}><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>;
+  if (mime.includes("pdf") || mime.includes("word") || mime.includes("document") || mime.includes("sheet") || mime.includes("excel")) return <svg {...p}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>;
+  if (mime.includes("zip") || mime.includes("tar") || mime.includes("gz")) return <svg {...p}><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>;
+  return <svg {...p}><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>;
 }
 
 export default function BoxPage() {
@@ -109,8 +108,16 @@ export default function BoxPage() {
   }
 
   return (
-    <div style={{ padding: "32px", maxWidth: "900px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+    <div style={{ padding: "clamp(16px, 4vw, 32px)", maxWidth: "900px" }}>
+      <style>{`
+        @media (max-width: 640px) {
+          .box-header { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; }
+          .box-upload-btn { width: 100% !important; }
+          .box-actions { flex-wrap: wrap !important; }
+          .box-actions a, .box-actions button { flex: 1 1 auto !important; justify-content: center !important; text-align: center !important; }
+        }
+      `}</style>
+      <div className="box-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
         <div>
           <h1 style={{ fontSize: "1.5rem", fontWeight: 700, marginBottom: "4px" }}>KRL Box</h1>
           <p style={{ color: "var(--color-muted)", fontSize: "0.875rem" }}>
@@ -122,6 +129,7 @@ export default function BoxPage() {
           <button
             onClick={() => fileInput.current?.click()}
             disabled={uploading}
+            className="box-upload-btn"
             style={{ padding: "8px 20px", background: "var(--color-accent)", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "0.9375rem", fontWeight: 600 }}
           >
             {uploading ? "업로드 중..." : "파일 보관하기"}
@@ -166,7 +174,7 @@ export default function BoxPage() {
                   </p>
                 </div>
                 {/* Action buttons */}
-                <div style={{ display: "flex", gap: "4px", flexShrink: 0 }}>
+                <div className="box-actions" style={{ display: "flex", gap: "4px", flexShrink: 0 }}>
                   <a
                     href={`/api/v1/box/${item.id}/download`}
                     download={item.original_name}
@@ -180,7 +188,7 @@ export default function BoxPage() {
                     style={{ padding: "5px 8px", border: "1px solid var(--color-hairline)", borderRadius: "6px", background: "transparent", cursor: "pointer", fontSize: "0.8125rem", color: "var(--color-muted)" }}
                     title="이름 변경"
                   >
-                    ✏
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                   </button>
                   <button onClick={() => deleteItem(item.id)} style={{ padding: "5px 8px", border: "1px solid var(--color-hairline)", borderRadius: "6px", background: "transparent", cursor: "pointer", color: "#ef4444", fontSize: "0.875rem" }} title="삭제">✕</button>
                 </div>

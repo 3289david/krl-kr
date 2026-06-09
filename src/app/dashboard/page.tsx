@@ -102,7 +102,20 @@ export default function DashboardPage() {
   }
 
   return (
-    <div style={{ padding: "32px" }}>
+    <div className="dash-home" style={{ padding: "32px" }}>
+      <style>{`
+        @media (max-width: 768px) {
+          .dash-home { padding: 16px !important; }
+          .dash-home-stats { grid-template-columns: repeat(3,1fr) !important; gap: 8px !important; }
+          .dash-home-cta { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; padding: 20px 16px !important; }
+          .dash-home-cta a { width: 100% !important; justify-content: center !important; }
+          .dash-home-actions { grid-template-columns: repeat(2,1fr) !important; }
+          .dash-toast { bottom: 80px !important; right: 16px !important; left: 16px !important; justify-content: center !important; }
+        }
+        @media (max-width: 480px) {
+          .dash-home-stats { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "32px", flexWrap: "wrap", gap: "16px" }}>
         <div>
@@ -120,14 +133,14 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats grid */}
-      <div className="dashboard-grid-3" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", marginBottom: "32px" }}>
+      <div className="dash-home-stats" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", marginBottom: "32px" }}>
         <StatCard label="총 링크" value={stats.totalLinks} icon={<LinkIcon size={18} />} sub="생성된 단축 링크" />
         <StatCard label="총 클릭" value={stats.totalClicks} icon={<BarChartIcon size={18} />} sub="전체 클릭 수" />
         <StatCard label="오늘 생성" value={stats.linksToday} icon={<PlusIcon size={18} />} sub="최근 24시간" />
       </div>
 
       {/* Quick create CTA */}
-      <div style={{
+      <div className="dash-home-cta" style={{
         background: "var(--color-ink)", borderRadius: "var(--radius-xl)", padding: "28px 32px",
         marginBottom: "32px", display: "flex", alignItems: "center",
         justifyContent: "space-between", gap: "24px", flexWrap: "wrap",
@@ -224,7 +237,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Quick actions */}
-      <div className="dashboard-grid-2" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: "12px" }}>
+      <div className="dash-home-actions" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: "12px" }}>
         {[
           { href: "/dashboard/blog", icon: (
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
@@ -262,6 +275,26 @@ export default function DashboardPage() {
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
             </svg>
           ), title: "문의 채팅", desc: "관리자에게 문의" },
+          { href: "/dashboard/badge", icon: (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+            </svg>
+          ), title: "배지 생성기", desc: "GitHub README 배지" },
+          { href: "/dashboard/og", icon: (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="5" width="20" height="14" rx="2"/><path d="M9 9h6M9 12h4"/>
+            </svg>
+          ), title: "OG 이미지", desc: "소셜 공유 썸네일" },
+          { href: "/dashboard/signature", icon: (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+            </svg>
+          ), title: "이메일 서명", desc: "HTML 서명 생성기" },
+          { href: "/dashboard/fonts", icon: (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+          ), title: "폰트 CDN", desc: "무료 웹폰트 CDN" },
           ...(isAdmin ? [{ href: "/dashboard/admin", icon: (
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
@@ -287,7 +320,7 @@ export default function DashboardPage() {
       </div>
 
       {copiedSlug && (
-        <div style={{
+        <div className="dash-toast" style={{
           position: "fixed", bottom: "24px", right: "24px",
           background: "var(--color-ink)", color: "var(--color-canvas)",
           padding: "10px 16px", borderRadius: "var(--radius-pill)",

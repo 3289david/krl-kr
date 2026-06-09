@@ -230,8 +230,8 @@ export default function EditorPage({ params }: { params: Promise<Params> }) {
     { label: "```", title: "코드 블록", action: () => insertBlock("```\n코드를 입력하세요\n```") },
     { label: "❝", title: "인용", action: () => prefixLine("> ") },
     { label: "•", title: "목록", action: () => prefixLine("- ") },
-    { label: "🔗", title: "링크", action: () => wrapSelection("[", "](https://)", "링크 텍스트") },
-    { label: "🖼", title: "Drive 이미지", action: loadDriveImages },
+    { label: "URL", title: "링크", action: () => wrapSelection("[", "](https://)", "링크 텍스트") },
+    { label: "IMG", title: "Drive 이미지", action: loadDriveImages },
   ];
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -256,19 +256,31 @@ export default function EditorPage({ params }: { params: Promise<Params> }) {
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--color-canvas)", display: "flex", flexDirection: "column" }}>
+      <style>{`
+        @media (max-width: 768px) {
+          .editor-topbar { flex-wrap: wrap !important; padding: 8px 12px !important; gap: 6px !important; }
+          .editor-topbar .editor-spacer { display: none !important; }
+          .editor-topbar .editor-view-toggle { order: -1; width: 100%; justify-content: center; }
+          .editor-topbar .editor-actions { display: flex; gap: 6px; width: 100%; justify-content: flex-end; }
+          .editor-area { flex-direction: column !important; padding: 0 12px !important; }
+          .editor-write-pane { border-right: none !important; padding-right: 0 !important; border-bottom: 1px solid var(--color-hairline) !important; padding-bottom: 16px !important; }
+          .editor-preview-pane { padding-left: 0 !important; }
+          .editor-status-bar span:last-child { display: none !important; }
+        }
+      `}</style>
       {/* Top bar */}
-      <div style={{ position: "sticky", top: 0, zIndex: 50, background: "var(--color-surface)", borderBottom: "1px solid var(--color-hairline)", padding: "10px 20px", display: "flex", alignItems: "center", gap: 12 }}>
+      <div className="editor-topbar" style={{ position: "sticky", top: 0, zIndex: 50, background: "var(--color-surface)", borderBottom: "1px solid var(--color-hairline)", padding: "10px 20px", display: "flex", alignItems: "center", gap: 12 }}>
         <a href={`/dashboard/blog/${blogId}`} style={{ color: "var(--color-muted)", fontSize: "0.875rem", textDecoration: "none" }}>← 목록</a>
-        <div style={{ flex: 1 }} />
-        <div style={{ display: "flex", gap: 4, background: "var(--color-canvas)", borderRadius: 8, padding: 2 }}>
+        <div className="editor-spacer" style={{ flex: 1 }} />
+        <div className="editor-view-toggle" style={{ display: "flex", gap: 4, background: "var(--color-canvas)", borderRadius: 8, padding: 2 }}>
           {(["write", "split", "preview"] as const).map(v => (
             <button key={v} onClick={() => setView(v)} style={{ padding: "4px 10px", borderRadius: 6, border: "none", background: view === v ? "var(--color-surface)" : "none", cursor: "pointer", fontSize: "0.8125rem", fontWeight: view === v ? 600 : 400, color: "var(--color-ink)", fontFamily: "inherit" }}>
               {v === "write" ? "작성" : v === "split" ? "분할" : "미리보기"}
             </button>
           ))}
         </div>
-        <button onClick={() => setShowAI(v => !v)} className="btn btn-sm btn-ghost">✨ AI</button>
-        <button onClick={() => setShowSettings(v => !v)} className="btn btn-sm btn-ghost">⚙ 설정</button>
+        <button onClick={() => setShowAI(v => !v)} className="btn btn-sm btn-ghost">AI</button>
+        <button onClick={() => setShowSettings(v => !v)} className="btn btn-sm btn-ghost">설정</button>
         <button onClick={() => save("draft")} disabled={saving} className="btn btn-sm btn-ghost">
           {saving ? "저장 중..." : saved ? "✓ 저장됨" : "임시저장"}
         </button>
@@ -281,11 +293,11 @@ export default function EditorPage({ params }: { params: Promise<Params> }) {
           <div style={{ maxWidth: 900, margin: "0 auto" }}>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
               {[
-                { action: "suggest_titles", label: "✨ 제목 추천" },
-                { action: "summarize", label: "📝 요약" },
-                { action: "generate_tags", label: "🏷 태그 생성" },
-                { action: "generate_seo", label: "🔍 SEO 설명" },
-                { action: "fix_spelling", label: "✏️ 맞춤법 교정" },
+                { action: "suggest_titles", label: "제목 추천" },
+                { action: "summarize", label: "요약" },
+                { action: "generate_tags", label: "태그 생성" },
+                { action: "generate_seo", label: "SEO 설명" },
+                { action: "fix_spelling", label: "맞춤법 교정" },
               ].map(({ action, label }) => (
                 <button key={action} onClick={() => runAI(action)} disabled={aiLoading} className="btn btn-sm btn-ghost" style={{ fontSize: "0.8125rem" }}>{label}</button>
               ))}
@@ -360,10 +372,10 @@ export default function EditorPage({ params }: { params: Promise<Params> }) {
       )}
 
       {/* Editor area */}
-      <div style={{ flex: 1, display: "flex", maxWidth: 1200, width: "100%", margin: "0 auto", padding: "0 20px" }}>
+      <div className="editor-area" style={{ flex: 1, display: "flex", maxWidth: 1200, width: "100%", margin: "0 auto", padding: "0 20px" }}>
         {/* Write pane */}
         {(view === "write" || view === "split") && (
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", borderRight: view === "split" ? "1px solid var(--color-hairline)" : "none", paddingRight: view === "split" ? 20 : 0 }}>
+          <div className="editor-write-pane" style={{ flex: 1, display: "flex", flexDirection: "column", borderRight: view === "split" ? "1px solid var(--color-hairline)" : "none", paddingRight: view === "split" ? 20 : 0 }}>
             <input
               value={post.title}
               onChange={e => update("title", e.target.value)}
@@ -399,7 +411,7 @@ export default function EditorPage({ params }: { params: Promise<Params> }) {
             />
 
             {/* Status bar */}
-            <div style={{ padding: "8px 0 16px", borderTop: "1px solid var(--color-hairline)", fontSize: "0.75rem", color: "var(--color-muted)", display: "flex", gap: 16 }}>
+            <div className="editor-status-bar" style={{ padding: "8px 0 16px", borderTop: "1px solid var(--color-hairline)", fontSize: "0.75rem", color: "var(--color-muted)", display: "flex", gap: 16 }}>
               <span>단어 {wordCount.toLocaleString()}개</span>
               <span>약 {readMin}분 읽기</span>
               <span>글자 {post.content.length.toLocaleString()}자</span>
@@ -410,7 +422,7 @@ export default function EditorPage({ params }: { params: Promise<Params> }) {
 
         {/* Preview pane — full markdown */}
         {(view === "preview" || view === "split") && (
-          <div style={{ flex: 1, padding: view === "split" ? "32px 0 40px 24px" : "32px 0 40px", overflowY: "auto" }}>
+          <div className="editor-preview-pane" style={{ flex: 1, padding: view === "split" ? "32px 0 40px 24px" : "32px 0 40px", overflowY: "auto" }}>
             <h1 style={{ fontSize: "2rem", fontWeight: 800, marginBottom: 8, letterSpacing: "-0.03em", color: "var(--color-ink)" }}>
               {post.title || "제목 없음"}
             </h1>

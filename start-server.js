@@ -35,7 +35,12 @@ if (fs.existsSync(standaloneNextDir)) {
   }
 }
 if (fs.existsSync(staticSrc)) {
-  execSync(`rm -rf "${staticDest}" && cp -r "${staticSrc}" "${staticDest}"`);
+  try {
+    fs.rmSync(staticDest, { recursive: true, force: true });
+    execSync(`cp -r "${staticSrc}" "${staticDest}"`);
+  } catch (e) {
+    console.warn('[start-server] Static sync failed, starting with existing files:', e.message);
+  }
 }
 if (fs.existsSync(buildIdSrc)) {
   fs.copyFileSync(buildIdSrc, buildIdDest);

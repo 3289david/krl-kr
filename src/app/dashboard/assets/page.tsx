@@ -40,8 +40,13 @@ function Badge({ active }: { active: boolean }) {
 }
 
 function MimeIcon({ mime }: { mime: string }) {
-  const icon = mime.startsWith("image/") ? "🖼️" : mime.startsWith("video/") ? "🎬" : mime.startsWith("audio/") ? "🎵" : mime.includes("pdf") ? "📄" : mime.includes("zip") || mime.includes("tar") || mime.includes("gzip") ? "📦" : "📁";
-  return <span style={{ fontSize: "1.1rem" }}>{icon}</span>;
+  const p = { width:20, height:20, viewBox:"0 0 24 24", fill:"none", stroke:"currentColor", strokeWidth:1.5, strokeLinecap:"round" as const, strokeLinejoin:"round" as const };
+  if (mime.startsWith("image/")) return <svg {...p}><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>;
+  if (mime.startsWith("video/")) return <svg {...p}><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>;
+  if (mime.startsWith("audio/")) return <svg {...p}><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>;
+  if (mime.includes("pdf")) return <svg {...p}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>;
+  if (mime.includes("zip") || mime.includes("tar") || mime.includes("gzip")) return <svg {...p}><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>;
+  return <svg {...p}><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>;
 }
 
 export default function AssetsPage() {
@@ -126,7 +131,15 @@ export default function AssetsPage() {
   ];
 
   return (
-    <div style={{ maxWidth: "900px", margin: "0 auto", padding: "24px 16px" }}>
+    <div style={{ maxWidth: "900px", margin: "0 auto", padding: "clamp(12px, 3vw, 24px) 16px" }}>
+      <style>{`
+        @media (max-width: 640px) {
+          .assets-card-row { flex-direction: column !important; align-items: flex-start !important; }
+          .assets-card-row > * { width: 100% !important; }
+          .assets-btns { display: grid !important; grid-template-columns: 1fr 1fr 1fr !important; }
+          .assets-btns button, .assets-btns a { width: 100% !important; }
+        }
+      `}</style>
       <div style={{ marginBottom: "24px" }}>
         <h1 style={{ fontSize: "1.5rem", fontWeight: 700, marginBottom: "4px" }}>KRL Assets</h1>
         <p style={{ color: "var(--color-muted)", fontSize: "0.875rem" }}>파일을 업로드하면 즉시 CDN URL이 생성됩니다. <code style={{ fontSize: "0.8rem" }}>cdn.krl.kr/u/{"{code}"}/{"{filename}"}</code></p>
@@ -164,7 +177,7 @@ export default function AssetsPage() {
           </div>
         ) : (
           <>
-            <div style={{ fontSize: "2rem", marginBottom: "8px" }}>☁️</div>
+            <div style={{ marginBottom: "8px", display:"flex", justifyContent:"center", color:"var(--color-muted)" }}><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.4} strokeLinecap="round" strokeLinejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg></div>
             <div style={{ fontWeight: 600, marginBottom: "4px" }}>파일을 드래그하거나 클릭하여 업로드</div>
             <div style={{ fontSize: "0.8rem", color: "var(--color-muted)" }}>최대 200MB · 모든 파일 형식 지원</div>
           </>
@@ -206,7 +219,7 @@ export default function AssetsPage() {
             const url = cdnUrl(a.code, a.filename);
             return (
               <div key={a.id} style={{ background: "var(--color-lifted)", border: "1px solid var(--color-hairline)", borderRadius: "10px", padding: "12px 16px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                <div className="assets-card-row" style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
                   <MimeIcon mime={a.mime_type} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 600, fontSize: "0.9rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.title || a.original_name}</div>

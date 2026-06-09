@@ -135,13 +135,20 @@ export default function SpaceEditorPage() {
   }
 
   return (
-    <div style={{ display: "flex", height: "calc(100vh - 54px)", overflow: "hidden" }}>
+    <div className="space-outer" style={{ display: "flex", height: "calc(100vh - 54px)", overflow: "hidden" }}>
+      <style>{`
+        @media (max-width: 768px) {
+          .space-outer { flex-direction: column !important; height: auto !important; overflow: visible !important; min-height: calc(100vh - 54px); }
+          .space-sidebar { width: 100% !important; max-height: 240px; border-right: none !important; border-bottom: 1px solid var(--color-hairline); flex-shrink: 0 !important; }
+          .space-editor { overflow: auto !important; min-height: 60vh; }
+        }
+      `}</style>
       {/* Page sidebar */}
-      <div style={{ width: "200px", borderRight: "1px solid var(--color-hairline)", padding: "16px 0", flexShrink: 0, overflowY: "auto", display: "flex", flexDirection: "column" }}>
+      <div className="space-sidebar" style={{ width: "200px", borderRight: "1px solid var(--color-hairline)", padding: "16px 0", flexShrink: 0, overflowY: "auto", display: "flex", flexDirection: "column" }}>
         <div style={{ padding: "0 12px 8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--color-ink)" }}>{site?.name ?? "사이트"}</span>
           <div style={{ display: "flex", gap: "4px" }}>
-            <button onClick={() => setShowSettings(!showSettings)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-muted)", fontSize: "0.85rem", padding: "2px" }} title="설정">⚙</button>
+            <button onClick={() => setShowSettings(!showSettings)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-muted)", padding: "2px", display:"flex" }} title="설정"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
             <button onClick={() => setShowNewPage(true)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-accent)", fontSize: "1.1rem" }}>+</button>
           </div>
         </div>
@@ -202,7 +209,7 @@ export default function SpaceEditorPage() {
       </div>
 
       {/* Editor */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      <div className="space-editor" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         {selectedPage ? (
           <>
             {/* Toolbar */}
@@ -235,7 +242,7 @@ export default function SpaceEditorPage() {
                           <div style={{ flex: 1, fontSize: "0.875rem", color: "var(--color-ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                             {block.type !== "divider" && block.content}
                           </div>
-                          <button onClick={() => setEditingBlockIdx(editingBlockIdx === idx ? null : idx)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-muted)", fontSize: "0.8125rem", padding: "2px 6px" }}>✏</button>
+                          <button onClick={() => setEditingBlockIdx(editingBlockIdx === idx ? null : idx)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-muted)", padding: "2px 6px", display:"flex" }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
                           <button onClick={() => moveBlock(idx, -1)} disabled={idx === 0} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-muted)", padding: "2px" }}>↑</button>
                           <button onClick={() => moveBlock(idx, 1)} disabled={idx === blocks.length - 1} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-muted)", padding: "2px" }}>↓</button>
                           <button onClick={() => removeBlock(idx)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", padding: "2px" }}>✕</button>

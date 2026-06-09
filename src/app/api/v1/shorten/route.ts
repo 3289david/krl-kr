@@ -89,6 +89,19 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Fall back to session auth if no API key
+    if (!userId) {
+      try {
+        const { requireAuth } = await import("@/lib/auth");
+        const sessionAuth = await requireAuth(db, request);
+        if (!sessionAuth.error && sessionAuth.user) {
+          userId = sessionAuth.user.id;
+        }
+      } catch {
+        // No session, continue as anonymous
+      }
+    }
+
     // Rate limiting:
     // - Authenticated API key users: 3000 requests/day (unlimited link creation, API fairness)
     // - Anonymous / session users: 10 per minute per IP

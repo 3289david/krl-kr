@@ -15,8 +15,16 @@ export default function RoomsDashboard() {
   }, []);
 
   return (
-    <div>
-      <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:24 }}>
+    <div className="dashboard-page">
+      <style>{`
+        @media (max-width: 640px) {
+          .rooms-header { flex-wrap: wrap !important; }
+          .rooms-header .btn { width: 100%; text-align: center; justify-content: center; }
+          .room-card-inner { flex-wrap: wrap !important; gap: 8px !important; }
+          .room-enter-btn { width: 100%; text-align: center; justify-content: center; }
+        }
+      `}</style>
+      <div className="rooms-header" style={{ display:"flex", alignItems:"center", gap:12, marginBottom:24 }}>
         <div>
           <h1 style={{ fontWeight:800, fontSize:"1.5rem", marginBottom:4 }}>KRL Room</h1>
           <p style={{ color:"var(--color-muted)", fontSize:".9rem" }}>내가 만든 협업 공간 목록</p>
@@ -28,7 +36,7 @@ export default function RoomsDashboard() {
       {loading && <div style={{ color:"var(--color-muted)" }}>불러오는 중...</div>}
       {!loading && rooms.length === 0 && (
         <div style={{ textAlign:"center", padding:"48px 0", color:"var(--color-muted)" }}>
-          <div style={{ fontSize:"3rem", marginBottom:8 }}>🏠</div>
+          <div style={{ marginBottom:8, color:"var(--color-muted)" }}><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.2} strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
           <div style={{ fontWeight:600 }}>방이 없습니다</div>
           <div style={{ fontSize:".875rem", marginTop:4 }}>로그인 상태로 방을 만들면 여기서 관리할 수 있습니다</div>
           <Link href="/room" className="btn btn-primary btn-sm" style={{ display:"inline-block", marginTop:12 }}>방 만들기</Link>
@@ -37,7 +45,7 @@ export default function RoomsDashboard() {
       <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
         {rooms.map(r => (
           <div key={r.code} style={{ background:"var(--color-surface)", borderRadius:12, padding:"14px 16px", border:`1px solid ${r.archivedAt?"var(--color-hairline)":"var(--color-hairline)"}`, opacity:r.archivedAt?0.6:1 }}>
-            <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+            <div className="room-card-inner" style={{ display:"flex", alignItems:"center", gap:12 }}>
               <div style={{ width:44, height:44, borderRadius:12, background:r.archivedAt?"#f1f5f9":"linear-gradient(135deg, #3b82f6, #8b5cf6)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
               </div>
