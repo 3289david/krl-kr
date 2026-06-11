@@ -210,6 +210,13 @@ const TOC = [
   { id: "community",  label: "커뮤니티" },
   { id: "search",     label: "검색" },
   { id: "ai",         label: "AI 채팅" },
+  { id: "avatar",     label: "아바타" },
+  { id: "countdown",  label: "카운트다운" },
+  { id: "waitlist",   label: "웨이트리스트" },
+  { id: "guestbook",  label: "방명록" },
+  { id: "launchpad",  label: "런치패드" },
+  { id: "patch",      label: "공지 배너" },
+  { id: "snapshot",   label: "스크린샷" },
   { id: "keys",       label: "API 키 관리" },
   { id: "errors",     label: "오류 코드" },
 ];
@@ -914,6 +921,409 @@ client.post(
               ]} />
             </Endpoint>
             <Endpoint method="DELETE" path="/api/v1/community/:id/comments" desc="댓글 삭제 (?comment_id=xxx). 작성자 또는 게시글 작성자 가능." auth />
+          </Section>
+
+          {/* ── 아바타 ── */}
+          <Section id="avatar" title="아바타" badge="Avatar">
+            <Alert type="tip">인증 없이 사용 가능합니다. 이름·ID·이메일 어떤 문자열이든 결정적(deterministic) SVG 아바타를 즉시 반환합니다.</Alert>
+            <Endpoint method="GET" path="/api/v1/avatar/:identifier" desc="문자열로부터 SVG 아바타 이미지를 생성합니다.">
+              <ParamTable rows={[
+                ["identifier", "string",                    true,  "아바타를 생성할 이름 또는 ID (URL 경로 세그먼트)"],
+                ["size",       "number",                    false, "이미지 크기 (px). 기본값: 64"],
+                ["style",      "initials|gradient|pixel",  false, "아바타 스타일. 기본값: initials"],
+              ]} />
+              <Block label="HTML에서 직접 사용" code={`<!-- 이니셜 아바타 (기본) -->
+<img src="https://krl.kr/api/v1/avatar/홍길동" width="64" height="64" />
+
+<!-- 그라디언트 스타일, 80px -->
+<img src="https://krl.kr/api/v1/avatar/hong@example.com?size=80&style=gradient" />
+
+<!-- 픽셀 아트 스타일 -->
+<img src="https://krl.kr/api/v1/avatar/user_123?style=pixel" />`} />
+              <LangBlock examples={{
+                curl: `# 이니셜 아바타 SVG 저장
+curl "https://krl.kr/api/v1/avatar/홍길동?size=128" -o avatar.svg`,
+                js: `// 동적으로 아바타 삽입
+document.querySelector("#avatar").src =
+  \`https://krl.kr/api/v1/avatar/\${encodeURIComponent(username)}?size=64\`;`,
+                python: `import httpx
+
+res = httpx.get(f"https://krl.kr/api/v1/avatar/홍길동?size=128")
+with open("avatar.svg", "wb") as f:
+    f.write(res.content)`,
+              }} />
+              <Alert type="info">응답 헤더: <code style={{fontFamily:"var(--font-mono)",fontSize:"0.85em",background:"var(--color-surface-card)",padding:"1px 5px",borderRadius:"4px"}}>Content-Type: image/svg+xml</code>, <code style={{fontFamily:"var(--font-mono)",fontSize:"0.85em",background:"var(--color-surface-card)",padding:"1px 5px",borderRadius:"4px"}}>Cache-Control: public, max-age=86400, immutable</code> — 같은 식별자는 항상 같은 색상과 이니셜을 반환합니다.</Alert>
+            </Endpoint>
+          </Section>
+
+          {/* ── 카운트다운 ── */}
+          <Section id="countdown" title="카운트다운" badge="Countdown">
+            <Alert type="info">카운트다운 페이지를 생성하면 <strong>krl.kr/countdown/슬러그</strong> 주소로 공유할 수 있습니다.</Alert>
+
+            <Endpoint method="GET" path="/api/v1/countdown" desc="내 카운트다운 목록 조회" auth />
+
+            <Endpoint method="POST" path="/api/v1/countdown" desc="새 카운트다운 생성" auth>
+              <ParamTable rows={[
+                ["title",       "string",  true,  "카운트다운 제목 (최대 200자)"],
+                ["target_at",   "string",  true,  "목표 일시 (ISO 8601 또는 datetime-local 형식)"],
+                ["description", "string",  false, "카운트다운 설명"],
+                ["slug",        "string",  false, "커스텀 슬러그. 미설정 시 자동 생성"],
+                ["theme",       "string",  false, "테마: minimal (기본, 다크) | light"],
+                ["is_public",   "number",  false, "공개 여부. 1 = 공개, 0 = 비공개 (기본: 1)"],
+              ]} />
+              <LangBlock examples={{
+                curl: `curl -X POST https://krl.kr/api/v1/countdown \\
+  -H "Content-Type: application/json" \\
+  -H "X-API-Key: krl_xxxx" \\
+  -d '{
+    "title": "수능 2026",
+    "target_at": "2026-11-19T08:40:00",
+    "slug": "suneung-2026",
+    "theme": "minimal"
+  }'`,
+                js: `const res = await fetch("https://krl.kr/api/v1/countdown", {
+  method: "POST",
+  headers: { "Content-Type": "application/json", "X-API-Key": "krl_xxxx" },
+  body: JSON.stringify({
+    title: "수능 2026",
+    target_at: "2026-11-19T08:40:00",
+    slug: "suneung-2026",
+  }),
+});
+const { countdown } = await res.json();
+console.log(countdown.url); // "https://krl.kr/countdown/suneung-2026"`,
+                python: `res = client.post("https://krl.kr/api/v1/countdown", json={
+    "title": "수능 2026",
+    "target_at": "2026-11-19T08:40:00",
+    "slug": "suneung-2026",
+})
+print(res.json()["countdown"]["slug"])`,
+              }} />
+              <Block label="응답 201" code={`{
+  "countdown": {
+    "id": "cd_xxxxxxxxxxxx",
+    "slug": "suneung-2026",
+    "title": "수능 2026",
+    "target_at": 1763542800000,
+    "theme": "minimal",
+    "is_public": 1,
+    "view_count": 0,
+    "url": "https://krl.kr/countdown/suneung-2026"
+  }
+}`} />
+            </Endpoint>
+
+            <Endpoint method="GET"    path="/api/v1/countdown/:slug" desc="카운트다운 공개 조회 (조회수 증가)" />
+            <Endpoint method="PATCH"  path="/api/v1/countdown/:slug" desc="카운트다운 수정 (소유자)" auth />
+            <Endpoint method="DELETE" path="/api/v1/countdown/:slug" desc="카운트다운 삭제 (소유자)" auth />
+          </Section>
+
+          {/* ── 웨이트리스트 ── */}
+          <Section id="waitlist" title="웨이트리스트" badge="Waitlist">
+            <Alert type="info">이메일 수집 + 추천인 시스템이 내장된 대기자 명단입니다. 공개 URL: <strong>krl.kr/waitlist/슬러그</strong></Alert>
+
+            <Endpoint method="GET" path="/api/v1/waitlist" desc="내 웨이트리스트 목록 조회" auth />
+
+            <Endpoint method="POST" path="/api/v1/waitlist" desc="새 웨이트리스트 생성" auth>
+              <ParamTable rows={[
+                ["name",             "string",  true,  "웨이트리스트 이름"],
+                ["description",      "string",  false, "설명 텍스트"],
+                ["cta",              "string",  false, "버튼 텍스트 (기본: '사전 등록하기')"],
+                ["referral_enabled", "number",  false, "추천인 시스템 활성화. 1 = 활성 (기본: 1)"],
+                ["is_open",          "number",  false, "등록 오픈 여부. 1 = 오픈 (기본: 1)"],
+                ["goal",             "number",  false, "목표 인원 수. 설정 시 진행률 바 표시"],
+              ]} />
+            </Endpoint>
+
+            <Endpoint method="POST" path="/api/v1/waitlist/:slug/signup" desc="웨이트리스트에 이메일 등록 (공개, 인증 불필요)">
+              <ParamTable rows={[
+                ["email", "string", true,  "등록할 이메일 주소"],
+                ["name",  "string", false, "이름 (선택)"],
+                ["ref",   "string", false, "추천인 코드 (URL 파라미터 ?ref=xxx)"],
+              ]} />
+              <LangBlock examples={{
+                curl: `curl -X POST https://krl.kr/api/v1/waitlist/my-product/signup \\
+  -H "Content-Type: application/json" \\
+  -d '{"email": "user@example.com", "name": "홍길동"}'`,
+                js: `const res = await fetch("/api/v1/waitlist/my-product/signup", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ email: "user@example.com" }),
+});
+const { ok, position, referral_url } = await res.json();
+// referral_url = "https://krl.kr/waitlist/my-product?ref=abc123"`,
+                python: `res = httpx.post(
+    "https://krl.kr/api/v1/waitlist/my-product/signup",
+    json={"email": "user@example.com"},
+)
+data = res.json()
+print(f"대기 순번: #{data['position']}")`,
+              }} />
+              <Block label="응답" code={`{
+  "ok": true,
+  "position": 42,
+  "referral_url": "https://krl.kr/waitlist/my-product?ref=abc123",
+  "already": false
+}`} />
+            </Endpoint>
+
+            <Endpoint method="GET"    path="/api/v1/waitlist/:slug/signup" desc="신청자 목록 조회 (소유자)" auth />
+            <Endpoint method="GET"    path="/api/v1/waitlist/:slug"        desc="웨이트리스트 공개 정보 조회" />
+            <Endpoint method="PATCH"  path="/api/v1/waitlist/:slug"        desc="웨이트리스트 설정 수정 (소유자)" auth />
+            <Endpoint method="DELETE" path="/api/v1/waitlist/:slug"        desc="웨이트리스트 삭제 (소유자)" auth />
+          </Section>
+
+          {/* ── 방명록 ── */}
+          <Section id="guestbook" title="방명록" badge="Guestbook">
+            <Alert type="info">방명록 페이지 URL: <strong>krl.kr/guestbook/슬러그</strong> · embed 위젯: <code style={{fontFamily:"var(--font-mono)",fontSize:"0.85em",background:"var(--color-surface-card)",padding:"1px 5px",borderRadius:"4px"}}>{`<script src="https://krl.kr/api/guestbook/embed.js?key=슬러그"></script>`}</code></Alert>
+
+            <Endpoint method="GET" path="/api/v1/guestbook" desc="내 방명록 목록 조회" auth />
+
+            <Endpoint method="POST" path="/api/v1/guestbook" desc="새 방명록 생성" auth>
+              <ParamTable rows={[
+                ["name",             "string", true,  "방명록 이름"],
+                ["description",      "string", false, "설명 텍스트"],
+                ["allow_anonymous",  "number", false, "익명 허용. 1 = 허용 (기본: 1)"],
+                ["require_approval", "number", false, "승인 후 게시. 1 = 승인 필요 (기본: 0)"],
+                ["theme",            "string", false, "테마: light (기본) | dark"],
+              ]} />
+            </Endpoint>
+
+            <Endpoint method="GET" path="/api/v1/guestbook/:slug/entries" desc="방명록 게시글 목록 (공개, CORS 허용)">
+              <ParamTable rows={[
+                ["page",  "number", false, "페이지 번호 (기본: 1)"],
+                ["limit", "number", false, "페이지당 개수 (기본: 20, 최대: 50)"],
+              ]} />
+              <LangBlock examples={{
+                curl: `curl "https://krl.kr/api/v1/guestbook/my-blog/entries?page=1"`,
+                js: `// 다른 도메인에서도 CORS 허용됨
+const res = await fetch(
+  "https://krl.kr/api/v1/guestbook/my-blog/entries"
+);
+const { entries, total } = await res.json();`,
+                python: `res = httpx.get(
+    "https://krl.kr/api/v1/guestbook/my-blog/entries",
+    params={"page": 1, "limit": 20},
+)
+data = res.json()`,
+              }} />
+              <Block label="응답" code={`{
+  "entries": [
+    {
+      "id": "gb_xxxxxxxxxxxx",
+      "author_name": "홍길동",
+      "content": "좋은 블로그네요!",
+      "created_at": 1748000000000
+    }
+  ],
+  "total": 42,
+  "page": 1,
+  "pages": 3
+}`} />
+            </Endpoint>
+
+            <Endpoint method="POST" path="/api/v1/guestbook/:slug/entries" desc="방명록 게시글 작성 (공개, 분당 3회 제한)">
+              <ParamTable rows={[
+                ["author_name", "string", false, "작성자 이름. 익명 허용 시 생략 가능"],
+                ["content",     "string", true,  "내용 (최대 500자)"],
+              ]} />
+              <LangBlock examples={{
+                curl: `curl -X POST https://krl.kr/api/v1/guestbook/my-blog/entries \\
+  -H "Content-Type: application/json" \\
+  -d '{"author_name": "홍길동", "content": "좋은 블로그네요!"}'`,
+                js: `const res = await fetch(
+  "https://krl.kr/api/v1/guestbook/my-blog/entries",
+  {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      author_name: "홍길동",
+      content: "좋은 블로그네요!",
+    }),
+  }
+);
+const { ok, pending } = await res.json();
+// pending = true 이면 승인 대기 중`,
+                python: `res = httpx.post(
+    "https://krl.kr/api/v1/guestbook/my-blog/entries",
+    json={"author_name": "홍길동", "content": "좋은 블로그네요!"},
+)`,
+              }} />
+            </Endpoint>
+
+            <Endpoint method="DELETE" path="/api/v1/guestbook/:slug/entries" desc="게시글 삭제 (?id=항목ID). 소유자만 가능." auth />
+            <Endpoint method="GET"    path="/api/guestbook/embed.js"         desc="방명록 embed 위젯 JavaScript. ?key=슬러그 필수." />
+          </Section>
+
+          {/* ── 런치패드 ── */}
+          <Section id="launchpad" title="런치패드" badge="Launchpad">
+            <Alert type="info">사이드 프로젝트 소개 페이지 URL: <strong>krl.kr/launchpad/슬러그</strong> · 업데이트 내역(changelog)과 피드백 폼이 기본 포함됩니다.</Alert>
+
+            <Endpoint method="GET" path="/api/v1/launchpad" desc="내 런치패드 프로젝트 목록" auth />
+
+            <Endpoint method="POST" path="/api/v1/launchpad" desc="새 프로젝트 생성" auth>
+              <ParamTable rows={[
+                ["name",          "string", true,  "프로젝트 이름"],
+                ["tagline",       "string", false, "한 줄 설명"],
+                ["description",   "string", false, "상세 설명"],
+                ["status",        "string", false, "building | beta | live | archived (기본: building)"],
+                ["website_url",   "string", false, "웹사이트 URL"],
+                ["github_url",    "string", false, "GitHub 저장소 URL"],
+                ["contact_email", "string", false, "문의 이메일"],
+                ["logo_text",     "string", false, "로고 텍스트 (최대 3자)"],
+                ["accent_color",  "string", false, "강조 색상 HEX (기본: #6366f1)"],
+              ]} />
+              <LangBlock examples={{
+                curl: `curl -X POST https://krl.kr/api/v1/launchpad \\
+  -H "Content-Type: application/json" \\
+  -H "X-API-Key: krl_xxxx" \\
+  -d '{
+    "name": "MyApp",
+    "tagline": "더 나은 방법으로 일하세요",
+    "status": "beta",
+    "website_url": "https://myapp.com",
+    "github_url": "https://github.com/user/myapp",
+    "accent_color": "#6366f1"
+  }'`,
+                js: `const { project } = await (await fetch("/api/v1/launchpad", {
+  method: "POST",
+  headers: { "Content-Type": "application/json", "X-API-Key": "krl_xxxx" },
+  body: JSON.stringify({ name: "MyApp", status: "beta" }),
+})).json();
+// 공개 URL: https://krl.kr/launchpad/{project.slug}`,
+                python: `res = client.post("https://krl.kr/api/v1/launchpad", json={
+    "name": "MyApp",
+    "tagline": "더 나은 방법으로 일하세요",
+    "status": "beta",
+})
+print(res.json()["project"]["slug"])`,
+              }} />
+            </Endpoint>
+
+            <Endpoint method="POST" path="/api/v1/launchpad/:slug/changelog" desc="업데이트 내역 추가" auth>
+              <ParamTable rows={[
+                ["title",   "string", true,  "업데이트 제목"],
+                ["content", "string", true,  "업데이트 내용"],
+                ["version", "string", false, "버전 태그 (예: v1.2.0)"],
+              ]} />
+            </Endpoint>
+
+            <Endpoint method="POST" path="/api/v1/launchpad/:slug/feedback" desc="피드백 제출 (공개, 시간당 3회 제한)">
+              <ParamTable rows={[
+                ["content",     "string", true,  "피드백 내용"],
+                ["type",        "string", false, "general | bug | feature | other (기본: general)"],
+                ["author_name", "string", false, "작성자 이름 (선택)"],
+              ]} />
+            </Endpoint>
+
+            <Endpoint method="GET"    path="/api/v1/launchpad/:slug"                  desc="프로젝트 공개 정보 + changelog 조회" />
+            <Endpoint method="GET"    path="/api/v1/launchpad/:slug/changelog"        desc="업데이트 내역 목록" />
+            <Endpoint method="DELETE" path="/api/v1/launchpad/:slug/changelog?id=xxx" desc="업데이트 내역 삭제 (소유자)" auth />
+            <Endpoint method="GET"    path="/api/v1/launchpad/:slug/feedback"         desc="수신된 피드백 목록 (소유자)" auth />
+            <Endpoint method="PATCH"  path="/api/v1/launchpad/:slug"                  desc="프로젝트 정보 수정 (소유자)" auth />
+            <Endpoint method="DELETE" path="/api/v1/launchpad/:slug"                  desc="프로젝트 삭제 (소유자)" auth />
+          </Section>
+
+          {/* ── 공지 배너 ── */}
+          <Section id="patch" title="공지 배너" badge="Patch">
+            <Alert type="info">embed 코드 한 줄로 어떤 웹사이트에도 긴급 공지를 표시합니다. 배너가 비활성 상태면 자동으로 숨겨집니다.</Alert>
+
+            <Endpoint method="GET" path="/api/v1/patch" desc="내 배너 목록 조회" auth />
+
+            <Endpoint method="POST" path="/api/v1/patch" desc="새 공지 배너 생성" auth>
+              <ParamTable rows={[
+                ["title",     "string", true,  "배너 제목 (최대 200자)"],
+                ["message",   "string", false, "상세 메시지"],
+                ["type",      "string", false, "info | warning | error | success (기본: info)"],
+                ["is_active", "number", false, "활성 여부. 1 = 활성 (기본: 1)"],
+              ]} />
+              <LangBlock examples={{
+                curl: `curl -X POST https://krl.kr/api/v1/patch \\
+  -H "Content-Type: application/json" \\
+  -H "X-API-Key: krl_xxxx" \\
+  -d '{
+    "title": "서버 점검 안내",
+    "message": "2026-06-15 02:00~04:00 서비스 점검 예정",
+    "type": "warning"
+  }'`,
+                js: `const { patch } = await (await fetch("/api/v1/patch", {
+  method: "POST",
+  headers: { "Content-Type": "application/json", "X-API-Key": "krl_xxxx" },
+  body: JSON.stringify({ title: "서버 점검 안내", type: "warning" }),
+})).json();
+
+// 웹사이트에 삽입
+// <script src="https://krl.kr/api/patch/banner.js?key=${patch.site_key}"></script>`,
+                python: `res = client.post("https://krl.kr/api/v1/patch", json={
+    "title": "서버 점검 안내",
+    "type": "warning",
+    "is_active": 1,
+})
+site_key = res.json()["patch"]["site_key"]`,
+              }} />
+              <Block label="응답 + embed 사용법" code={`// 응답
+{
+  "patch": {
+    "id": "patch_xxxx",
+    "site_key": "abc123xyz",
+    "title": "서버 점검 안내",
+    "type": "warning",
+    "is_active": 1
+  }
+}
+
+// HTML에 삽입 (배너 활성 시 자동 표시, 비활성 시 자동 숨김)
+<script src="https://krl.kr/api/patch/banner.js?key=abc123xyz"></script>`} />
+            </Endpoint>
+
+            <Endpoint method="GET"    path="/api/v1/patch/:siteKey" desc="배너 공개 조회 (banner.js 내부에서 사용)" />
+            <Endpoint method="PATCH"  path="/api/v1/patch/:siteKey" desc="배너 내용·활성 상태 수정" auth>
+              <ParamTable rows={[
+                ["title",     "string", false, "새 제목"],
+                ["message",   "string", false, "새 메시지"],
+                ["type",      "string", false, "새 유형"],
+                ["is_active", "number", false, "0 = 비활성화, 1 = 활성화"],
+              ]} />
+            </Endpoint>
+            <Endpoint method="DELETE" path="/api/v1/patch/:siteKey" desc="배너 삭제" auth />
+            <Endpoint method="GET"    path="/api/patch/banner.js"   desc="배너 embed 스크립트. ?key=site_key 필수. CORS 허용." />
+          </Section>
+
+          {/* ── 스크린샷 ── */}
+          <Section id="snapshot" title="스크린샷" badge="Snapshot">
+            <Alert type="tip">인증 없이 사용 가능합니다. <code style={{fontFamily:"var(--font-mono)",fontSize:"0.85em",background:"var(--color-surface-card)",padding:"1px 5px",borderRadius:"4px"}}>SCREENSHOTONE_KEY</code> 환경 변수 설정 시 고품질 스크린샷, 미설정 시 Microlink 무료 API를 폴백으로 사용합니다.</Alert>
+
+            <Endpoint method="GET" path="/api/snapshot" desc="URL의 스크린샷을 PNG 또는 SVG 플레이스홀더로 반환합니다.">
+              <ParamTable rows={[
+                ["url",    "string", true,  "캡처할 URL (http:// 또는 https://)"],
+                ["width",  "number", false, "뷰포트 너비 px (기본: 1280)"],
+                ["height", "number", false, "뷰포트 높이 px (기본: 800)"],
+              ]} />
+              <LangBlock examples={{
+                curl: `# PNG 이미지로 저장
+curl "https://krl.kr/api/snapshot?url=https://krl.kr" -o screenshot.png`,
+                js: `// Blob으로 받아 이미지에 삽입
+const res = await fetch(
+  "https://krl.kr/api/snapshot?url=https://krl.kr&width=1280&height=800"
+);
+const blob = await res.blob();
+const imgUrl = URL.createObjectURL(blob);
+document.querySelector("img").src = imgUrl;`,
+                python: `res = httpx.get(
+    "https://krl.kr/api/snapshot",
+    params={"url": "https://krl.kr", "width": 1280, "height": 800},
+)
+with open("screenshot.png", "wb") as f:
+    f.write(res.content)`,
+              }} />
+              <Block label="응답" code={`// Content-Type: image/png  (실제 스크린샷)
+// 또는
+// Content-Type: image/svg+xml  (폴백 플레이스홀더)
+
+// 오류 시 JSON 반환
+{ "error": "Invalid URL" }  // 400
+{ "error": "URL is not accessible" }  // 422`} />
+            </Endpoint>
           </Section>
 
           {/* ── API 키 관리 ── */}
