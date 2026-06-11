@@ -1253,7 +1253,7 @@ print(res.json()["project"]["slug"])`,
 })).json();
 
 // 웹사이트에 삽입
-// <script src="https://krl.kr/api/patch/banner.js?key=${patch.site_key}"></script>`,
+// <script src="https://krl.kr/api/patch/banner.js?key=\${patch.site_key}"></script>`,
                 python: `res = client.post("https://krl.kr/api/v1/patch", json={
     "title": "서버 점검 안내",
     "type": "warning",
