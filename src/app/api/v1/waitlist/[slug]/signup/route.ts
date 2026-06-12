@@ -23,12 +23,13 @@ export async function POST(request: NextRequest, { params }: Ctx) {
   if (!email?.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
     return NextResponse.json({ error: "올바른 이메일 주소를 입력해주세요." }, { status: 400 });
 
-  const existing = await db.prepare("SELECT id, referral_code, position FROM waitlist_signups WHERE waitlist_id = ? AND email = ?").bind(waitlist.id, email.toLowerCase()).first() as Record<string, unknown> | null;
+  const existing = await db.prepare("SELECT id, referral_code FROM waitlist_signups WHERE waitlist_id = ? AND email = ?").bind(waitlist.id, email.toLowerCase()).first() as Record<string, unknown> | null;
   if (existing) {
+    const posRow = await db.prepare("SELECT COUNT(*) AS cnt FROM waitlist_signups WHERE waitlist_id = ? AND created_at <= (SELECT created_at FROM waitlist_signups WHERE id = ?)").bind(waitlist.id, existing.id).first() as Record<string, unknown>;
     return NextResponse.json({
       ok: true,
       already: true,
-      position: existing.position,
+      position: Number(posRow?.cnt ?? 1),
       referral_code: existing.referral_code,
       referral_url: `https://krl.kr/waitlist/${slug}?ref=${existing.referral_code}`,
     });

@@ -177,7 +177,7 @@ export default function LaunchpadDashboard() {
                   <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
                     {c.version && <span style={{ fontSize: ".75rem", padding: "2px 8px", background: `${selected.accent_color}20`, color: selected.accent_color, borderRadius: 99, fontWeight: 600 }}>{c.version}</span>}
                     <p style={{ fontWeight: 600, fontSize: ".9375rem", color: "var(--color-ink)" }}>{c.title}</p>
-                    <span style={{ fontSize: ".75rem", color: "var(--color-muted)", marginLeft: "auto" }}>{new Date(c.created_at).toLocaleDateString("ko-KR")}</span>
+                    <span style={{ fontSize: ".75rem", color: "var(--color-muted)", marginLeft: "auto" }}>{new Date(Number(c.created_at)).toLocaleDateString("ko-KR")}</span>
                   </div>
                   <p style={{ fontSize: ".875rem", color: "var(--color-body)", lineHeight: 1.6, whiteSpace: "pre-line" }}>{c.content}</p>
                 </div>

@@ -53,5 +53,5 @@ export async function POST(request: NextRequest) {
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`
   ).bind(id, auth.user.id, slug, title.trim(), description ?? null, targetMs, theme, is_public ? 1 : 0, now, now).run();
 
-  return NextResponse.json({ countdown: { id, slug, title, description, target_at: targetMs, theme, is_public } }, { status: 201 });
+  return NextResponse.json({ countdown: { id, slug, title, description, target_at: targetMs, theme, is_public, view_count: 0 } }, { status: 201 });
 }

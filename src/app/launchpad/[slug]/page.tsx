@@ -8,7 +8,7 @@ interface ChangelogEntry { id: string; version?: string; title: string; content:
 const STATUS_MAP: Record<string, string> = { building: "개발 중", beta: "베타", live: "정식 출시", archived: "아카이브" };
 const STATUS_COLOR: Record<string, string> = { building: "#f59e0b", beta: "#3b82f6", live: "#10b981", archived: "#6b7280" };
 
-function relDate(ts: number) { return new Date(ts).toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" }); }
+function relDate(ts: number) { return new Date(Number(ts)).toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" }); }
 
 export default function LaunchpadPage() {
   const { slug } = useParams() as { slug: string };

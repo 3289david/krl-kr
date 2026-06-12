@@ -24,7 +24,7 @@ export default function CountdownPage() {
     if (!cd) return;
     const tick = () => {
       const now = Date.now();
-      const rem = cd.target_at - now;
+      const rem = Number(cd.target_at) - now;
       if (rem <= 0) { setDiff({ d: 0, h: 0, m: 0, s: 0, done: true }); return; }
       const s = Math.floor(rem / 1000) % 60;
       const m = Math.floor(rem / 60000) % 60;
@@ -90,7 +90,7 @@ export default function CountdownPage() {
         )}
 
         <p style={{ marginTop: 48, color: textMuted, fontSize: ".75rem" }}>
-          목표일: {new Date(cd.target_at).toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" })}
+          목표일: {new Date(Number(cd.target_at)).toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" })}
         </p>
 
         <a href="https://krl.kr" style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 32, color: textMuted, fontSize: ".75rem", textDecoration: "none", padding: "6px 14px", borderRadius: 99, border: `1px solid ${isDark ? "#334155" : "#e2e8f0"}` }}>

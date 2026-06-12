@@ -49,5 +49,5 @@ export async function POST(request: NextRequest) {
      VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)`
   ).bind(id, auth.user.id, slug, name.trim(), description ?? null, cta, referral_enabled ? 1 : 0, goal ?? null, launch_at ? new Date(launch_at).getTime() : null, now, now).run();
 
-  return NextResponse.json({ waitlist: { id, slug, name, description, cta, referral_enabled, is_open: 1, goal } }, { status: 201 });
+  return NextResponse.json({ waitlist: { id, slug, name, description, cta, referral_enabled, is_open: 1, goal, signup_count: 0 } }, { status: 201 });
 }

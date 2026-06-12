@@ -3,8 +3,8 @@ import { useState, useEffect } from "react";
 
 interface Countdown { id: string; slug: string; title: string; description?: string; target_at: number; theme: string; is_public: number; view_count: number; }
 
-function fmtDate(ts: number) { return new Date(ts).toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" }); }
-function daysLeft(ts: number) { const d = Math.ceil((ts - Date.now()) / 86400000); if (d < 0) return "지남"; if (d === 0) return "오늘"; return `D-${d}`; }
+function fmtDate(ts: number) { return new Date(Number(ts)).toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" }); }
+function daysLeft(ts: number) { const d = Math.ceil((Number(ts) - Date.now()) / 86400000); if (d < 0) return "지남"; if (d === 0) return "오늘"; return `D-${d}`; }
 
 export default function CountdownDashboard() {
   const [list, setList] = useState<Countdown[]>([]);

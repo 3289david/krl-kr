@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 interface Entry { id: string; author_name: string; content: string; created_at: number; }
 interface Guestbook { slug: string; name: string; description?: string; allow_anonymous: number; require_approval: number; theme: string; entry_count: number; }
 
-function relTime(ts: number) { const d = Date.now()-ts; if(d<60000) return "방금"; if(d<3600000) return `${Math.floor(d/60000)}분 전`; if(d<86400000) return `${Math.floor(d/3600000)}시간 전`; return new Date(ts).toLocaleDateString("ko-KR"); }
+function relTime(ts: number) { const n = Number(ts); const d = Date.now()-n; if(d<60000) return "방금"; if(d<3600000) return `${Math.floor(d/60000)}분 전`; if(d<86400000) return `${Math.floor(d/3600000)}시간 전`; return new Date(n).toLocaleDateString("ko-KR"); }
 
 export default function GuestbookPage() {
   const { slug } = useParams() as { slug: string };

@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
   }
 
   // Option 2: Microlink (free tier)
-  const mlUrl = `https://api.microlink.io?url=${encodeURIComponent(url)}&screenshot=true&meta=false&embed=screenshot.url`;
+  const mlUrl = `https://api.microlink.io?url=${encodeURIComponent(url)}&screenshot=true&meta=false`;
   try {
     const res = await fetch(mlUrl, { headers: { "User-Agent": "KRL/1.0" } });
     if (res.ok) {

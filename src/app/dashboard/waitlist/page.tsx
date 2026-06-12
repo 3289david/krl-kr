@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 interface Waitlist { id: string; slug: string; name: string; description?: string; cta: string; referral_enabled: number; is_open: number; goal?: number; signup_count: number; }
 interface Signup { id: string; email: string; name?: string; position: number; referral_count: number; created_at: number; }
 
-function relTime(ts: number) { const d = Date.now()-ts; if(d<60000) return "방금"; if(d<3600000) return `${Math.floor(d/60000)}분 전`; if(d<86400000) return `${Math.floor(d/3600000)}시간 전`; return new Date(ts).toLocaleDateString("ko-KR"); }
+function relTime(ts: number) { const n = Number(ts); const d = Date.now()-n; if(d<60000) return "방금"; if(d<3600000) return `${Math.floor(d/60000)}분 전`; if(d<86400000) return `${Math.floor(d/3600000)}시간 전`; return new Date(n).toLocaleDateString("ko-KR"); }
 
 export default function WaitlistDashboard() {
   const [list, setList] = useState<Waitlist[]>([]);
