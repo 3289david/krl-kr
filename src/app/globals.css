@@ -19,6 +19,7 @@
 
   /* Surfaces */
   --color-canvas:              var(--rk-canvas);
+  --color-surface:             var(--rk-paper);
   --color-lifted:              var(--rk-surface);
   --color-surface-card:        var(--rk-cream);
   --color-surface-dark:        var(--rk-ink);
