@@ -1,10 +1,10 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface Node { id: string; name: string; cpu_cores: number; ram_gb: number; os?: string; available_from?: string; available_to?: string; status: string; total_hours: number; created_at: number; }
-interface Job { id: string; title: string; type: string; cpu_req: number; ram_req: number; node_id?: string; node_name?: string; status: string; result?: string; created_at: number; }
+interface Job { id: string; title: string; type: string; cpu_req: number; ram_req: number; node_id?: string; node_name?: string; status: string; result?: string; result_file_id?: string; result_file_name?: string; created_at: number; updated_at: number; }
 
-function relTime(ts: number) { const n = Number(ts); if(Date.now()-n<86400000) return `${Math.floor((Date.now()-n)/3600000) || 1}시간 전`; return new Date(n).toLocaleDateString("ko-KR"); }
+function relTime(ts: number) { const n = Number(ts); const d = Date.now()-n; if(d<60000) return "방금"; if(d<3600000) return `${Math.floor(d/60000)}분 전`; if(d<86400000) return `${Math.floor(d/3600000)}시간 전`; return new Date(n).toLocaleDateString("ko-KR"); }
 const statusColor = (s: string) => ({ available: "#16a34a", busy: "#f59e0b", offline: "#6b7280", pending: "#3b82f6", running: "#f59e0b", done: "#10b981", failed: "#dc2626" }[s] ?? "#6b7280");
 const statusLabel = (s: string) => ({ available: "사용 가능", busy: "사용 중", offline: "오프라인", pending: "대기중", running: "실행중", done: "완료", failed: "실패" }[s] ?? s);
 const inputStyle = { width: "100%", padding: "8px 12px", border: "1px solid var(--color-hairline)", borderRadius: 8, fontSize: ".875rem", background: "var(--color-canvas)", color: "var(--color-ink)", boxSizing: "border-box" as const };
@@ -20,6 +20,8 @@ export default function GridDashboard() {
   const [nodeForm, setNodeForm] = useState({ name: "", cpu_cores: "1", ram_gb: "1", os: "", available_from: "", available_to: "" });
   const [jobForm, setJobForm] = useState({ title: "", description: "", type: "compute", cpu_req: "1", ram_req: "1", node_id: "" });
   const [saving, setSaving] = useState(false);
+  const [uploadingJobId, setUploadingJobId] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     Promise.all([
@@ -66,6 +68,29 @@ export default function GridDashboard() {
     setMyJobs(prev => prev.map(j => j.id === id ? { ...j, status: "done" } : j));
   }
 
+  async function uploadResult(jobId: string, file: File) {
+    setUploadingJobId(jobId);
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("name", file.name);
+
+    const uploadR = await fetch("/api/v1/drive", { method: "POST", body: formData });
+    const uploadD = await uploadR.json();
+    if (!uploadD.file) { alert("업로드 실패: " + (uploadD.error ?? "알 수 없는 오류")); setUploadingJobId(null); return; }
+
+    const fileId = uploadD.file.id;
+    const fileName = uploadD.file.name;
+
+    await fetch("/api/v1/grid/jobs", {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: jobId, status: "done", result_file_id: fileId, result_file_name: fileName }),
+    });
+    setMyJobs(prev => prev.map(j => j.id === jobId ? { ...j, status: "done", result_file_id: fileId, result_file_name: fileName } : j));
+    setUploadingJobId(null);
+  }
+
+  const tabStyle = (active: boolean) => ({ padding: "8px 18px", border: "none", background: "transparent", cursor: "pointer", fontSize: ".875rem", fontWeight: active ? 600 : 400, color: active ? "var(--color-ink)" : "var(--color-muted)", borderBottom: active ? "2px solid var(--color-ink)" : "2px solid transparent", marginBottom: -1 });
+
   return (
     <div style={{ padding: "clamp(16px,4vw,32px)", maxWidth: 1000 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, flexWrap: "wrap", gap: 10 }}>
@@ -78,6 +103,8 @@ export default function GridDashboard() {
           <button onClick={() => setCreatingJob(true)} style={{ padding: "8px 18px", background: "var(--color-ink)", color: "var(--color-canvas)", border: "none", borderRadius: 8, cursor: "pointer", fontWeight: 600, fontSize: ".875rem" }}>작업 제출</button>
         </div>
       </div>
+
+      <input ref={fileRef} type="file" style={{ display: "none" }} onChange={e => { const f = e.target.files?.[0]; if (f && uploadingJobId) uploadResult(uploadingJobId, f); e.target.value = ""; }} />
 
       {creatingNode && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: 16 }} onClick={e => e.target === e.currentTarget && setCreatingNode(false)}>
@@ -137,8 +164,8 @@ export default function GridDashboard() {
       )}
 
       <div style={{ display: "flex", gap: 0, marginBottom: 20, borderBottom: "1px solid var(--color-hairline)" }}>
-        {[["nodes", "내 컴퓨터"], ["jobs", "내 작업"], ["browse", "전체 노드"]].map(([v, l]) => (
-          <button key={v} onClick={() => setTab(v as "nodes" | "jobs" | "browse")} style={{ padding: "8px 18px", border: "none", background: "transparent", cursor: "pointer", fontSize: ".875rem", fontWeight: tab === v ? 600 : 400, color: tab === v ? "var(--color-ink)" : "var(--color-muted)", borderBottom: tab === v ? "2px solid var(--color-ink)" : "2px solid transparent", marginBottom: -1 }}>{l}</button>
+        {(["nodes", "jobs", "browse"] as const).map((v, i) => (
+          <button key={v} onClick={() => setTab(v)} style={tabStyle(tab === v)}>{["내 컴퓨터", "내 작업", "전체 노드"][i]}</button>
         ))}
       </div>
 
@@ -153,12 +180,12 @@ export default function GridDashboard() {
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 600, fontSize: ".9375rem" }}>{n.name}</div>
-                <div style={{ fontSize: ".8125rem", color: "var(--color-muted)" }}>CPU {n.cpu_cores}코어 / RAM {n.ram_gb}GB{n.os ? ` / ${n.os}` : ""}</div>
+                <div style={{ fontSize: ".8125rem", color: "var(--color-muted)" }}>CPU {Number(n.cpu_cores)}코어 / RAM {Number(n.ram_gb)}GB{n.os ? ` / ${n.os}` : ""}</div>
                 {(n.available_from || n.available_to) && <div style={{ fontSize: ".8125rem", color: "var(--color-muted)" }}>가용시간: {n.available_from ?? "?"}–{n.available_to ?? "?"}</div>}
+                <div style={{ fontSize: ".75rem", color: "var(--color-muted)", marginTop: 2 }}>{relTime(Number(n.created_at))} · 총 {Number(n.total_hours)}시간 제공</div>
               </div>
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                 <span style={{ fontSize: ".75rem", padding: "3px 10px", borderRadius: 99, background: `${statusColor(n.status)}15`, color: statusColor(n.status), fontWeight: 600 }}>{statusLabel(n.status)}</span>
-                <span style={{ fontSize: ".75rem", color: "var(--color-muted)" }}>총 {n.total_hours}시간</span>
                 {n.status !== "offline" && <button onClick={() => updateNodeStatus(n.id, "offline")} style={{ padding: "4px 10px", border: "1px solid var(--color-hairline)", borderRadius: 6, background: "transparent", cursor: "pointer", fontSize: ".75rem" }}>오프라인</button>}
                 {n.status === "offline" && <button onClick={() => updateNodeStatus(n.id, "available")} style={{ padding: "4px 10px", border: "1px solid #d1fae5", borderRadius: 6, background: "transparent", cursor: "pointer", fontSize: ".75rem", color: "#16a34a" }}>활성화</button>}
                 <button onClick={() => delNode(n.id)} style={{ padding: "4px 8px", border: "1px solid #fecdd3", borderRadius: 6, background: "transparent", color: "#dc2626", cursor: "pointer", fontSize: ".75rem" }}>삭제</button>
@@ -171,14 +198,37 @@ export default function GridDashboard() {
       {tab === "jobs" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {myJobs.length === 0 ? <p style={{ color: "var(--color-muted)", fontSize: ".875rem", textAlign: "center", padding: 40 }}>제출한 작업이 없습니다.</p> : myJobs.map(j => (
-            <div key={j.id} style={{ background: "#fff", border: "1px solid var(--color-hairline)", borderRadius: 12, padding: "14px 16px", display: "flex", gap: 14, alignItems: "center" }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 600 }}>{j.title}</div>
-                <div style={{ fontSize: ".8125rem", color: "var(--color-muted)" }}>{j.type} · CPU {j.cpu_req}코어 · RAM {j.ram_req}GB{j.node_name ? ` · ${j.node_name}` : ""}</div>
-                <div style={{ fontSize: ".75rem", color: "var(--color-muted)", marginTop: 2 }}>{relTime(j.created_at)}</div>
+            <div key={j.id} style={{ background: "#fff", border: "1px solid var(--color-hairline)", borderRadius: 12, padding: "14px 16px" }}>
+              <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 600 }}>{j.title}</div>
+                  <div style={{ fontSize: ".8125rem", color: "var(--color-muted)" }}>{j.type} · CPU {Number(j.cpu_req)}코어 · RAM {Number(j.ram_req)}GB{j.node_name ? ` · ${j.node_name}` : ""}</div>
+                  <div style={{ fontSize: ".75rem", color: "var(--color-muted)", marginTop: 2 }}>{relTime(Number(j.created_at))}</div>
+                </div>
+                <span style={{ fontSize: ".75rem", padding: "3px 10px", borderRadius: 99, background: `${statusColor(j.status)}15`, color: statusColor(j.status), fontWeight: 600, flexShrink: 0 }}>{statusLabel(j.status)}</span>
+                {j.status === "running" && (
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <button onClick={() => completeJob(j.id)} style={{ padding: "4px 10px", border: "none", borderRadius: 6, background: "#10b981", color: "#fff", cursor: "pointer", fontSize: ".75rem", fontWeight: 600 }}>완료</button>
+                    <button
+                      onClick={() => { setUploadingJobId(j.id); fileRef.current?.click(); }}
+                      disabled={uploadingJobId === j.id}
+                      style={{ padding: "4px 10px", border: "1px solid var(--color-hairline)", borderRadius: 6, background: "transparent", cursor: "pointer", fontSize: ".75rem" }}
+                    >
+                      {uploadingJobId === j.id ? "업로드 중..." : "결과 파일 업로드"}
+                    </button>
+                  </div>
+                )}
               </div>
-              <span style={{ fontSize: ".75rem", padding: "3px 10px", borderRadius: 99, background: `${statusColor(j.status)}15`, color: statusColor(j.status), fontWeight: 600 }}>{statusLabel(j.status)}</span>
-              {j.status === "running" && <button onClick={() => completeJob(j.id)} style={{ padding: "4px 10px", border: "none", borderRadius: 6, background: "#10b981", color: "#fff", cursor: "pointer", fontSize: ".75rem", fontWeight: 600 }}>완료</button>}
+              {j.result_file_id && (
+                <div style={{ marginTop: 10, padding: "8px 12px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, display: "flex", alignItems: "center", gap: 8 }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth={2}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  <span style={{ fontSize: ".8125rem", color: "#166534", flex: 1 }}>{j.result_file_name}</span>
+                  <a href={`/api/v1/drive/${j.result_file_id}/download`} download style={{ fontSize: ".75rem", color: "#16a34a", textDecoration: "none", fontWeight: 600 }}>다운로드</a>
+                </div>
+              )}
+              {j.result && !j.result_file_id && (
+                <div style={{ marginTop: 10, padding: "8px 12px", background: "var(--color-canvas)", borderRadius: 8, fontSize: ".8125rem", color: "var(--color-muted)", fontFamily: "monospace", whiteSpace: "pre-wrap", wordBreak: "break-all" }}>{j.result}</div>
+              )}
             </div>
           ))}
         </div>
@@ -193,11 +243,12 @@ export default function GridDashboard() {
                 <span style={{ fontWeight: 600 }}>{n.name}</span>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, fontSize: ".8125rem" }}>
-                <div style={{ background: "var(--color-canvas)", borderRadius: 6, padding: "6px 10px", textAlign: "center" }}><div style={{ fontWeight: 700, fontSize: "1.1rem" }}>{n.cpu_cores}</div><div style={{ color: "var(--color-muted)" }}>코어</div></div>
-                <div style={{ background: "var(--color-canvas)", borderRadius: 6, padding: "6px 10px", textAlign: "center" }}><div style={{ fontWeight: 700, fontSize: "1.1rem" }}>{n.ram_gb}</div><div style={{ color: "var(--color-muted)" }}>GB RAM</div></div>
+                <div style={{ background: "var(--color-canvas)", borderRadius: 6, padding: "6px 10px", textAlign: "center" }}><div style={{ fontWeight: 700, fontSize: "1.1rem" }}>{Number(n.cpu_cores)}</div><div style={{ color: "var(--color-muted)" }}>코어</div></div>
+                <div style={{ background: "var(--color-canvas)", borderRadius: 6, padding: "6px 10px", textAlign: "center" }}><div style={{ fontWeight: 700, fontSize: "1.1rem" }}>{Number(n.ram_gb)}</div><div style={{ color: "var(--color-muted)" }}>GB RAM</div></div>
               </div>
               {n.os && <p style={{ fontSize: ".75rem", color: "var(--color-muted)", marginTop: 8 }}>{n.os}</p>}
               {(n.available_from || n.available_to) && <p style={{ fontSize: ".75rem", color: "var(--color-muted)" }}>{n.available_from}–{n.available_to}</p>}
+              <button onClick={() => { setCreatingJob(true); setJobForm(p => ({ ...p, node_id: n.id })); setTab("jobs"); }} style={{ marginTop: 10, width: "100%", padding: "6px", border: "1px solid var(--color-hairline)", borderRadius: 6, background: "transparent", cursor: "pointer", fontSize: ".8125rem" }}>이 노드에 작업 제출</button>
             </div>
           ))}
         </div>

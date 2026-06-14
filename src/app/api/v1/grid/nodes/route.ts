@@ -38,5 +38,5 @@ export async function POST(request: NextRequest) {
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'available', 0, ?, ?)`
   ).bind(id, auth.user.id, auth.user.username ?? null, name.trim(), Number(cpu_cores), Number(ram_gb), os ?? null, available_from ?? null, available_to ?? null, now, now).run();
 
-  return NextResponse.json({ node: { id, name: name.trim(), cpu_cores: Number(cpu_cores), ram_gb: Number(ram_gb), os, available_from, available_to, status: "available", total_hours: 0 } }, { status: 201 });
+  return NextResponse.json({ node: { id, name: name.trim(), cpu_cores: Number(cpu_cores), ram_gb: Number(ram_gb), os, available_from, available_to, status: "available", total_hours: 0, created_at: now, updated_at: now } }, { status: 201 });
 }

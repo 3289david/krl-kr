@@ -10,6 +10,16 @@ function generateCode(len = 6): string {
   return s;
 }
 
+function getClientIp(request: NextRequest): string {
+  const xReal = request.headers.get("x-real-ip");
+  if (xReal) return xReal.split(",")[0].trim();
+  const xff = request.headers.get("x-forwarded-for");
+  if (xff) return xff.split(",")[0].trim();
+  const cf = request.headers.get("cf-connecting-ip");
+  if (cf) return cf.trim();
+  return "unknown";
+}
+
 export async function GET(request: NextRequest) {
   const db = getDB(request);
   const auth = await requireAuth(db, request);
@@ -32,6 +42,8 @@ export async function POST(request: NextRequest) {
   const { name, description, ssid_hint } = body;
   if (!name?.trim()) return NextResponse.json({ error: "공간 이름을 입력해주세요." }, { status: 400 });
 
+  const creatorIp = getClientIp(request);
+
   let code = generateCode(6);
   let attempts = 0;
   while (attempts < 10) {
@@ -45,9 +57,9 @@ export async function POST(request: NextRequest) {
   const now = Date.now();
 
   await db.prepare(
-    `INSERT INTO local_spaces (id, user_id, name, code, description, ssid_hint, is_active, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, 1, ?)`
-  ).bind(id, auth.user.id, name.trim(), code, description ?? null, ssid_hint ?? null, now).run();
+    `INSERT INTO local_spaces (id, user_id, name, code, description, ssid_hint, is_active, creator_ip, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)`
+  ).bind(id, auth.user.id, name.trim(), code, description ?? null, ssid_hint ?? null, creatorIp, now).run();
 
-  return NextResponse.json({ space: { id, name: name.trim(), code, description, ssid_hint, is_active: 1, message_count: 0 } }, { status: 201 });
+  return NextResponse.json({ space: { id, name: name.trim(), code, description, ssid_hint, is_active: 1, message_count: 0, creator_ip: creatorIp } }, { status: 201 });
 }

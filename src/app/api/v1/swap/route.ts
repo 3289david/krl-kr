@@ -21,6 +21,18 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ listings: rows.results ?? [] });
   }
 
+  const myoffers = request.nextUrl.searchParams.get("myoffers") === "1";
+  if (myoffers) {
+    const auth = await requireAuth(db, request);
+    if (auth.error || !auth.user) return NextResponse.json({ error: "인증이 필요합니다." }, { status: 401 });
+    const rows = await db.prepare(
+      `SELECT o.*, l.title AS listing_title, l.slug AS listing_slug, l.status AS listing_status, l.want_for
+       FROM swap_offers o JOIN swap_listings l ON l.id = o.listing_id
+       WHERE o.from_user_id = ? ORDER BY o.created_at DESC LIMIT ? OFFSET ?`
+    ).bind(auth.user.id, limit, offset).all();
+    return NextResponse.json({ offers: rows.results ?? [] });
+  }
+
   let sql = "SELECT * FROM swap_listings WHERE status = 'open'";
   const binds: unknown[] = [];
   if (category) { sql += " AND category = ?"; binds.push(category); }
@@ -60,5 +72,5 @@ export async function POST(request: NextRequest) {
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'open', ?, ?)`
   ).bind(id, auth.user.id, slug, title.trim(), description ?? null, category ?? null, want_for.trim(), image_url ?? null, now, now).run();
 
-  return NextResponse.json({ listing: { id, slug, title: title.trim(), description, category, want_for: want_for.trim(), image_url, status: "open" } }, { status: 201 });
+  return NextResponse.json({ listing: { id, slug, title: title.trim(), description, category, want_for: want_for.trim(), image_url, status: "open", created_at: now } }, { status: 201 });
 }

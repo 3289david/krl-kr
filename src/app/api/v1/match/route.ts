@@ -52,5 +52,5 @@ export async function POST(request: NextRequest) {
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?)`
   ).bind(id, auth.user.id, auth.user.username ?? null, type, title.trim(), description ?? null, category.trim(), contact ?? null, now, now).run();
 
-  return NextResponse.json({ listing: { id, type, title: title.trim(), description, category: category.trim(), contact, status: "active" } }, { status: 201 });
+  return NextResponse.json({ listing: { id, type, title: title.trim(), description, category: category.trim(), contact, status: "active", created_at: now } }, { status: 201 });
 }

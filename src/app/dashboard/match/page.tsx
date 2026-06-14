@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 
 interface Listing { id: string; type: string; title: string; description?: string; category: string; contact?: string; status: string; created_at: number; }
 
-function relTime(ts: number) { const n = Number(ts); const d = Date.now()-n; if(d<86400000) return `${Math.floor(d/3600000) || 1}시간 전`; return new Date(n).toLocaleDateString("ko-KR"); }
+function relTime(ts: number) { const n = Number(ts); const d = Date.now()-n; if(d<60000) return "방금"; if(d<3600000) return `${Math.floor(d/60000)}분 전`; if(d<86400000) return `${Math.floor(d/3600000)}시간 전`; return new Date(n).toLocaleDateString("ko-KR"); }
 const CATS = ["전자기기", "의류/잡화", "도서/문구", "스포츠/레저", "가구/생활", "식품/음료", "반려동물", "기타"];
 const inputStyle = { width: "100%", padding: "8px 12px", border: "1px solid var(--color-hairline)", borderRadius: 8, fontSize: ".875rem", background: "var(--color-canvas)", color: "var(--color-ink)", boxSizing: "border-box" as const };
 

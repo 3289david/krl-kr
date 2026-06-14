@@ -5,12 +5,28 @@ import { checkRateLimit } from "@/lib/auth";
 
 type Ctx = { params: Promise<{ code: string }> };
 
+function getClientIp(request: NextRequest): string {
+  const xReal = request.headers.get("x-real-ip");
+  if (xReal) return xReal.split(",")[0].trim();
+  const xff = request.headers.get("x-forwarded-for");
+  if (xff) return xff.split(",")[0].trim();
+  const cf = request.headers.get("cf-connecting-ip");
+  if (cf) return cf.trim();
+  return "unknown";
+}
+
 export async function GET(request: NextRequest, { params }: Ctx) {
   const { code } = await params;
   const db = getDB(request);
 
   const space = await db.prepare("SELECT * FROM local_spaces WHERE code = ? AND is_active = 1").bind(code.toUpperCase()).first() as Record<string, unknown> | null;
   if (!space) return NextResponse.json({ error: "공간을 찾을 수 없습니다." }, { status: 404 });
+
+  const clientIp = getClientIp(request);
+  const spaceIp = space.creator_ip as string | null;
+  if (spaceIp && spaceIp !== "unknown" && clientIp !== "unknown" && clientIp !== spaceIp) {
+    return NextResponse.json({ error: "같은 Wi-Fi에서만 접근할 수 있습니다.", wifi_mismatch: true }, { status: 403 });
+  }
 
   const since = request.nextUrl.searchParams.get("since");
   let rows;
@@ -21,19 +37,24 @@ export async function GET(request: NextRequest, { params }: Ctx) {
     rows = { results: (rows.results ?? []).reverse() };
   }
 
-  return NextResponse.json({ messages: rows.results ?? [] });
+  return NextResponse.json({ messages: rows.results ?? [], space_ip: spaceIp });
 }
 
 export async function POST(request: NextRequest, { params }: Ctx) {
   const { code } = await params;
   const db = getDB(request);
 
-  const ip = request.headers.get("cf-connecting-ip") ?? request.headers.get("x-forwarded-for") ?? "unknown";
-  const rl = await checkRateLimit({ key: `local:${ip}`, limit: 20, windowMs: 60_000 });
+  const clientIp = getClientIp(request);
+  const rl = await checkRateLimit({ key: `local:${clientIp}`, limit: 20, windowMs: 60_000 });
   if (!rl.allowed) return NextResponse.json({ error: "요청이 너무 많습니다." }, { status: 429 });
 
   const space = await db.prepare("SELECT * FROM local_spaces WHERE code = ? AND is_active = 1").bind(code.toUpperCase()).first() as Record<string, unknown> | null;
   if (!space) return NextResponse.json({ error: "공간을 찾을 수 없습니다." }, { status: 404 });
+
+  const spaceIp = space.creator_ip as string | null;
+  if (spaceIp && spaceIp !== "unknown" && clientIp !== "unknown" && clientIp !== spaceIp) {
+    return NextResponse.json({ error: "같은 Wi-Fi에서만 접근할 수 있습니다.", wifi_mismatch: true }, { status: 403 });
+  }
 
   const body = await request.json();
   const { author_name, content } = body;
