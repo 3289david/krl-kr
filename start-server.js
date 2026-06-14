@@ -36,8 +36,10 @@ if (fs.existsSync(standaloneNextDir)) {
 }
 if (fs.existsSync(staticSrc)) {
   try {
-    fs.rmSync(staticDest, { recursive: true, force: true });
-    execSync(`cp -r "${staticSrc}" "${staticDest}"`);
+    // Merge new static files on top of old ones — preserves previous build chunks so
+    // browsers with cached HTML from an old build can still load their chunks.
+    fs.mkdirSync(staticDest, { recursive: true });
+    execSync(`cp -r "${staticSrc}/." "${staticDest}/"`);
   } catch (e) {
     console.warn('[start-server] Static sync failed, starting with existing files:', e.message);
   }

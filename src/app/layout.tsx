@@ -81,6 +81,8 @@ export default function RootLayout({
   return (
     <html lang="ko" className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <head>
+        {/* ChunkLoadError auto-reload: when a JS chunk 404s after a new deploy, reload once */}
+        <script dangerouslySetInnerHTML={{ __html: `(function(){var r=sessionStorage.getItem('_cle_reload');window.addEventListener('error',function(e){var m=e.message||'';var n=e.error&&e.error.name||'';if((m.includes('Loading chunk')||m.includes('ChunkLoadError')||n==='ChunkLoadError')&&r!=='1'){sessionStorage.setItem('_cle_reload','1');window.location.reload();}else{sessionStorage.removeItem('_cle_reload');}});window.addEventListener('unhandledrejection',function(e){var n=e.reason&&e.reason.name||'';var m=String(e.reason||'');if((n==='ChunkLoadError'||m.includes('ChunkLoadError'))&&r!=='1'){sessionStorage.setItem('_cle_reload','1');window.location.reload();}else{sessionStorage.removeItem('_cle_reload');}});})();` }} />
         {/* Google AdSense — must be in raw <head> for verification */}
         {/* eslint-disable-next-line @next/next/no-sync-scripts */}
         <script
