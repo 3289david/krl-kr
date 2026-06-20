@@ -66,11 +66,16 @@ export async function GET(
     }
   }
 
-  // Increment download count
-  await db
-    .prepare("UPDATE files SET download_count = download_count + 1 WHERE slug = ?")
-    .bind(slug)
-    .run();
+  const { searchParams: sp } = new URL(request.url);
+  const isPreview = sp.get("preview") === "1";
+
+  // Only increment download count for actual downloads (not preview/stream)
+  if (!isPreview) {
+    await db
+      .prepare("UPDATE files SET download_count = download_count + 1 WHERE slug = ?")
+      .bind(slug)
+      .run();
+  }
 
   const filePath = getFilePath(file.storage_path);
   const mimeType = file.mime_type ?? "application/octet-stream";
@@ -80,7 +85,9 @@ export async function GET(
     queueHls(filePath, `pub_${slug}`);
   }
 
-  const disposition = `attachment; filename="${encodeURIComponent(file.original_name)}"`;
+  const disposition = isPreview
+    ? `inline; filename="${encodeURIComponent(file.original_name)}"`
+    : `attachment; filename="${encodeURIComponent(file.original_name)}"`;
   const res = streamFile(filePath, mimeType, request.headers.get("range"), disposition);
   if (res.status === 404) {
     return NextResponse.json(

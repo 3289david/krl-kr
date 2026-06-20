@@ -12,5 +12,14 @@ module.exports = {
         // Copy .env.example to .env.local and fill in the values.
       },
     },
+    {
+      name: "krl-ws-terminal",
+      script: "ws-terminal.js",
+      cwd: "/var/www/krl-kr",
+      interpreter: "node",
+      env_file: ".env.local",
+      restart_delay: 3000,
+      max_restarts: 10,
+    },
   ],
 };

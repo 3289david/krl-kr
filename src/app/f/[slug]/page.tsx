@@ -26,6 +26,7 @@ interface FileRecord {
   max_downloads: number | null;
   expires_at: string | null;
   created_at: string;
+  password_hash: string | null;
 }
 
 interface PageProps {
@@ -110,23 +111,57 @@ export default async function FileDownloadPage({ params }: PageProps) {
 
   const iconType = getFileIcon(file.mime_type);
   const iconPath = FILE_ICON_PATHS[iconType];
+  const isMedia = iconType === "video" || iconType === "image" || iconType === "audio";
+  const hasPassword = !!file.password_hash;
+  const maxWidth = isMedia ? "min(96vw, 860px)" : "480px";
 
   return (
     <main>
       <section className="section">
-        <div className="container" style={{ maxWidth: "480px" }}>
-          <div style={{ textAlign: "center", padding: "48px 32px", background: "var(--color-lifted)", border: "1px solid var(--color-hairline)", borderRadius: "var(--radius-xl)" }}>
-            <div style={{ width: "72px", height: "72px", borderRadius: "var(--radius-xl)", background: "var(--color-surface-card)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px" }}>
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--color-ink)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d={iconPath} />
-              </svg>
-            </div>
+        <div className="container" style={{ maxWidth }}>
+          <div style={{ textAlign: "center", padding: isMedia ? "24px" : "48px 32px", background: "var(--color-lifted)", border: "1px solid var(--color-hairline)", borderRadius: "var(--radius-xl)" }}>
 
-            <h1 style={{ fontSize: "1.375rem", marginBottom: "8px", wordBreak: "break-all" }}>
+            {/* Inline media player — hidden for password-protected files */}
+            {iconType === "video" && !hasPassword && (
+              <div style={{ marginBottom: "20px", borderRadius: "var(--radius-lg)", overflow: "hidden", background: "#000" }}>
+                <HlsPlayer
+                  src={`/api/v1/files/${slug}?preview=1`}
+                  hlsSrc={`/api/v1/hls/pub/${slug}/playlist.m3u8`}
+                  style={{ maxHeight: "520px", width: "100%" }}
+                />
+              </div>
+            )}
+
+            {iconType === "image" && !hasPassword && (
+              <div style={{ marginBottom: "20px", borderRadius: "var(--radius-lg)", overflow: "hidden" }}>
+                <img
+                  src={`/api/v1/files/${slug}?preview=1`}
+                  alt={file.original_name}
+                  style={{ maxWidth: "100%", maxHeight: "520px", objectFit: "contain", display: "block", margin: "0 auto" }}
+                />
+              </div>
+            )}
+
+            {iconType === "audio" && !hasPassword && (
+              <div style={{ padding: "16px 0 8px" }}>
+                <audio controls src={`/api/v1/files/${slug}?preview=1`} style={{ width: "100%" }} />
+              </div>
+            )}
+
+            {/* Show icon only for non-media or password-protected files */}
+            {(!isMedia || hasPassword) && (
+              <div style={{ width: "72px", height: "72px", borderRadius: "var(--radius-xl)", background: "var(--color-surface-card)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px" }}>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--color-ink)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d={iconPath} />
+                </svg>
+              </div>
+            )}
+
+            <h1 style={{ fontSize: "1.25rem", marginBottom: "8px", wordBreak: "break-all", marginTop: isMedia && !hasPassword ? "8px" : undefined }}>
               {file.original_name}
             </h1>
 
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "16px", marginBottom: "32px", flexWrap: "wrap" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "16px", marginBottom: "24px", flexWrap: "wrap" }}>
               <span style={{ fontSize: "0.875rem", color: "var(--color-muted)" }}>{formatBytes(file.size)}</span>
               <span style={{ fontSize: "0.875rem", color: "var(--color-muted)" }}>{file.mime_type}</span>
               <span style={{ fontSize: "0.875rem", color: "var(--color-muted)" }}>다운로드 {file.download_count}회</span>
@@ -136,26 +171,6 @@ export default async function FileDownloadPage({ params }: PageProps) {
               <p style={{ fontSize: "0.875rem", color: "var(--color-muted)", marginBottom: "20px" }}>
                 만료일: {formatDate(expiresMs)}
               </p>
-            )}
-
-            {iconType === "video" && (
-              <div style={{ marginBottom: "24px", borderRadius: "var(--radius-lg)", overflow: "hidden" }}>
-                <HlsPlayer
-                  src={`/api/v1/files/${slug}`}
-                  hlsSrc={`/api/v1/hls/pub/${slug}/playlist.m3u8`}
-                  style={{ maxHeight: "360px", width: "100%" }}
-                />
-              </div>
-            )}
-
-            {iconType === "image" && (
-              <div style={{ marginBottom: "24px", borderRadius: "var(--radius-lg)", overflow: "hidden" }}>
-                <img
-                  src={`/api/v1/files/${slug}`}
-                  alt={file.original_name}
-                  style={{ maxWidth: "100%", maxHeight: "360px", objectFit: "contain", display: "block", margin: "0 auto" }}
-                />
-              </div>
             )}
 
             <a

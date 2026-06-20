@@ -32,9 +32,11 @@ export function getStorageLimit(
 export async function getStorageUsed(pool: Pool, userId: string): Promise<number> {
   const r = await pool.query<{ used: string }>(
     `SELECT COALESCE(SUM(bytes), 0)::BIGINT AS used FROM (
-       SELECT size      AS bytes FROM drive_files WHERE user_id=$1 AND type='file'
+       SELECT size       AS bytes FROM drive_files WHERE user_id=$1 AND type='file'
        UNION ALL
-       SELECT file_size AS bytes FROM box_items   WHERE user_id=$1
+       SELECT file_size  AS bytes FROM box_items   WHERE user_id=$1
+       UNION ALL
+       SELECT disk_bytes AS bytes FROM workspaces   WHERE user_id=$1 AND status!='deleted'
      ) t`,
     [userId]
   );
