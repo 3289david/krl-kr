@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getDB } from "@/lib/env";
 import { formatDate } from "@/lib/utils";
+import HlsPlayer from "@/components/HlsPlayer";
 
 /** Safely convert any date value (number, numeric string, ISO string) to ms */
 function toMs(v: unknown): number | null {
@@ -135,6 +136,26 @@ export default async function FileDownloadPage({ params }: PageProps) {
               <p style={{ fontSize: "0.875rem", color: "var(--color-muted)", marginBottom: "20px" }}>
                 만료일: {formatDate(expiresMs)}
               </p>
+            )}
+
+            {iconType === "video" && (
+              <div style={{ marginBottom: "24px", borderRadius: "var(--radius-lg)", overflow: "hidden" }}>
+                <HlsPlayer
+                  src={`/api/v1/files/${slug}`}
+                  hlsSrc={`/api/v1/hls/pub/${slug}/playlist.m3u8`}
+                  style={{ maxHeight: "360px", width: "100%" }}
+                />
+              </div>
+            )}
+
+            {iconType === "image" && (
+              <div style={{ marginBottom: "24px", borderRadius: "var(--radius-lg)", overflow: "hidden" }}>
+                <img
+                  src={`/api/v1/files/${slug}`}
+                  alt={file.original_name}
+                  style={{ maxWidth: "100%", maxHeight: "360px", objectFit: "contain", display: "block", margin: "0 auto" }}
+                />
+              </div>
             )}
 
             <a

@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
+import HlsPlayer from "@/components/HlsPlayer";
 
 /* ── Types ── */
 interface RoomInfo { code: string; name: string; ownerName: string|null; archivedAt: number|null; createdAt: number; lastActiveAt: number; note: string; fileCount: number; messageCount: number; }
@@ -292,7 +293,13 @@ export default function RoomPage() {
                 <div key={f.id} style={{ background:"#fff", borderRadius:10, border:"1px solid #e2e8f0", padding:12 }}>
                   {f.mimeType.startsWith("image/") && <img src={f.url} alt={f.name} style={{ maxWidth:"100%", maxHeight:200, borderRadius:8, objectFit:"cover", display:"block", marginBottom:8 }} />}
                   {f.mimeType.startsWith("audio/") && <audio controls src={f.url} style={{ width:"100%", marginBottom:8 }} />}
-                  {f.mimeType.startsWith("video/") && <video controls src={f.url} style={{ maxWidth:"100%", maxHeight:200, borderRadius:8, display:"block", marginBottom:8 }} />}
+                  {f.mimeType.startsWith("video/") && (
+                    <HlsPlayer
+                      src={f.url}
+                      hlsSrc={`/api/v1/hls/room/${f.id}/playlist.m3u8`}
+                      style={{ maxWidth:"100%", maxHeight:200, borderRadius:8, marginBottom:8 }}
+                    />
+                  )}
                   <div style={{ display:"flex", alignItems:"center", gap:8 }}>
                     <div style={{ flexShrink:0 }}>{mimeIcon(f.mimeType)}</div>
                     <div style={{ flex:1, minWidth:0 }}>

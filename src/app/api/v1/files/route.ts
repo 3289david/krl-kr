@@ -3,7 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDB } from "@/lib/env";
 import { requireAuth, hashPassword, getSessionFromRequest } from "@/lib/auth";
 import { generateId, generateSlug } from "@/lib/utils";
-import { saveFile } from "@/lib/storage";
+import { saveFile, getFilePath } from "@/lib/storage";
+import { isVideo, queueHls } from "@/lib/hls";
 
 export const runtime = "nodejs";
 
@@ -78,6 +79,11 @@ export async function POST(request: NextRequest) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     const { key: storagePath } = await saveFile(buffer, file.name, file.type);
+
+    // Queue HLS for video files immediately after upload
+    if (isVideo(file.type)) {
+      queueHls(getFilePath(storagePath), `pub_${slug}`);
+    }
 
     await db
       .prepare(

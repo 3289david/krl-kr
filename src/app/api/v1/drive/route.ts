@@ -5,6 +5,7 @@ import { checkStorageQuota, getStorageUsed, getUserPlan, getStorageLimit } from 
 import path from "path";
 import fs from "fs";
 import { randomUUID } from "crypto";
+import { isVideo, queueHls } from "@/lib/hls";
 
 export const runtime = "nodejs";
 
@@ -159,7 +160,14 @@ export async function POST(request: NextRequest) {
          VALUES ($1, $2, $3, 'file', $4, $5, $6, $7, $7) RETURNING *`,
         [user.id, parentId, file.name, file.type || "application/octet-stream", file.size, storagePath, now]
       );
-      return NextResponse.json({ file: result.rows[0] }, { status: 201 });
+      const driveFile = result.rows[0];
+
+      // Queue HLS for video files immediately after upload
+      if (isVideo(file.type)) {
+        queueHls(storagePath, `drive_${driveFile.id}`);
+      }
+
+      return NextResponse.json({ file: driveFile }, { status: 201 });
     }
 
     return NextResponse.json({ error: "지원하지 않는 형식입니다." }, { status: 400 });

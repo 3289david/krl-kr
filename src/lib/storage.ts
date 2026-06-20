@@ -33,6 +33,11 @@ export async function saveFile(
   return { key, path: filePath, size: buffer.length };
 }
 
+/** Resolve a storage key to its absolute disk path (sync, no I/O). */
+export function getFilePath(key: string): string {
+  return path.join(getUploadDir(), key);
+}
+
 export async function getFile(key: string): Promise<Buffer | null> {
   const filePath = path.join(getUploadDir(), key);
   try {

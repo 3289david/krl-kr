@@ -4,6 +4,8 @@ import { getDB } from "@/lib/env";
 import fs from "fs";
 import path from "path";
 import archiver from "archiver";
+import { streamFile } from "@/lib/stream-file";
+import { isVideo, queueHls } from "@/lib/hls";
 
 export const runtime = "nodejs";
 
@@ -67,16 +69,21 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     if (!file.storage_path || !fs.existsSync(file.storage_path)) {
       return NextResponse.json({ error: "파일이 존재하지 않습니다." }, { status: 404 });
     }
+
     const { searchParams } = new URL(request.url);
     const preview = searchParams.get("preview") === "1";
-    const buffer = fs.readFileSync(file.storage_path);
-    return new NextResponse(buffer, {
-      headers: {
-        "Content-Type": file.mime_type ?? "application/octet-stream",
-        "Content-Disposition": preview ? "inline" : `attachment; filename="${encodeURIComponent(file.name)}"`,
-        "Content-Length": String(buffer.length),
-      },
-    });
+    const mimeType = file.mime_type ?? "application/octet-stream";
+
+    // Queue HLS transcoding for video files (fire-and-forget)
+    if (isVideo(mimeType)) {
+      queueHls(file.storage_path, `drive_${id}`);
+    }
+
+    const disposition = preview
+      ? "inline"
+      : `attachment; filename="${encodeURIComponent(file.name)}"`;
+
+    return streamFile(file.storage_path, mimeType, request.headers.get("range"), disposition);
   } catch (err) {
     console.error("[drive download]", err);
     return NextResponse.json({ error: "서버 오류" }, { status: 500 });

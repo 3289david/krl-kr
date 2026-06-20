@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { formatBytes } from "@/lib/utils";
+import HlsPlayer from "@/components/HlsPlayer";
 
 interface DriveFile {
   id: number;
@@ -92,7 +93,11 @@ function PreviewModal({ file, onClose }: { file: DriveFile; onClose: () => void 
             <img src={src} alt={file.name} style={{ maxWidth: "100%", maxHeight: "80vh", objectFit: "contain", display: "block" }} />
           )}
           {type === "video" && (
-            <video src={src} controls style={{ maxWidth: "100%", maxHeight: "80vh", background: "#000" }} />
+            <HlsPlayer
+              src={src}
+              hlsSrc={`/api/v1/hls/drive/${file.id}/playlist.m3u8`}
+              style={{ maxWidth: "100%", maxHeight: "80vh", width: "100%" }}
+            />
           )}
           {type === "audio" && (
             <div style={{ padding: 48, textAlign: "center", width: "100%" }}>

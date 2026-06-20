@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDB } from "@/lib/env";
 import { requireAuth, verifyPassword } from "@/lib/auth";
-import { getFile, deleteFile } from "@/lib/storage";
+import { deleteFile, getFilePath } from "@/lib/storage";
+import { streamFile } from "@/lib/stream-file";
+import { isVideo, queueHls } from "@/lib/hls";
 
 export const runtime = "nodejs";
 
@@ -70,22 +72,23 @@ export async function GET(
     .bind(slug)
     .run();
 
-  // Stream from local disk
-  const buffer = await getFile(file.storage_path);
-  if (buffer) {
-    return new NextResponse(new Uint8Array(buffer), {
-      headers: {
-        "Content-Type": file.mime_type ?? "application/octet-stream",
-        "Content-Disposition": `attachment; filename="${encodeURIComponent(file.original_name)}"`,
-        "Content-Length": file.size.toString(),
-      },
-    });
+  const filePath = getFilePath(file.storage_path);
+  const mimeType = file.mime_type ?? "application/octet-stream";
+
+  // Queue HLS transcoding for video files (fire-and-forget)
+  if (isVideo(mimeType)) {
+    queueHls(filePath, `pub_${slug}`);
   }
 
-  return NextResponse.json(
-    { error: "파일을 찾을 수 없습니다. 스토리지에서 삭제되었을 수 있습니다." },
-    { status: 404 }
-  );
+  const disposition = `attachment; filename="${encodeURIComponent(file.original_name)}"`;
+  const res = streamFile(filePath, mimeType, request.headers.get("range"), disposition);
+  if (res.status === 404) {
+    return NextResponse.json(
+      { error: "파일을 찾을 수 없습니다. 스토리지에서 삭제되었을 수 있습니다." },
+      { status: 404 }
+    );
+  }
+  return res;
 }
 
 export async function DELETE(

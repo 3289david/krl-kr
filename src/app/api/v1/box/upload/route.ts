@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
 import { getDB } from "@/lib/env";
-import { saveFile } from "@/lib/storage";
+import { saveFile, getFilePath } from "@/lib/storage";
 import { checkStorageQuota } from "@/lib/storage-quota";
+import { isVideo, queueHls } from "@/lib/hls";
 
 export const runtime = "nodejs";
 
@@ -31,7 +32,14 @@ export async function POST(request: NextRequest) {
       "INSERT INTO box_items (user_id, file_key, original_name, file_size, mime_type, notes, archived_at) VALUES ($1, $2, $3, $4, $5, '', $6) RETURNING *",
       [user.id, key, file.name, file.size, file.type || "application/octet-stream", now]
     );
-    return NextResponse.json({ item: result.rows[0], storage: quota }, { status: 201 });
+    const item = result.rows[0];
+
+    // Queue HLS for video files immediately after upload
+    if (isVideo(file.type)) {
+      queueHls(getFilePath(key), `box_${item.id}`);
+    }
+
+    return NextResponse.json({ item, storage: quota }, { status: 201 });
   } catch (err) {
     console.error("[box/upload POST]", err);
     return NextResponse.json({ error: "서버 오류" }, { status: 500 });

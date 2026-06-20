@@ -3,6 +3,7 @@ import { getRedis } from "@/lib/redis";
 import fs from "fs";
 import path from "path";
 import { randomUUID } from "crypto";
+import { isVideo, queueHls } from "@/lib/hls";
 
 export const runtime = "nodejs";
 
@@ -88,6 +89,13 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
       [code, userId, guestId, uploaderName, file.name, file.type || "application/octet-stream", file.size, url, now]
     );
+    const roomFileId = r.rows[0].id;
+
+    // Queue HLS transcoding for video files (use DB id as key)
+    const mimeType = file.type || "application/octet-stream";
+    if (isVideo(mimeType)) {
+      queueHls(filePath, `room_${roomFileId}`);
+    }
 
     // If logged-in, also add to their Drive
     if (userId) {
@@ -101,7 +109,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     await pool.query("UPDATE krl_rooms SET last_active_at=$1 WHERE code=$2", [now, code]);
 
     const fileObj = {
-      id: Number(r.rows[0].id),
+      id: Number(roomFileId),
       name: file.name,
       mimeType: file.type || "application/octet-stream",
       size: file.size,

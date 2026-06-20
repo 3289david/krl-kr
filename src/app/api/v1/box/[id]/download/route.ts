@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
 import { getDB } from "@/lib/env";
-import { getFile } from "@/lib/storage";
+import { getFilePath } from "@/lib/storage";
+import { streamFile } from "@/lib/stream-file";
+import { isVideo, queueHls } from "@/lib/hls";
 
 export const runtime = "nodejs";
 
@@ -18,18 +20,20 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const item = result.rows[0];
     if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-    const buffer = await getFile(item.file_key);
-    if (!buffer) return NextResponse.json({ error: "파일을 찾을 수 없습니다." }, { status: 404 });
+    const filePath = getFilePath(item.file_key);
+    const mimeType = item.mime_type || "application/octet-stream";
+
+    if (isVideo(mimeType)) {
+      queueHls(filePath, `box_${id}`);
+    }
 
     const filename = encodeURIComponent(item.original_name);
-    return new NextResponse(buffer, {
-      status: 200,
-      headers: {
-        "Content-Type": item.mime_type || "application/octet-stream",
-        "Content-Disposition": `attachment; filename*=UTF-8''${filename}`,
-        "Content-Length": String(buffer.length),
-      },
-    });
+    return streamFile(
+      filePath,
+      mimeType,
+      request.headers.get("range"),
+      `attachment; filename*=UTF-8''${filename}`
+    );
   } catch (err) {
     console.error("[box/download GET]", err);
     return NextResponse.json({ error: "서버 오류" }, { status: 500 });
