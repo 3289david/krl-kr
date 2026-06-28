@@ -1,5 +1,24 @@
 import { createReadStream, existsSync, statSync } from "fs";
-import { Readable } from "stream";
+import type { ReadStream } from "fs";
+
+function nodeToWebStream(nodeStream: ReadStream): ReadableStream<Uint8Array> {
+  return new ReadableStream<Uint8Array>({
+    start(controller) {
+      nodeStream.on("data", (chunk: Buffer) => {
+        try { controller.enqueue(new Uint8Array(chunk)); } catch { nodeStream.destroy(); }
+      });
+      nodeStream.on("end", () => {
+        try { controller.close(); } catch { /* already closed */ }
+      });
+      nodeStream.on("error", (err) => {
+        try { controller.error(err); } catch { /* already errored */ }
+      });
+    },
+    cancel() {
+      nodeStream.destroy();
+    },
+  });
+}
 
 export function streamFile(
   filePath: string,
@@ -41,10 +60,7 @@ export function streamFile(
       });
     }
 
-    const nodeStream = createReadStream(filePath, { start, end });
-    const webStream = Readable.toWeb(nodeStream) as ReadableStream;
-
-    return new Response(webStream, {
+    return new Response(nodeToWebStream(createReadStream(filePath, { start, end })), {
       status: 206,
       headers: {
         ...baseHeaders,
@@ -54,10 +70,7 @@ export function streamFile(
     });
   }
 
-  const nodeStream = createReadStream(filePath);
-  const webStream = Readable.toWeb(nodeStream) as ReadableStream;
-
-  return new Response(webStream, {
+  return new Response(nodeToWebStream(createReadStream(filePath)), {
     headers: { ...baseHeaders, "Content-Length": String(fileSize) },
   });
 }

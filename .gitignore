@@ -38,8 +38,6 @@ yarn-error.log*
 /uploads/
 /hosting/
 /drive/
-/hls_cache/
-/workspaces/
 
 # Swap files
 *.swp

@@ -149,7 +149,7 @@ export function Footer() {
             </p>
             {[
               { href: "/about", label: "소개" },
-              { href: "/blog", label: "블로그" },
+              { href: "https://blog.krl.kr", label: "블로그" },
               { href: "/contact", label: "문의하기" },
             ].map((item) => (
               <Link
