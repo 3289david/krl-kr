@@ -107,11 +107,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       archive.finalize();
     });
     const zip = Buffer.concat(chunks);
-    const safeName = file.name.replace(/[^a-zA-Z0-9가-힣._-]/g, "_");
+    const encodedName = encodeURIComponent(file.name + ".zip");
     return new NextResponse(zip, {
       headers: {
         "Content-Type": "application/zip",
-        "Content-Disposition": `attachment; filename="${safeName}.zip"`,
+        "Content-Disposition": `attachment; filename*=UTF-8''${encodedName}`,
         "Content-Length": String(zip.length),
       },
     });
